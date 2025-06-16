@@ -1,0 +1,138 @@
+import { v4 as uuidv4 } from "uuid";
+import { enqueueMessage } from './redisClient.js'; 
+
+// ----- Type definitions for graphql Objects
+interface Layer {
+    id: string;
+    type: string;
+    name?: string;
+}
+
+interface LinearLayer extends Layer {
+    type: "Linear";
+    inputDim: number;
+    outputDim: number;
+}
+
+type LinearLayerConfig = {
+  name?: string;
+  inputDim: number;
+  outputDim: number;
+};
+
+type LayerConfig = {
+  type: 'Linear'; 
+  linear?: LinearLayerConfig;
+};
+
+type AppendLayerArgs = {
+    modelId: string;
+    layerConfig: LayerConfig;
+};
+
+type Model  = {
+  id: string;
+  name: string;
+  layers: Layer[];
+}
+
+// in memory model
+const models: Model[] = [];
+
+export const resolvers = {
+    // graphql interface inferring
+    Layer: {
+        // for inferring underlying concrete type
+        __resolveType(layer: Layer, _: unknown){
+            
+            if(layer.type === "Linear"){
+                return 'LinearLayer';
+            }
+            return null;
+        }
+    },
+    // graphql queries
+    Query: {
+        // getModel query
+        // return the model based on id
+        getModel: (_: unknown, {id}: {id:string}) =>{
+            return models.find(m => m.id === id);
+        },
+        // getModels query
+        // return the models list
+        getModels: () => models,
+    },
+    // graphql mutations
+    Mutation: {
+        /*
+        createModel mutation
+        
+        Args:
+            name:string, name of the model
+        */
+        createModel: (_: unknown, {name}: {name:string}) => {
+            // create a new model
+            const newModel: Model = {
+                id: uuidv4(), // generate unique uuid
+                name: name, 
+                layers: [] // initialize model with no layers to begin with
+            }
+            models.push(newModel);
+            console.log(`[synapse][graphql]: Created model: ${newModel.name} (ID: ${newModel.id})`);
+            return newModel;
+        },
+        /* 
+        appendLayer mutation
+
+        Args:
+            modelId: Id, unique id of the model,
+            layerConfig: any, configuration of the layer
+        */
+        appendLayer: async (_: unknown, {modelId, layerConfig} : AppendLayerArgs) => {
+            // find the model 
+            const model = models.find(m => m.id === modelId);
+            // handle model doesn't exist 
+            if(!model){
+                throw new Error(`[synapse][graphql]: Model with ID ${modelId} not found`)
+            }
+
+            // destructure layerConfig
+            const {type, linear} = layerConfig;
+            
+            // initialize new layer & its uuid
+            let newLayer: any;
+            const layerId = uuidv4();
+
+            // handle linear model
+            if(type == "Linear"){
+                if(!linear) throw new Error(`[synapse][graphql]: Linear layer config is missing`);
+                newLayer = {
+                    id: layerId,
+                    type: "Linear",
+                    name: linear.name || `LinearLayer_${layerId.substring(0, 4)}`,
+                    inputDim: linear.inputDim,
+                    outputDim: linear.outputDim
+                };
+            }
+            else{
+                throw new Error(`[synapse][graphql]: Unsupported layer type: ${type}`)
+            }
+            // push layer to model
+            model.layers.push(newLayer)
+            console.log(`[synapse][graphql]: Appended ${type} layer (ID: ${newLayer.id}) to model ${model.name} (Model ID: ${model.id})`);
+            
+            console.log(`[synapse][graphql]: Appending to redis message Queue`)
+            // push message to redis
+            const message = {
+                eventType: "LAYER_ADDED",
+                modelId: model.id,
+                layerData: newLayer,
+                timestamp: new Date().toISOString()
+            };
+
+            await enqueueMessage(message);
+            // return model
+            return model;
+        }
+    }
+}
