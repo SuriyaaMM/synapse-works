@@ -1,12 +1,13 @@
 import redis
 import json
-import time
+
+from modelManager import ModelManager, transformLayerConfig
 
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 REDIS_QUEUE_NAME = 'model_layer_updates_queue'
 
-def processMessage(messageData):
+def processMessage(messageData, models: list[ModelManager]):
     """Processes a single message received from Redis."""
     try:
         # load the string (Json.stringify is called from server-side in typescript)
@@ -15,10 +16,16 @@ def processMessage(messageData):
 
         eventType = message.get("eventType")
         modelId = message.get("modelId")
-        layerData = message.get("layerData")
+        layerConfig = message.get("layerData")
         # handle LAYER_ADDED event 
         if eventType == "LAYER_ADDED":
-            print(f"[synapse][redis]: Layer added to model {modelId}: {layerData.get('type')} - {layerData.get('name')}")
+            for model in models:
+                if model.id == modelId:
+                    pass
+
+            print(f"[synapse][redis]: Layer added to model {modelId}: {layerConfig.get('type')} - {layerConfig.get('name')}")
+
+        
         else:
             print(f"[synapse][redis]: Unknown event type: {eventType}")
     # ----- exceptions
@@ -27,7 +34,7 @@ def processMessage(messageData):
     except Exception as e:
         print(f"[synapse][redis]: processing message: {e}")
 
-def start():
+def start(models: list[ModelManager]):
     """Connects to Redis and starts consuming messages from the list."""
     print("[synapse][redis]: Connecting to Redis...")
     try:
@@ -42,7 +49,7 @@ def start():
             # blocking right tail pop, we left pushed to the queue
             _, messageData = r.brpop([REDIS_QUEUE_NAME], timeout=0) # type:ignore
             if messageData:
-                processMessage(messageData.decode('utf-8'))
+                processMessage(messageData.decode('utf-8'), models=models)
     # ----- exceptions
     except Exception as e:
         print(f"[synapse][redis]: unexpected exception: {e}")
@@ -51,4 +58,5 @@ def start():
             print("[synapse][redis]: Redis connection closed.")
 
 if __name__ == '__main__':
-    start()
+    models = []
+    start(models)

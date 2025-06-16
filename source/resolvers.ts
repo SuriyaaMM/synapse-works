@@ -7,21 +7,20 @@ interface Layer {
     type: string;
     name?: string;
 }
-
 interface LinearLayer extends Layer {
-    type: "Linear";
-    inputDim: number;
-    outputDim: number;
+    type: 'linear';
+    in_features: number;
+    out_features: number;
 }
 
 type LinearLayerConfig = {
   name?: string;
-  inputDim: number;
-  outputDim: number;
+  in_features: number;
+  out_features: number;
 };
 
 type LayerConfig = {
-  type: 'Linear'; 
+  type: string; 
   linear?: LinearLayerConfig;
 };
 
@@ -45,8 +44,8 @@ export const resolvers = {
         // for inferring underlying concrete type
         __resolveType(layer: Layer, _: unknown){
             
-            if(layer.type === "Linear"){
-                return 'LinearLayer';
+            if(layer.type === "linear"){
+                return 'linear';
             }
             return null;
         }
@@ -70,7 +69,7 @@ export const resolvers = {
         Args:
             name:string, name of the model
         */
-        createModel: (_: unknown, {name}: {name:string}) => {
+        createModel: async (_: unknown, {name}: {name:string}) => {
             // create a new model
             const newModel: Model = {
                 id: uuidv4(), // generate unique uuid
@@ -79,6 +78,16 @@ export const resolvers = {
             }
             models.push(newModel);
             console.log(`[synapse][graphql]: Created model: ${newModel.name} (ID: ${newModel.id})`);
+            console.log(`[synapse][graphql]: Appending to redis message Queue`)
+            // push message to redis
+            const message = {
+                eventType: "MODEL_CREATED",
+                modelId: newModel.id,
+                name: newModel.name,
+                timestamp: new Date().toISOString()
+            };
+
+            await enqueueMessage(message);
             return newModel;
         },
         /* 
@@ -96,37 +105,39 @@ export const resolvers = {
                 throw new Error(`[synapse][graphql]: Model with ID ${modelId} not found`)
             }
 
-            // destructure layerConfig
-            const {type, linear} = layerConfig;
-            
-            // initialize new layer & its uuid
-            let newLayer: any;
-            const layerId = uuidv4();
-
             // handle linear model
-            if(type == "Linear"){
+            if(layerConfig.type == "linear"){
+                // destructure layerConfig
+                const {type, linear} = layerConfig;
+
+                // initialize new layer & its uuid
+                let newLayer: LinearLayer;
+                const layerId = uuidv4();
+
                 if(!linear) throw new Error(`[synapse][graphql]: Linear layer config is missing`);
+                
                 newLayer = {
                     id: layerId,
-                    type: "Linear",
-                    name: linear.name || `LinearLayer_${layerId.substring(0, 4)}`,
-                    inputDim: linear.inputDim,
-                    outputDim: linear.outputDim
+                    type: "linear",
+                    name: linear.name || `linear_${layerId.substring(0, 4)}`,
+                    in_features: linear.in_features,
+                    out_features: linear.out_features
                 };
+
+                // push layer to model
+                model.layers.push(newLayer)
+                console.log(`[synapse][graphql]: Appended ${type} layer (ID: ${newLayer.id}) to model ${model.name} (Model ID: ${model.id})`);
             }
             else{
-                throw new Error(`[synapse][graphql]: Unsupported layer type: ${type}`)
+                throw new Error(`[synapse][graphql]: Unsupported layer type: ${layerConfig.type}`)
             }
-            // push layer to model
-            model.layers.push(newLayer)
-            console.log(`[synapse][graphql]: Appended ${type} layer (ID: ${newLayer.id}) to model ${model.name} (Model ID: ${model.id})`);
             
             console.log(`[synapse][graphql]: Appending to redis message Queue`)
             // push message to redis
             const message = {
                 eventType: "LAYER_ADDED",
                 modelId: model.id,
-                layerData: newLayer,
+                layerData: model.layers.at(-1),
                 timestamp: new Date().toISOString()
             };
 

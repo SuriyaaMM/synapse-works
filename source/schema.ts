@@ -21,8 +21,9 @@ export const typeDefs = `#graphql
     }
     # LinearLayerConfig input 
     input LinearLayerConfig {
-        inputDim: Int!      
-        outputDim: Int!
+        in_features: Int!      
+        out_features: Int!
+        bias: bool
         name: String
     }
     # LayerConfig input for collective layers
