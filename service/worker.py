@@ -1,7 +1,9 @@
 import redis
 import json
 
-from modelManager import ModelManager, transformLayerConfig
+from modelManager import ModelManager
+from backendUtils import parseKwargsFromLayerConfig, \
+                        parseKwargsFromTrainConfig
 
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
@@ -13,19 +15,31 @@ def processMessage(messageData, models: list[ModelManager]):
         # load the string (Json.stringify is called from server-side in typescript)
         message = json.loads(messageData)
         print(f"[synapse][redis] : Received message: {message}")
-
+        # get event type
         eventType = message.get("eventType")
-        modelId = message.get("modelId")
-        layerConfig = message.get("layerData")
+        
         # handle LAYER_ADDED event 
         if eventType == "LAYER_ADDED":
+            id = message.get("modelId")
+            layerConfig = message.get("layerData")
             for model in models:
-                if model.id == modelId:
-                    pass
-
-            print(f"[synapse][redis]: Layer added to model {modelId}: {layerConfig.get('type')} - {layerConfig.get('name')}")
-
-        
+                if model.id == id:
+                    layerName, kwargs = parseKwargsFromLayerConfig(layer_config=layerConfig)
+                    model.appendLayer(layer_name=layerName, kwargs=kwargs) # type:ignore
+        # handle MODEL_CREATED event
+        elif eventType == "MODEL_CREATED":
+            id = message.get("modelId")
+            name = message.get("name")
+            model = ModelManager(model_id=id, model_name=name)
+            models.append(model)
+        # handle SET_TRAIN_CONFIG
+        elif eventType == "SET_TRAIN_CONFIG":
+            id = message.get("modelId")
+            trainConfig = message.get("trainConfig")
+            for model in models:
+                if model.id == id:
+                    trainConfigObj = parseKwargsFromTrainConfig(train_config=trainConfig)
+                    model.setTrainingConfig(trainConfigObj)
         else:
             print(f"[synapse][redis]: Unknown event type: {eventType}")
     # ----- exceptions

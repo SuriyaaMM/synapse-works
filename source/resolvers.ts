@@ -29,10 +29,28 @@ type AppendLayerArgs = {
     layerConfig: LayerConfig;
 };
 
+type OptimizerConfig = {
+    name: string;
+    lr: number;
+}  
+
+type TrainConfig = {
+    epochs: number;
+    batch_size: number;
+    optimizerConfig: OptimizerConfig
+    loss_function: string;
+}
+
+type TrainConfigArgs = {
+    modelId: string;
+    trainConfig: TrainConfig;
+}
+
 type Model  = {
   id: string;
   name: string;
   layers: Layer[];
+  trainConfig: TrainConfig;
 }
 
 // in memory model
@@ -45,7 +63,8 @@ export const resolvers = {
         __resolveType(layer: Layer, _: unknown){
             
             if(layer.type === "linear"){
-                return 'linear';
+                // must match the one in schema
+                return 'LinearLayer';
             }
             return null;
         }
@@ -74,7 +93,16 @@ export const resolvers = {
             const newModel: Model = {
                 id: uuidv4(), // generate unique uuid
                 name: name, 
-                layers: [] // initialize model with no layers to begin with
+                layers: [], // initialize model with no layers to begin with
+                trainConfig : {
+                    epochs: 50, 
+                    batch_size: 64, 
+                    optimizerConfig: {
+                        name: "adam",
+                        lr: 3e-4
+                    }, 
+                    loss_function: "ce"
+                } // default train config
             }
             models.push(newModel);
             console.log(`[synapse][graphql]: Created model: ${newModel.name} (ID: ${newModel.id})`);
@@ -90,6 +118,8 @@ export const resolvers = {
             await enqueueMessage(message);
             return newModel;
         },
+
+
         /* 
         appendLayer mutation
 
@@ -143,6 +173,37 @@ export const resolvers = {
 
             await enqueueMessage(message);
             // return model
+            return model;
+        },
+
+
+        /*
+        setTrainConfig mutation
+
+        Args:
+            modelId: Id, unique id of the model
+            trainConfig: TrainConfig, training configurations
+        */
+        setTrainConfig: async (_:unknown, {modelId, trainConfig}:TrainConfigArgs) => {
+
+            // find the model 
+            const model = models.find(m => m.id === modelId);
+            // handle model doesn't exist 
+            if(!model){
+                throw new Error(`[synapse][graphql]: Model with ID ${modelId} not found`)
+            }
+
+            model.trainConfig = trainConfig
+
+            console.log(`[synapse][graphql]: Appending to redis message Queue`)
+            // push message to redis
+            const message = {
+                eventType: "SET_TRAIN_CONFIG",
+                modelId: model.id,
+                trainConfig: trainConfig,
+                timestamp: new Date().toISOString()
+            };
+            await enqueueMessage(message);
             return model;
         }
     }

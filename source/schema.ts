@@ -1,4 +1,5 @@
 export const typeDefs = `#graphql
+    # ---------- Layers ----------
     # abstract Layer type
     interface Layer {
         id: ID! 
@@ -10,20 +11,16 @@ export const typeDefs = `#graphql
         id: ID! 
         type: String!   # must be Linear
         name: String    # optional layer name
-        inputDim: Int!  # input dimensions
-        outputDim: Int! # output dimensions
+        in_features: Int!  # input dimensions
+        out_features: Int! # output dimensions
     }
-    # Model type
-    type Model {
-        id: ID!
-        name: String!       # model name
-        layers: [Layer!]!   # list of layers that model contains
-    }
+    
+    # ---------- Layer Config ----------
     # LinearLayerConfig input 
     input LinearLayerConfig {
         in_features: Int!      
         out_features: Int!
-        bias: bool
+        bias: Boolean
         name: String
     }
     # LayerConfig input for collective layers
@@ -31,14 +28,43 @@ export const typeDefs = `#graphql
         type: String! # Linear, Conv2D
         linear: LinearLayerConfig # optional LinearLayerConfig
     }
-    # Queries
+    # ---------- Train Config ----------
+    type OptimizerConfig {
+        name: String!
+        lr: Float!
+    }
+    type TrainConfig {
+        epochs: Int!
+        batch_size: Int!
+        optimizerConfig: OptimizerConfig!
+        loss_function: String!
+    }
+    input OptimizerConfigInput {
+        name: String!
+        lr: Float!
+    }
+    input TrainConfigInput {
+        epochs: Int!
+        batch_size: Int!
+        optimizerConfig: OptimizerConfigInput!
+        loss_function: String!
+    }
+    # ---------- Model ----------
+    # Model type
+    type Model {
+        id: ID!
+        name: String!       # model name
+        layers: [Layer!]!   # list of layers that model contains
+        trainConfig: TrainConfig!
+    }
+    # ---------- Queries ----------
     type Query {
         # get the model by id
         getModel(id: ID!): Model
         # get all models
         getModels: [Model!]!
     }
-    # Mutations
+    # ---------- Mutations ----------
     type Mutation {
         # create model
         createModel(name: String!): Model!
@@ -46,6 +72,11 @@ export const typeDefs = `#graphql
         appendLayer(
             modelId: ID!
             layerConfig: LayerConfig!
+        ): Model!
+        # set's training configuration
+        setTrainConfig(
+            modelId: ID!
+            trainConfig: TrainConfigInput!
         ): Model!
     }
 `

@@ -11,7 +11,7 @@ class nfFormatter(logging.Formatter):
     red = "\x1b[31;20m"
     bold_red = "\x1b[31;1m"
     reset = "\x1b[0m"
-    strFormat = "[NF][%(asctime)s](%(filename)s:%(lineno)d): %(message)s "
+    strFormat = "[synapse][%(asctime)s](%(filename)s:%(lineno)d): %(message)s "
 
     FORMATS = {
         logging.DEBUG:      grey + strFormat + reset,
