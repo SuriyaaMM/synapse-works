@@ -2,8 +2,8 @@ import redis
 import json
 
 from modelManager import ModelManager
-from backendUtils import parseKwargsFromLayerConfig, \
-                        parseKwargsFromTrainConfig
+from backendUtils import parseFromLayerConfig, \
+                        parseFromTrainConfig
 
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
@@ -24,8 +24,8 @@ def processMessage(messageData, models: list[ModelManager]):
             layerConfig = message.get("layerData")
             for model in models:
                 if model.id == id:
-                    layerName, kwargs = parseKwargsFromLayerConfig(layer_config=layerConfig)
-                    model.appendLayer(layer_name=layerName, kwargs=kwargs) # type:ignore
+                    layerConfigObj = parseFromLayerConfig(layer_config=layerConfig)
+                    model.appendLayer(layer_config=layerConfigObj)
         # handle MODEL_CREATED event
         elif eventType == "MODEL_CREATED":
             id = message.get("modelId")
@@ -38,8 +38,9 @@ def processMessage(messageData, models: list[ModelManager]):
             trainConfig = message.get("trainConfig")
             for model in models:
                 if model.id == id:
-                    trainConfigObj = parseKwargsFromTrainConfig(train_config=trainConfig)
+                    trainConfigObj = parseFromTrainConfig(train_config=trainConfig)
                     model.setTrainingConfig(trainConfigObj)
+                    model.dumpNetworkForTraining()
         else:
             print(f"[synapse][redis]: Unknown event type: {eventType}")
     # ----- exceptions

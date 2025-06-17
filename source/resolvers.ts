@@ -11,39 +11,57 @@ interface LinearLayer extends Layer {
     type: 'linear';
     in_features: number;
     out_features: number;
+    bias?: boolean;
 }
-
+// Inputs
 type LinearLayerConfig = {
   name?: string;
   in_features: number;
   out_features: number;
+  bias?: boolean;
 };
-
+// Inputs
 type LayerConfig = {
   type: string; 
   linear?: LinearLayerConfig;
 };
-
-type AppendLayerArgs = {
-    modelId: string;
-    layerConfig: LayerConfig;
-};
-
+// Training Configuration
 type OptimizerConfig = {
-    name: string;
     lr: number;
 }  
 
 type TrainConfig = {
     epochs: number;
     batch_size: number;
+    optimizer: String;
     optimizerConfig: OptimizerConfig
     loss_function: string;
 }
 
-type TrainConfigArgs = {
-    modelId: string;
-    trainConfig: TrainConfig;
+interface Dataset {
+    name: String
+    split_options?: [number, number]
+    shuffle?: Boolean
+}
+
+interface MNISTDataset extends Dataset{
+    name: String
+    split_options?: [number, number]
+    shuffle?: Boolean
+    root: String
+    train?: Boolean
+    download?: Boolean
+}
+type MNISTDatasetConfig  = {
+    root: String
+    train?: Boolean
+    download?: Boolean
+}
+type DatasetConfig = {
+    name: String
+    split_options?: [number]
+    shuffle?: Boolean
+    mnist?: MNISTDatasetConfig
 }
 
 type Model  = {
@@ -51,13 +69,30 @@ type Model  = {
   name: string;
   layers: Layer[];
   trainConfig: TrainConfig;
+  dataset: Dataset;
+}
+
+// appendLayer function args
+type AppendLayerArgs = {
+    modelId: string;
+    layerConfig: LayerConfig;
+};
+// setTrainConfig function args
+type TrainConfigArgs = {
+    modelId: string;
+    trainConfig: TrainConfig;
+}
+// setDataset function args
+type setDatasetArgs = {
+    modelId: string;
+    dataset: DatasetConfig
 }
 
 // in memory model
 const models: Model[] = [];
 
 export const resolvers = {
-    // graphql interface inferring
+    // graphql interface inferring for Layer
     Layer: {
         // for inferring underlying concrete type
         __resolveType(layer: Layer, _: unknown){
@@ -65,6 +100,17 @@ export const resolvers = {
             if(layer.type === "linear"){
                 // must match the one in schema
                 return 'LinearLayer';
+            }
+            return null;
+        }
+    },
+    // graphql interface inferring for Dataset
+    Dataset: {
+        // for inferring underlying concrete type
+        __resolveType(dataset: Dataset, _: unknown){
+            if(dataset.name == "mnist"){
+                // match the one in schema
+                return 'MNISTDataset'
             }
             return null;
         }
@@ -97,12 +143,16 @@ export const resolvers = {
                 trainConfig : {
                     epochs: 50, 
                     batch_size: 64, 
+                    optimizer: "adam",
                     optimizerConfig: {
-                        name: "adam",
                         lr: 3e-4
                     }, 
                     loss_function: "ce"
-                } // default train config
+                }, // default train config
+                dataset: {
+                    name: "mnist",
+                    split_options: [0.8, 0.2]
+                }
             }
             models.push(newModel);
             console.log(`[synapse][graphql]: Created model: ${newModel.name} (ID: ${newModel.id})`);
@@ -151,7 +201,8 @@ export const resolvers = {
                     type: "linear",
                     name: linear.name || `linear_${layerId.substring(0, 4)}`,
                     in_features: linear.in_features,
-                    out_features: linear.out_features
+                    out_features: linear.out_features,
+                    bias: linear.bias
                 };
 
                 // push layer to model

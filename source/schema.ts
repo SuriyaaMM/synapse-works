@@ -30,24 +30,49 @@ export const typeDefs = `#graphql
     }
     # ---------- Train Config ----------
     type OptimizerConfig {
-        name: String!
         lr: Float!
     }
     type TrainConfig {
         epochs: Int!
         batch_size: Int!
+        optimizer: String!
         optimizerConfig: OptimizerConfig!
         loss_function: String!
     }
     input OptimizerConfigInput {
-        name: String!
         lr: Float!
     }
     input TrainConfigInput {
         epochs: Int!
         batch_size: Int!
+        optimizer: String!
         optimizerConfig: OptimizerConfigInput!
         loss_function: String!
+    }
+    # ---------- Dataset Config ----------
+    interface Dataset {
+        name: String!
+        split_options: [Float]
+        shuffle: Boolean
+    }
+    type MNISTDataset implements Dataset{
+        name: String!
+        split_options: [Float]
+        shuffle: Boolean
+        root: String!
+        train: Boolean
+        download: Boolean
+    }
+    input MNISTDatasetInput {
+        root: String!
+        train: Boolean
+        download: Boolean
+    }
+    input DatasetInput {
+        name: String!
+        split_options: [Float!]
+        shuffle: Boolean
+        mnist: MNISTDatasetInput
     }
     # ---------- Model ----------
     # Model type
@@ -56,6 +81,7 @@ export const typeDefs = `#graphql
         name: String!       # model name
         layers: [Layer!]!   # list of layers that model contains
         trainConfig: TrainConfig!
+        dataset: Dataset!
     }
     # ---------- Queries ----------
     type Query {
@@ -78,6 +104,11 @@ export const typeDefs = `#graphql
             modelId: ID!
             trainConfig: TrainConfigInput!
         ): Model!
+        # set's dataset configuration
+        setDataset(
+            modelId: ID!
+            dataset: DatasetInput!
+        )
     }
 `
 

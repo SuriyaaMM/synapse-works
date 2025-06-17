@@ -28,28 +28,27 @@ class ModelManager(object):
     def dumpNetworkForTraining(self):
         if(self.backend == "torch"):
             self._TrainManager = TorchTrainManager(self._InternalManager.layers,
-                                                   self._InternalManager.optimizerConfig,
-                                                   self._InternalManager.lossFunctionName,
+                                                   self._InternalManager.trainConfig,
                                                    self.debug)
         else:
             raise NotImplementedError(f"training using {self.backend} is not implemented yet")
 
-    def appendLayer(self, layer_name: str, kwargs:LayerKwargs):
+    def appendLayer(self, layer_config: LayerConfig):
         R"""Appends the layer to model
         
         Args:
             layer_name: str, graphql object layerName
         """
-        self._InternalManager.appendLayer(layer_name=layer_name, kwargs=kwargs, debug=self.debug)
-        logging.info(f"appended layer({layer_name} to model(id = {self.id}) with kwargs\n{kwargs})")
+        self._InternalManager.appendLayer(layer_config=layer_config)
+        logging.info(f"appended layer({layer_config['name']} to model(id = {self.id}) with kwargs\n{layer_config["kwargs"]})")
     
-    def deleteLayer(self, layer_name: str, kwargs: LayerKwargs):
+    def deleteLayer(self, layer_config: LayerConfig):
         R"""Deletes the layer in model
 
         Args:
             layer_name: str, graphql object layerName
         """
-        self._InternalManager.deleteLayer(layer_name=layer_name, kwargs=kwargs, debug=self.debug)
+        self._InternalManager.deleteLayer(layer_config=layer_config)
 
     def setTrainingConfig(self, train_config_td: TrainConfig):
         R"""Sets training configuration for the model

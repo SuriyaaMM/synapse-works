@@ -10,11 +10,11 @@ class AbstractModelManager(ABC):
         super().__init__()
 
     @abstractmethod
-    def appendLayer(self, layer_name: str, kwargs: LayerKwargs, debug: bool = True):
+    def appendLayer(self, layer_config: LayerConfig, debug: bool = True):
         pass
 
     @abstractmethod
-    def deleteLayer(self, layer_name: str, kwargs: LayerKwargs, debug: bool = True):
+    def deleteLayer(self, layer_config: LayerConfig, debug: bool = True):
         pass
 
     @abstractmethod
