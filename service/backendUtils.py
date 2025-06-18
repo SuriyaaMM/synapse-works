@@ -31,12 +31,9 @@ def parseFromLayerConfig(layer_config: dict, debug: bool = True) -> LayerConfig:
 def parseFromTrainConfig(train_config: dict, debug: bool = True) -> TrainConfig:
     R"""Transforms the given train_config dict into structuredd kwargs for passing to any other 
     function that requires this
-
-    Returns:
-
     """
     if(debug):
-        logging.info(f"[synapse][debug]: received train config {train_config}")
+        logging.info(f"received train config {train_config}")
 
     optimizerConfig: dict = cast(dict, train_config.get("optimizerConfig"))
     
@@ -56,7 +53,41 @@ def parseFromTrainConfig(train_config: dict, debug: bool = True) -> TrainConfig:
         "loss_function": lossFunction  
     })
     if(debug):
-        logging.info(f"[synapse][debug]: parsed train config {trainConfig}")
+        logging.info(f"parsed train config {trainConfig}")
     return trainConfig
     
 
+def parseFromDataset(dataset: dict, debug: bool = True) -> Dataset:
+    R"""Transforms the given dataset dict into structuredd kwargs for passing to any other 
+    function that requires this
+    """
+
+    if(debug):
+        logging.info(f"received dataset object: {dataset}")
+
+    name: str = dataset["name"]
+
+    parsedDatasetObj: Dataset = cast(Dataset, {
+        "name": name
+    })
+
+    for key in OptionalDatasetKeys:
+        if key in dataset.keys():
+            parsedDatasetObj[key] = dataset[key]
+
+    if(name == "mnist"):
+        kwargs = cast(DatasetKwargs_T, {
+            "root": dataset["root"]
+        })
+        for key in OptionalDatasetKwargsKeys:
+            if key in dataset.keys():
+                kwargs[key] = dataset[key]
+    else:
+        raise NotImplementedError(f"{name} dataset is not implemented yet")
+    
+    parsedDatasetObj["kwargs"] = kwargs
+
+    if debug:
+        logging.info(f"parsed dataset object: {parsedDatasetObj}")  
+        
+    return parsedDatasetObj

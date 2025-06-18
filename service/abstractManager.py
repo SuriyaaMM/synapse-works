@@ -18,7 +18,7 @@ class AbstractModelManager(ABC):
         pass
 
     @abstractmethod
-    def setDatasetConfig(self, dataset_config: DatasetConfig, debug: bool = True):
+    def setDatasetConfig(self, dataset_config: Dataset, debug: bool = True):
         pass
     
     @abstractmethod

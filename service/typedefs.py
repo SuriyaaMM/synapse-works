@@ -52,17 +52,24 @@ class TrainConfig(TypedDict):
 """ ------------------------------------ Dataset Configurations ----------------------------
 """
 # refer: https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.MNIST.html
-class _MNISTDatasetConfig(TypedDict):
+class MNISTDatasetKwargs(TypedDict):
     root: str
-    train: bool
-    download: bool
+    train: Optional[bool]
+    download: Optional[bool]
 
-DatasetKwargs_T = Union[_MNISTDatasetConfig]
+DatasetKwargs_T = Union[MNISTDatasetKwargs]
 
-class DatasetConfig(TypedDict):
+class Dataset(TypedDict):
     name: str
-    split_length: list
-    shuffle: bool 
+    split_length: Optional[list[float]]
+    shuffle: Optional[bool] 
     kwargs: DatasetKwargs_T
+
+OptionalDatasetKeys = [
+    "split_length", "shuffle"
+]
+OptionalDatasetKwargsKeys = [
+    "train", "download" # Optional in MNISTDatasetKwargs
+]
 
 

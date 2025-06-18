@@ -2,7 +2,7 @@ from config import logging
 
 import torch
 from torch import nn
-from torch.utils.data import Dataset
+from torch.utils import data as tdu
 from torchvision.datasets import MNIST, CIFAR10, CIFAR100
 
 def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]:
@@ -29,7 +29,7 @@ def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]
     return layerNameMap[layer_name]
 
 
-def torch_dataset_name_map(dataset_name: str, debug: bool = True) -> type[Dataset]:
+def torch_dataset_name_map(dataset_name: str, debug: bool = True) -> type[tdu.Dataset]:
     R"""maps dataset_name to valid torch inbuilt datasets
 
     Args:

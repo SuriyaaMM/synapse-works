@@ -17,16 +17,16 @@ export const typeDefs = `#graphql
     
     # ---------- Layer Config ----------
     # LinearLayerConfig input 
-    input LinearLayerConfig {
+    input LinearLayerInput {
         in_features: Int!      
         out_features: Int!
         bias: Boolean
         name: String
     }
     # LayerConfig input for collective layers
-    input LayerConfig {
+    input LayerInput {
         type: String! # Linear, Conv2D
-        linear: LinearLayerConfig # optional LinearLayerConfig
+        linear: LinearLayerInput # optional LinearLayerConfig
     }
     # ---------- Train Config ----------
     type OptimizerConfig {
@@ -52,12 +52,12 @@ export const typeDefs = `#graphql
     # ---------- Dataset Config ----------
     interface Dataset {
         name: String!
-        split_options: [Float]
+        split_length: [Float]
         shuffle: Boolean
     }
-    type MNISTDataset implements Dataset{
+    type MNISTDataset implements Dataset {
         name: String!
-        split_options: [Float]
+        split_length: [Float]
         shuffle: Boolean
         root: String!
         train: Boolean
@@ -70,7 +70,7 @@ export const typeDefs = `#graphql
     }
     input DatasetInput {
         name: String!
-        split_options: [Float!]
+        split_length: [Float!]
         shuffle: Boolean
         mnist: MNISTDatasetInput
     }
@@ -97,7 +97,7 @@ export const typeDefs = `#graphql
         # append layer to model
         appendLayer(
             modelId: ID!
-            layerConfig: LayerConfig!
+            layerInput: LayerInput!
         ): Model!
         # set's training configuration
         setTrainConfig(
@@ -107,8 +107,8 @@ export const typeDefs = `#graphql
         # set's dataset configuration
         setDataset(
             modelId: ID!
-            dataset: DatasetInput!
-        )
+            datasetInput: DatasetInput!
+        ): Model!
     }
 `
 

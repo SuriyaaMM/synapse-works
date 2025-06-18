@@ -5,7 +5,7 @@ from typedefs import *
 import torch
 
 from torch import nn
-from torch.utils.data import Dataset, DataLoader, random_split
+from torch.utils import data as tdu
 
 from backendTorchUtils import torch_dataset_name_map, torch_layer_name_map, \
                                 torch_loss_function_name_map, torch_optimizer_name_map
@@ -47,22 +47,15 @@ class TorchModelManager(AbstractModelManager):
             self.layers.remove(layer)
             logging.info(f"removed layer {layer}")
 
-    def setDatasetConfig(self, dataset_config_td: DatasetConfig, debug: bool = True):
+    def setDatasetConfig(self, dataset_config_td: Dataset, debug: bool = True):
         # get configurations
-        self.datasetName = dataset_config_td["name"]
-        self.splitOptions : list = dataset_config_td["split_length"]
-        self.shuffle = dataset_config_td["shuffle"]
+        self.datasetConfig = dataset_config_td
         # configure torch for specified
-        self.dataset = torch_dataset_name_map(self.datasetName, debug)(dataset_config_td["kwargs"]) # type:ignore
-        self.trainDataset, self.testDataset = random_split(self.dataset, lengths=self.splitOptions) # type:ignore
-
-        logging.info(\
-        f"""Set Dataset Configuration with
-                        
-        name: {self.datasetName}
-        split : ({self.splitOptions[0] * 100} % train) & ({self.splitOptions[1] * 100} % test)
-        shuffle: {self.shuffle}""")
-
+        self.dataset = torch_dataset_name_map(self.datasetConfig["name"], debug)(**dataset_config_td["kwargs"]) # type:ignore
+        self.trainDataset, self.testDataset = tdu.random_split(self.dataset, self.datasetConfig["split_length"]) # type:ignore
+        logging.info(f"dataset state: {self.dataset.__str__}")
+        logging.info(f"train dataset & test dataset: {self.trainDataset, self.testDataset}")
+        
     def setTrainConfig(self, train_config_td: TrainConfig,  debug: bool = True):
         # get configurations
         self.trainConfig: TrainConfig = train_config_td

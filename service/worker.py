@@ -3,7 +3,8 @@ import json
 
 from modelManager import ModelManager
 from backendUtils import parseFromLayerConfig, \
-                        parseFromTrainConfig
+                        parseFromTrainConfig, \
+                        parseFromDataset
 
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
@@ -40,7 +41,14 @@ def processMessage(messageData, models: list[ModelManager]):
                 if model.id == id:
                     trainConfigObj = parseFromTrainConfig(train_config=trainConfig)
                     model.setTrainingConfig(trainConfigObj)
-                    model.dumpNetworkForTraining()
+        # handle SET_DATASET
+        elif eventType == "SET_DATSET":
+            id = message.get("modelId")
+            dataset = message.get("dataset")
+            for model in models:
+                if model.id == id:
+                    parsedDataset = parseFromDataset(dataset=dataset)
+                    model.setDatasetConfig(parsedDataset)
         else:
             print(f"[synapse][redis]: Unknown event type: {eventType}")
     # ----- exceptions

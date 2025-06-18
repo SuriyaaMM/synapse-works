@@ -58,7 +58,7 @@ class ModelManager(object):
         """
         self._InternalManager.setTrainConfig(train_config_td=train_config_td, debug=self.debug)
 
-    def setDatasetConfig(self, dataset_config_td: DatasetConfig):
+    def setDatasetConfig(self, dataset_config_td: Dataset):
         R"""Sets dataset configuration for the model
 
         Args:
