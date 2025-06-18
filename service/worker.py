@@ -1,67 +1,68 @@
 import redis
 import json
+import traceback
+from config import logging
 
 from modelManager import ModelManager
 from backendUtils import parseFromLayerConfig, \
                         parseFromTrainConfig, \
                         parseFromDataset
 
+from typedefs import *
+
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
 REDIS_QUEUE_NAME = 'model_layer_updates_queue'
 
-def processMessage(messageData, models: list[ModelManager]):
+def processMessage(message_data, models: list[ModelManager]):
     """Processes a single message received from Redis."""
     try:
         # load the string (Json.stringify is called from server-side in typescript)
-        message = json.loads(messageData)
-        print(f"[synapse][redis] : Received message: {message}")
+        message = json.loads(message_data)
         # get event type
-        eventType = message.get("eventType")
+        event_type = message.get("event_type")
         
         # handle LAYER_ADDED event 
-        if eventType == "LAYER_ADDED":
-            id = message.get("modelId")
-            layerConfig = message.get("layerData")
+        if event_type == "LAYER_ADDED":
+            id = message.get("model_id")
+            layer_config = message.get("layer_config")
             for model in models:
                 if model.id == id:
-                    layerConfigObj = parseFromLayerConfig(layer_config=layerConfig)
-                    model.appendLayer(layer_config=layerConfigObj)
+                    parsed_layer_config: LayerConfig = parseFromLayerConfig(layer_config)
+                    model.appendLayer(layer_config=parsed_layer_config)
         # handle MODEL_CREATED event
-        elif eventType == "MODEL_CREATED":
-            id = message.get("modelId")
+        elif event_type == "MODEL_CREATED":
+            id = message.get("model_id")
             name = message.get("name")
             model = ModelManager(model_id=id, model_name=name)
             models.append(model)
         # handle SET_TRAIN_CONFIG
-        elif eventType == "SET_TRAIN_CONFIG":
-            id = message.get("modelId")
-            trainConfig = message.get("trainConfig")
+        elif event_type == "SET_TRAIN_CONFIG":
+            id = message.get("model_id")
+            train_config = message.get("train_config")
             for model in models:
                 if model.id == id:
-                    trainConfigObj = parseFromTrainConfig(train_config=trainConfig)
-                    model.setTrainingConfig(trainConfigObj)
+                    parsed_train_config = parseFromTrainConfig(train_config)
+                    model.setTrainingConfig(parsed_train_config)
         # handle SET_DATASET
-        elif eventType == "SET_DATSET":
-            id = message.get("modelId")
-            dataset = message.get("dataset")
+        elif event_type == "SET_DATSET":
+            id = message.get("model_id")
+            dataset_config = message.get("dataset_config")
             for model in models:
                 if model.id == id:
-                    parsedDataset = parseFromDataset(dataset=dataset)
-                    model.setDatasetConfig(parsedDataset)
+                    parsed_dataset_config = parseFromDataset(dataset_config)
+                    model.setDatasetConfig(parsed_dataset_config)
         # handle TRAIN_MODEL
-        elif eventType == "TRAIN_MODEL":
-            id = message.get("modelId")
+        elif event_type == "TRAIN_MODEL":
+            id = message.get("model_id")
             for model in models:
                 if model.id == id:
                     model.train()
         else:
-            print(f"[synapse][redis]: Unknown event type: {eventType}")
+            print(f"[synapse][redis]: Unknown event type: {event_type}")
     # ----- exceptions
-    except json.JSONDecodeError:
-        print(f"[synapse][redis]: Invalid JSON received: {messageData.decode()}")
     except Exception as e:
-        print(f"[synapse][redis]: processing message: {e}")
+        logging.error(traceback.format_exc())
 
 def start(models: list[ModelManager]):
     """Connects to Redis and starts consuming messages from the list."""
@@ -76,9 +77,9 @@ def start(models: list[ModelManager]):
 
         while True:
             # blocking right tail pop, we left pushed to the queue
-            _, messageData = r.brpop([REDIS_QUEUE_NAME], timeout=0) # type:ignore
-            if messageData:
-                processMessage(messageData.decode('utf-8'), models=models)
+            _, message_data = r.brpop([REDIS_QUEUE_NAME], timeout=0) # type:ignore
+            if message_data:
+                processMessage(message_data.decode('utf-8'), models=models)
     # ----- exceptions
     except Exception as e:
         print(f"[synapse][redis]: unexpected exception: {e}")

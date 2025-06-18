@@ -1,20 +1,20 @@
 import { enqueueMessage } from "./redisClient.js";
-import { DatasetInput, MNISTDataset, Model, SetDatasetArgs } from "./types";
-import { Dataset,  } from "./types";
+import { DatasetConfigInput, MNISTDatasetConfig, Model, SetDatasetArgs } from "./types";
+import { DatasetConfig  } from "./types";
 
 type DatasetHandlerMap = {
-    [K in Dataset['name']]: (config: DatasetInput) => Dataset;
+    [K in DatasetConfig['name']]: (config: DatasetConfigInput) => DatasetConfig;
 };
 
 // handle runtime validation of datasets
 export const datasetHandlers: DatasetHandlerMap = {
-    "mnist": (dataset: DatasetInput) => {
+    "mnist": (dataset: DatasetConfigInput) => {
         // destructure the dataset
         const {split_length, shuffle, mnist} = dataset;
         // if mnistConfig is not found, report error
         if(!mnist) throw new Error("[synapse][graphql]: mnist config is missing");
         // create MNISTDataset object & return it
-        const newDataset: MNISTDataset = {
+        const newDataset: MNISTDatasetConfig = {
             name: "mnist",
             split_length: split_length,
             shuffle: shuffle,
@@ -28,27 +28,27 @@ export const datasetHandlers: DatasetHandlerMap = {
 
 export async function setDatasetResolver(models: Model[], args: SetDatasetArgs){
     // find the model 
-    const model = models.find(m => m.id === args.modelId);
+    const model = models.find(m => m.id === args.model_id);
     // handle model doesn't exist 
     if(!model){
-        throw new Error(`[synapse][graphql]: Model with ID ${args.modelId} not found`)
+        throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`)
     }
     // get the corresponding dataset
-    const handler = datasetHandlers[args.datasetInput.name];
+    const handler = datasetHandlers[args.dataset_config.name];
     // handle invalid dataset
-    if(!handler) throw new Error(`[synapse][graphql]: dataset with name ${args.datasetInput.name} doesn't exist`);
+    if(!handler) throw new Error(`[synapse][graphql]: dataset with name ${args.dataset_config.name} doesn't exist`);
     // create new dataset object
-    const newDataset = handler(args.datasetInput)
+    const new_dataset_config = handler(args.dataset_config)
     // set newDataset in the model
-    model.dataset = newDataset;
-    console.log(`[symapse][graphql]: set new dataset configuration ${JSON.stringify(newDataset)} to model (Id = ${model.id})`);
+    model.dataset_config = new_dataset_config;
+    console.log(`[symapse][graphql]: set new dataset configuration ${JSON.stringify(new_dataset_config)} to model (Id = ${model.id})`);
     
     // push message to redis
     console.log(`[synapse][graphql]: Appending to redis message Queue`)
     const message = {
-        eventType: "SET_DATSET",
-        modelId: model.id,
-        dataset: newDataset,
+        event_type: "SET_DATSET",
+        model_id: model.id,
+        dataset_config: new_dataset_config,
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);
