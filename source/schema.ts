@@ -1,32 +1,29 @@
 export const typeDefs = `#graphql
-    # ---------- Layers ----------
-    # abstract Layer type
-    interface Layer {
+    # ---------- Layer Config ----------
+    interface LayerConfig {
         id: ID! 
-        type: String! # layer name (Linear, Conv2d)
-        name: String # optional name
+        type: String! 
+        name: String 
     }
-    # LinearLayer type derived from abstract Layer
-    type LinearLayer implements Layer {
+    type LinearLayerConfig implements LayerConfig {
         id: ID! 
-        type: String!   # must be Linear
-        name: String    # optional layer name
-        in_features: Int!  # input dimensions
-        out_features: Int! # output dimensions
+        type: String!   
+        name: String    
+        in_features: Int!  
+        out_features: Int! 
     }
     
-    # ---------- Layer Config ----------
-    # LinearLayerConfig input 
-    input LinearLayerInput {
+    # ---------- Layer Config Input ----------
+    input LinearLayerConfigInput {
         in_features: Int!      
         out_features: Int!
         bias: Boolean
         name: String
     }
     # LayerConfig input for collective layers
-    input LayerInput {
-        type: String! # Linear, Conv2D
-        linear: LinearLayerInput # optional LinearLayerConfig
+    input LayerConfigInput {
+        type: String! 
+        linear: LinearLayerConfigInput 
     }
     # ---------- Train Config ----------
     type OptimizerConfig {
@@ -34,9 +31,8 @@ export const typeDefs = `#graphql
     }
     type TrainConfig {
         epochs: Int!
-        batch_size: Int!
         optimizer: String!
-        optimizerConfig: OptimizerConfig!
+        optimizer_config: OptimizerConfig!
         loss_function: String!
     }
     input OptimizerConfigInput {
@@ -44,44 +40,46 @@ export const typeDefs = `#graphql
     }
     input TrainConfigInput {
         epochs: Int!
-        batch_size: Int!
         optimizer: String!
-        optimizerConfig: OptimizerConfigInput!
+        optimizer_config: OptimizerConfigInput!
         loss_function: String!
     }
     # ---------- Dataset Config ----------
-    interface Dataset {
+    interface DatasetConfig {
         name: String!
+        batch_size: Int
         split_length: [Float]
         shuffle: Boolean
     }
-    type MNISTDataset implements Dataset {
+    type MNISTDatasetConfig implements DatasetConfig {
         name: String!
+        batch_size: Int
         split_length: [Float]
         shuffle: Boolean
         root: String!
         train: Boolean
         download: Boolean
     }
-    input MNISTDatasetInput {
+    input MNISTDatasetConfigInput {
         root: String!
         train: Boolean
         download: Boolean
     }
-    input DatasetInput {
+    input DatasetConfigInput {
         name: String!
+        batch_size: Int
         split_length: [Float!]
         shuffle: Boolean
-        mnist: MNISTDatasetInput
+        mnist: MNISTDatasetConfigInput
     }
     # ---------- Model ----------
     # Model type
     type Model {
         id: ID!
-        name: String!       # model name
-        layers: [Layer!]!   # list of layers that model contains
-        trainConfig: TrainConfig!
-        dataset: Dataset!
+        name: String!       
+        layers_config: [LayerConfig!]! 
+        train_config: TrainConfig!
+        dataset_config: DatasetConfig!
     }
     # ---------- Queries ----------
     type Query {
@@ -96,22 +94,22 @@ export const typeDefs = `#graphql
         createModel(name: String!): Model!
         # append layer to model
         appendLayer(
-            modelId: ID!
-            layerInput: LayerInput!
+            model_id: ID!
+            layer_config: LayerConfigInput!
         ): Model!
         # set's training configuration
         setTrainConfig(
-            modelId: ID!
-            trainConfig: TrainConfigInput!
+            model_id: ID!
+            train_config: TrainConfigInput!
         ): Model!
         # set's dataset configuration
         setDataset(
-            modelId: ID!
-            datasetInput: DatasetInput!
+            model_id: ID!
+            dataset_config: DatasetConfigInput!
         ): Model!
         # train model
         train(
-            modelId: ID!
+            model_id: ID!
         ): Model!
     }
 `

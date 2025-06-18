@@ -1,11 +1,11 @@
 import {
-    Layer,
+    LayerConfig,
     Model,
     AppendLayerArgs,
     SetDatasetArgs,
     SetTrainConfigArgs,
     CreateModelArgs,
-    Dataset,
+    DatasetConfig,
     TrainArgs
 } from "./types.js"
 
@@ -18,25 +18,25 @@ const models: Model[] = [];
 
 export const resolvers = {
     // graphql interface inferring for Layer
-    Layer: {
+    LayerConfig: {
         // for inferring underlying concrete type
-        __resolveType(layer: Layer, _: unknown){
+        __resolveType(layer_config: LayerConfig, _: unknown){
             
-            if(layer.type === "linear"){
+            if(layer_config.type === "linear"){
                 // must match the one in schema
-                return 'LinearLayer';
+                return 'LinearLayerConfig';
             }
             return null;
         }
     },
     // graphql interface inferring for Dataset
-    Dataset: {
+    DatasetConfig: {
         // for inferring underlying concrete type
-        __resolveType(dataset: Dataset, _: unknown){
+        __resolveType(dataset_config: DatasetConfig, _: unknown){
 
-            if(dataset.name === "mnist"){
+            if(dataset_config.name === "mnist"){
                 // must match the one in schema
-                return 'MNISTDataset';
+                return 'MNISTDatasetConfig';
             }
             return null;
         }

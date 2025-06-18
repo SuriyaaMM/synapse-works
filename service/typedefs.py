@@ -1,18 +1,6 @@
 from typing import TypedDict, Union, Optional, Literal
 
-""" ------------------------------------ graphql schema -----------------------------------
-input LinearLayerConfig {
-    in_features: Int!      
-    out_features: Int!
-    bias: Boolean
-    name: String
-}
-
-input LayerConfig {
-    type: String! # Linear, Conv2D
-    linear: LinearLayerConfig # optional LinearLayerConfig
-}
-"""
+""" ------------------------------------ Layer Config ----------------------------------- """
 class LinearLayerKwargs(TypedDict):
     in_features: int
     out_features:int
@@ -23,53 +11,73 @@ class DropoutLayerKwargs(TypedDict):
 
 LayerKwargs_T = Union[LinearLayerKwargs, DropoutLayerKwargs]
 class LayerConfig(TypedDict):
-    name: str
+    type: str
     kwargs: LayerKwargs_T
 
-""" ------------------------------------ Train Configurations ----------------------------
-    ------------------------------------ graphql schema -----------------------------------
-    type OptimizerConfig {
-        lr: Float!
-    }
-    type TrainConfig {
-        epochs: Int!
-        batch_size: Int!
-        optimizer: String!
-        optimizerConfig: OptimizerConfig!
-        loss_function: String!
-    }
-"""
-class OptimizerKwargs_T(TypedDict):
+class TSLinearLayerInput(TypedDict):
+    id: str
+    type: str
+    name: str
+    in_features: int
+    out_features: int
+    bias: Optional[bool]
+
+class TSDropoutLayerInput(TypedDict):
+    id: str
+    type: str
+    name: str
+    p: float
+
+TSLayerInput = Union[TSLinearLayerInput | TSDropoutLayerInput]
+
+""" ------------------------------------ Train Configurations ---------------------------- """
+class AdamOptimizerKwargs_T(TypedDict):
     lr: float
 
+class SGDOptimizerKwargs_T(TypedDict):
+    momentum: float
+
+OptimizerKwargs_T = Union[AdamOptimizerKwargs_T | SGDOptimizerKwargs_T]
 class TrainConfig(TypedDict):
     epochs: int
-    batch_size: int
     optimizer: str
     optimizer_kwargs: OptimizerKwargs_T
     loss_function: str
 
-""" ------------------------------------ Dataset Configurations ----------------------------
-"""
+class TSOptimizerConfigInput(TypedDict):
+    lr: float
+class TSTrainConfigInput(TypedDict):
+    epochs: int
+    optimizer: str
+    optimizer_config: TSOptimizerConfigInput
+    loss_function: str
+
+""" ------------------------------------ Dataset Configurations ---------------------------- """
 # refer: https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.MNIST.html
-class MNISTDatasetKwargs(TypedDict):
+class MNISTDatasetConfig(TypedDict):
     root: str
     train: Optional[bool]
     download: Optional[bool]
 
-DatasetKwargs_T = Union[MNISTDatasetKwargs]
+DatasetKwargs_T = Union[MNISTDatasetConfig]
 
-class Dataset(TypedDict):
-    name: str
-    split_length: Optional[list[float]]
+class DataLoaderConfig(TypedDict):
+    batch_size: Optional[int]
     shuffle: Optional[bool] 
+
+class DatasetConfig(TypedDict):
+    name: str
+    dataloader_config: DataLoaderConfig
+    split_length: list[float | int]
     kwargs: DatasetKwargs_T
 
-OptionalDatasetKeys = [
-    "split_length", "shuffle"
-]
-OptionalDatasetKwargsKeys = [
-    "train", "download" # Optional in MNISTDatasetKwargs
-]
+class TSMNISTDatasetInput(TypedDict):
+    name: str
+    batch_size: Optional[int]
+    split_length: Optional[list[float]]
+    shuffle: Optional[bool]
+    root: str
+    train: Optional[bool]
+    download: Optional[bool]
 
-
+TSDatasetInput = Union[TSMNISTDatasetInput]

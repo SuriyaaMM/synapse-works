@@ -1,93 +1,117 @@
 from typedefs import *
 from typing import cast
 from config import logging
+import json
 
-def parseFromLayerConfig(layer_config: dict, debug: bool = True) -> LayerConfig:
+def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> LayerConfig:
     R"""Transforms the given layer_config dict into structured kwargs for passing to any other
         function that requires this
 
     Returns:
-        tuple[layer name, layer config object for this layer]
+        LayerConfig object
     """
-    layerName = cast(str, layer_config.get("type"))
+    logging.info(f"Received PARAM(layer_config):\n{json.dumps(layer_config, indent=4)}")
 
-    if layerName == "linear":
-        # create kwargs object for linear layer
+    layer_type = layer_config["type"]
+    # put together layer config
+    parsed_layer_config: LayerConfig = cast(LayerConfig, {
+        "type": layer_type
+    })
+
+    # handle for linear layer
+    if layer_type == "linear":
+        layer_config = cast(TSLinearLayerInput, layer_config)
+        # linear layer specific kwargs object
         kwargs = cast(LayerKwargs_T, {
             "in_features" : layer_config["in_features"], 
             "out_features": layer_config["out_features"],
-            # bias is optional, we default it to True
-            "bias" : layer_config.get("bias", True)
         })
-        # create the layerConfig object
-        layerConfig = cast(LayerConfig, {
-            "name": layerName,
-            "kwargs" : kwargs
-        })
-        return layerConfig
+        # optional configurations
+        if "bias" in layer_config.keys():
+            kwargs["bias"] = layer_config["bias"] # type:ignore
+
     else:
-        raise NotImplementedError(f"layer({layerName}) is not implemented yet")
+        raise NotImplementedError(f"layer({layer_type}) is not implemented yet")
     
-def parseFromTrainConfig(train_config: dict, debug: bool = True) -> TrainConfig:
+    # set layer specific kwargs
+    parsed_layer_config["kwargs"] = kwargs
+    logging.info(f"Parsed PARAM(layer_config):\n{json.dumps(parsed_layer_config, indent=4)}")
+
+    return parsed_layer_config
+    
+def parseFromTrainConfig(train_config: TSTrainConfigInput) -> TrainConfig:
     R"""Transforms the given train_config dict into structuredd kwargs for passing to any other 
     function that requires this
     """
-    if(debug):
-        logging.info(f"received train config {train_config}")
+    logging.info(f"Received PARAM(train_config):\n{json.dumps(train_config, indent=4)}")
 
-    optimizerConfig: dict = cast(dict, train_config.get("optimizerConfig"))
-    
+    # non optional settings
     optimizer: str = train_config["optimizer"]
-    batchSize: int = train_config["batch_size"]
     epochs: int = train_config["epochs"]
-    lossFunction: str = train_config["loss_function"]
-    optimizerKwargs = {}
-    for key in optimizerConfig:
-        optimizerKwargs[key] = optimizerConfig[key]
-
-    trainConfig: TrainConfig = cast(TrainConfig, {
+    loss_function: str = train_config["loss_function"]
+    # put together train config
+    parsed_train_config: TrainConfig = cast(TrainConfig, {
         "epochs" : epochs,
-        "batch_size": batchSize,
         "optimizer": optimizer,
-        "optimizer_kwargs": optimizerKwargs,
-        "loss_function": lossFunction  
+        "loss_function": loss_function  
     })
-    if(debug):
-        logging.info(f"parsed train config {trainConfig}")
-    return trainConfig
-    
 
-def parseFromDataset(dataset: dict, debug: bool = True) -> Dataset:
+    # optimizer dependent configuration
+    optimizer_config: TSOptimizerConfigInput = train_config["optimizer_config"]
+
+    # handle for adam optimizer
+    if optimizer == "adam":
+        optimizer_kwargs = cast(AdamOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+    else:
+        raise NotImplementedError(f"{optimizer} is not implemented yet")
+    
+    # set optimizer-specific kwargs
+    parsed_train_config["optimizer_kwargs"] = optimizer_kwargs
+    logging.info(f"Parsed PARAM(train_config):\n{json.dumps(parsed_train_config, indent=4)}")
+    
+    return parsed_train_config
+    
+def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
     R"""Transforms the given dataset dict into structuredd kwargs for passing to any other 
     function that requires this
     """
+    logging.info(f"Received PARAM(dataset_config):\n{json.dumps(dataset_config, indent=4)}")
 
-    if(debug):
-        logging.info(f"received dataset object: {dataset}")
+    # non optional kwargs
+    name: str = dataset_config["name"]
+    root: str = dataset_config["root"]
+    parsed_dataset_config: DatasetConfig = cast(DatasetConfig, {
+        "name": name,
+        "dataloader_config" : {}
+    }) 
 
-    name: str = dataset["name"]
+    # optional kwargs
+    if "batch_size" in dataset_config.keys():
+        parsed_dataset_config["dataloader_config"]["batch_size"] = dataset_config["batch_size"]
+    if "split_length" in dataset_config.keys():
+        parsed_dataset_config["split_length"] = dataset_config["split_length"] # type:ignore
+    else:
+        parsed_dataset_config["split_length"] = [0.8, 0.2]
+    if "shuffle" in dataset_config.keys():
+        parsed_dataset_config["dataloader_config"]["shuffle"] = dataset_config["shuffle"]
 
-    parsedDatasetObj: Dataset = cast(Dataset, {
-        "name": name
-    })
-
-    for key in OptionalDatasetKeys:
-        if key in dataset.keys():
-            parsedDatasetObj[key] = dataset[key]
-
-    if(name == "mnist"):
-        kwargs = cast(DatasetKwargs_T, {
-            "root": dataset["root"]
+    # handle for mnist dataset
+    if name == "mnist":
+        kwargs = cast(MNISTDatasetConfig, {
+            "root": root
         })
-        for key in OptionalDatasetKwargsKeys:
-            if key in dataset.keys():
-                kwargs[key] = dataset[key]
+        # optional configurations
+        if "train" in dataset_config.keys():
+            kwargs["train"] = dataset_config["train"]
+        if "download" in dataset_config.keys():
+            kwargs["download"] = dataset_config["download"]
     else:
         raise NotImplementedError(f"{name} dataset is not implemented yet")
     
-    parsedDatasetObj["kwargs"] = kwargs
-
-    if debug:
-        logging.info(f"parsed dataset object: {parsedDatasetObj}")  
+    # add dataset specific kwargs
+    parsed_dataset_config["kwargs"] = kwargs
+    logging.info(f"Parsed PARAM(dataset_config):\n{json.dumps(parsed_dataset_config, indent=4)}")
         
-    return parsedDatasetObj
+    return parsed_dataset_config
