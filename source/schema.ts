@@ -109,6 +109,10 @@ export const typeDefs = `#graphql
             modelId: ID!
             datasetInput: DatasetInput!
         ): Model!
+        # train model
+        train(
+            modelId: ID!
+        ): Model!
     }
 `
 

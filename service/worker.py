@@ -49,6 +49,12 @@ def processMessage(messageData, models: list[ModelManager]):
                 if model.id == id:
                     parsedDataset = parseFromDataset(dataset=dataset)
                     model.setDatasetConfig(parsedDataset)
+        # handle TRAIN_MODEL
+        elif eventType == "TRAIN_MODEL":
+            id = message.get("modelId")
+            for model in models:
+                if model.id == id:
+                    model.train()
         else:
             print(f"[synapse][redis]: Unknown event type: {eventType}")
     # ----- exceptions

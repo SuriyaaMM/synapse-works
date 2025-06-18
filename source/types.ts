@@ -95,4 +95,8 @@ export type SetDatasetArgs = {
     datasetInput: DatasetInput;
 }
 
+// train function args
+export type TrainArgs = {
+    modelId: string;
+}
 

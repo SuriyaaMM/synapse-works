@@ -1,0 +1,33 @@
+[synapse][redis]: Waiting for messages in 'model_layer_updates_queue'
+[synapse][redis] : Received message: {'eventType': 'MODEL_CREATED', 'modelId': 'fab5d60e-6d0c-4aa1-b04f-bc03e5ff8983', 'name': 'NeuralNet1', 'timestamp': '2025-06-18T14:04:06.575Z'}
+[synapse][2025-06-18 19:34:06,575](modelManager.py:26): ModelManager (name = NeuralNet1)initialized with (id = fab5d60e-6d0c-4aa1-b04f-bc03e5ff8983) 
+[synapse][redis] : Received message: {'eventType': 'LAYER_ADDED', 'modelId': 'fab5d60e-6d0c-4aa1-b04f-bc03e5ff8983', 'layerData': {'id': '6a351b0f-2251-4eff-af49-72e3e4b4f3ed', 'type': 'linear', 'name': 'InputLinear', 'in_features': 784, 'out_features': 64}, 'timestamp': '2025-06-18T14:04:14.212Z'}
+[synapse][2025-06-18 19:34:14,213](modelManager.py:43): appended layer(linear to model(id = fab5d60e-6d0c-4aa1-b04f-bc03e5ff8983) with kwargs
+{'in_features': 784, 'out_features': 64, 'bias': True}) 
+[synapse][redis] : Received message: {'eventType': 'SET_TRAIN_CONFIG', 'modelId': 'fab5d60e-6d0c-4aa1-b04f-bc03e5ff8983', 'trainConfig': {'epochs': 10, 'batch_size': 32, 'optimizer': 'adam', 'optimizerConfig': {'lr': 0.001}, 'loss_function': 'ce'}, 'timestamp': '2025-06-18T14:04:16.673Z'}
+[synapse][2025-06-18 19:34:16,673](backendUtils.py:36): received train config {'epochs': 10, 'batch_size': 32, 'optimizer': 'adam', 'optimizerConfig': {'lr': 0.001}, 'loss_function': 'ce'} 
+[synapse][2025-06-18 19:34:16,673](backendUtils.py:56): parsed train config {'epochs': 10, 'batch_size': 32, 'optimizer': 'adam', 'optimizer_kwargs': {'lr': 0.001}, 'loss_function': 'ce'} 
+[synapse][2025-06-18 19:34:16,673](backendTorch.py:59): epochs: 10                      batch size: 32 
+[synapse][redis] : Received message: {'eventType': 'SET_DATSET', 'modelId': 'fab5d60e-6d0c-4aa1-b04f-bc03e5ff8983', 'dataset': {'name': 'mnist', 'split_length': [0.7, 0.3], 'shuffle': True, 'root': './data/mnist', 'train': True, 'download': True}, 'timestamp': '2025-06-18T14:04:19.873Z'}
+[synapse][2025-06-18 19:34:19,873](backendUtils.py:66): received dataset object: {'name': 'mnist', 'split_length': [0.7, 0.3], 'shuffle': True, 'root': './data/mnist', 'train': True, 'download': True} 
+[synapse][2025-06-18 19:34:19,873](backendUtils.py:91): parsed dataset object: {'name': 'mnist', 'split_length': [0.7, 0.3], 'shuffle': True, 'kwargs': {'root': './data/mnist', 'train': True, 'download': True}} 
+[synapse][2025-06-18 19:34:19,873](backendTorch.py:54): Dataset (mnist) is configured 
+[synapse][redis] : Received message: {'eventType': 'TRAIN_MODEL', 'modelId': 'fab5d60e-6d0c-4aa1-b04f-bc03e5ff8983', 'timestamp': '2025-06-18T14:04:23.099Z'}
+[synapse][2025-06-18 19:34:23,099](modelManager.py:70): training model started! 
+[synapse][2025-06-18 19:34:23,099](backendTorch.py:76): Set Optimizer {'state': {}, 'param_groups': [{'lr': 0.001, 'betas': (0.9, 0.999), 'eps': 1e-08, 'weight_decay': 0, 'amsgrad': False, 'maximize': False, 'foreach': None, 'capturable': False, 'differentiable': False, 'fused': None, 'decoupled_weight_decay': False, 'params': [0, 1]}]} 
+[synapse][2025-06-18 19:34:23,099](backendTorch.py:78): Set LossFunction OrderedDict() 
+[synapse][2025-06-18 19:34:23,131](backendTorch.py:81): Set dataset <method-wrapper '__str__' of MNIST object at 0x7f2f9715da00> 
+[synapse][2025-06-18 19:34:23,131](backendTorch.py:82): Split Length = [0.7, 0.3] 
+[synapse][2025-06-18 19:34:23,133](backendTorch.py:85): Train Loader configured, <method-wrapper '__str__' of DataLoader object at 0x7f2f972e2c60> 
+[synapse][2025-06-18 19:34:23,133](backendTorch.py:87): Test Loader configured, <method-wrapper '__str__' of DataLoader object at 0x7f2f972e2c60> 
+[synapse][2025-06-18 19:34:23,133](modelManager.py:72): sucessfully dumped neural network 
+[synapse][2025-06-18 19:34:29,918](backendTorch.py:121): epoch: 1, loss: 22768.251706123352 
+[synapse][2025-06-18 19:34:34,872](backendTorch.py:121): epoch: 2, loss: 13261.635717988014 
+[synapse][2025-06-18 19:34:39,840](backendTorch.py:121): epoch: 3, loss: 12166.483676075935 
+[synapse][2025-06-18 19:34:44,812](backendTorch.py:121): epoch: 4, loss: 11619.631927490234 
+[synapse][2025-06-18 19:34:49,788](backendTorch.py:121): epoch: 5, loss: 11268.97127687931 
+[synapse][2025-06-18 19:34:54,772](backendTorch.py:121): epoch: 6, loss: 11015.451585769653 
+[synapse][2025-06-18 19:34:59,762](backendTorch.py:121): epoch: 7, loss: 10818.97727483511 
+[synapse][2025-06-18 19:35:04,758](backendTorch.py:121): epoch: 8, loss: 10659.728522241116 
+[synapse][2025-06-18 19:35:09,759](backendTorch.py:121): epoch: 9, loss: 10526.553992211819 
+[synapse][2025-06-18 19:35:14,740](backendTorch.py:121): epoch: 10, loss: 10412.588201463223

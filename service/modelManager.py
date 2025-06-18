@@ -1,7 +1,7 @@
 from config import logging
 from typedefs import *
 
-from backendTorch import TorchModelManager, TorchTrainManager
+from backendTorch import TorchModelManager, TorchTrainManager, train
 
 class ModelManager(object):
 
@@ -29,7 +29,7 @@ class ModelManager(object):
         if(self.backend == "torch"):
             self._TrainManager = TorchTrainManager(self._InternalManager.layers,
                                                    self._InternalManager.trainConfig,
-                                                   self.debug)
+                                                   self._InternalManager.datasetConfig)
         else:
             raise NotImplementedError(f"training using {self.backend} is not implemented yet")
 
@@ -65,3 +65,9 @@ class ModelManager(object):
             dataset_config_td: DatasetConfig graphql object
         """
         self._InternalManager.setDatasetConfig(dataset_config_td=dataset_config_td, debug=self.debug)
+
+    def train(self):
+        logging.info("training model started!")
+        self.dumpNetworkForTraining()
+        logging.info("sucessfully dumped neural network")
+        train(self._TrainManager)

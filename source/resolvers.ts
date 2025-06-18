@@ -5,12 +5,13 @@ import {
     SetDatasetArgs,
     SetTrainConfigArgs,
     CreateModelArgs,
-    Dataset
+    Dataset,
+    TrainArgs
 } from "./types.js"
 
 import { appendLayerResolver } from "./layerResolver.js";
 import { createModelResolver } from './modelResolver.js';
-import { setTrainConfigResolver } from './trainResolvers.js';
+import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
 
 const models: Model[] = [];
@@ -68,6 +69,10 @@ export const resolvers = {
         // setDataset mutation
         setDataset: async (_:unknown, args: SetDatasetArgs) => {
             return await setDatasetResolver(models, args);
+        },
+        // train mutation
+        train: async (_:unknown, args: TrainArgs) => {
+            return await trainResolver(models, args);
         }
     }
 }
