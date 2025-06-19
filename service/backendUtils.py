@@ -30,6 +30,32 @@ def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> Laye
         if "bias" in layer_config.keys():
             kwargs["bias"] = layer_config["bias"] # type:ignore
 
+    elif layer_type == "conv2d":
+        layer_config = cast(TSConv2dLayerInput, layer_config)
+        # conv2d layer specific kwargs object
+        kwargs = cast(Conv2dLayerKwargs, {
+            "in_channels": layer_config["in_channels"],
+            "out_channels": layer_config["out_channels"],
+            "kernel_size": layer_config["kernel_size"]
+        })
+        # optional configurations
+        if "stride" in layer_config.keys():
+            kwargs["stride"] = layer_config["stride"] # type:ignore
+
+        if "padding" in layer_config.keys():
+            kwargs["padding"] = layer_config["padding"] # type:ignore
+
+        if "dilation" in layer_config.keys():
+            kwargs["dilation"] = layer_config["dilation"] # type:ignore
+
+        if "groups" in layer_config.keys():
+            kwargs["groups"] = layer_config["groups"] # type:ignore
+
+        if "bias" in layer_config.keys():
+            kwargs["bias"] = layer_config["bias"] # type:ignore
+            
+        if "padding_mode" in layer_config.keys():
+            kwargs["padding_mode"] = layer_config["padding_mode"] # type:ignore
     else:
         raise NotImplementedError(f"layer({layer_type}) is not implemented yet")
     

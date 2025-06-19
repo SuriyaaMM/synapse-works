@@ -2,7 +2,7 @@ import Redis from 'ioredis';
 import type { Redis as RedisClientType } from 'ioredis';
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-const REDIS_QUEUE_NAME = 'model_layer_updates_queue';
+const REDIS_QUEUE_NAME = 'model_main_queue';
 
 let redisInstance: RedisClientType | null = null;
 
