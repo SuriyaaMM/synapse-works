@@ -12,7 +12,7 @@ from typedefs import *
 
 REDIS_HOST = 'localhost'
 REDIS_PORT = 6379
-REDIS_QUEUE_NAME = 'model_layer_updates_queue'
+REDIS_QUEUE_NAME = 'model_main_queue'
 
 def processMessage(message_data, models: list[ModelManager]):
     """Processes a single message received from Redis."""

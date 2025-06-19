@@ -12,18 +12,45 @@ export const typeDefs = `#graphql
         in_features: Int!  
         out_features: Int! 
     }
+    type Conv2dLayerConfig implements LayerConfig {
+        id: ID!
+        type: String!
+        name: String
+        in_channels: Int!
+        out_channels: Int!
+        kernel_size: [Int!]!
+        stride: [Int]
+        padding: [Int]
+        dilation: [Int]
+        groups: [Int]
+        bias: Boolean
+        padding_mode: String
+    }
     
     # ---------- Layer Config Input ----------
     input LinearLayerConfigInput {
+        name: String
         in_features: Int!      
         out_features: Int!
         bias: Boolean
+    }
+    input Conv2dLayerConfigInput {
         name: String
+        in_channels: Int!
+        out_channels: Int!
+        kernel_size: [Int!]!
+        stride: [Int]
+        padding: [Int]
+        dilation: [Int]
+        groups: [Int]
+        bias: Boolean
+        padding_mode: String
     }
     # LayerConfig input for collective layers
     input LayerConfigInput {
         type: String! 
-        linear: LinearLayerConfigInput 
+        linear: LinearLayerConfigInput
+        conv2d: Conv2dLayerConfigInput
     }
     # ---------- Train Config ----------
     type OptimizerConfig {
@@ -84,7 +111,7 @@ export const typeDefs = `#graphql
     # ---------- Queries ----------
     type Query {
         # get the model by id
-        getModel(id: ID!): Model
+        getModel(id: ID!): Model!
         # get all models
         getModels: [Model!]!
     }

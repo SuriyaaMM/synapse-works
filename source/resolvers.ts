@@ -26,6 +26,9 @@ export const resolvers = {
                 // must match the one in schema
                 return 'LinearLayerConfig';
             }
+            else if(layer_config.type == "conv2d"){
+                return 'Conv2dLayerConfig';
+            }
             return null;
         }
     },

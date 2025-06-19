@@ -1,15 +1,26 @@
-from typing import TypedDict, Union, Optional, Literal
+from typing import TypedDict, Union, Optional, NotRequired, Tuple
 
 """ ------------------------------------ Layer Config ----------------------------------- """
 class LinearLayerKwargs(TypedDict):
     in_features: int
     out_features:int
-    bias: Optional[bool]
+    bias: NotRequired[bool]
+
+class Conv2dLayerKwargs(TypedDict):
+    in_channels: int
+    out_channels: int
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    groups: NotRequired[Tuple[int, ...]]
+    bias: NotRequired[bool]
+    padding_mode: NotRequired[str]
 
 class DropoutLayerKwargs(TypedDict):
     p: float
 
-LayerKwargs_T = Union[LinearLayerKwargs, DropoutLayerKwargs]
+LayerKwargs_T = Union[LinearLayerKwargs, Conv2dLayerKwargs, DropoutLayerKwargs]
 class LayerConfig(TypedDict):
     type: str
     kwargs: LayerKwargs_T
@@ -20,7 +31,21 @@ class TSLinearLayerInput(TypedDict):
     name: str
     in_features: int
     out_features: int
-    bias: Optional[bool]
+    bias: NotRequired[bool]
+
+class TSConv2dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    in_channels: int
+    out_channels: int
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    groups: NotRequired[Tuple[int, ...]]
+    bias: NotRequired[bool]
+    padding_mode: NotRequired[str]
 
 class TSDropoutLayerInput(TypedDict):
     id: str
@@ -28,7 +53,7 @@ class TSDropoutLayerInput(TypedDict):
     name: str
     p: float
 
-TSLayerInput = Union[TSLinearLayerInput | TSDropoutLayerInput]
+TSLayerInput = Union[TSLinearLayerInput, TSConv2dLayerInput, TSDropoutLayerInput]
 
 """ ------------------------------------ Train Configurations ---------------------------- """
 class AdamOptimizerKwargs_T(TypedDict):

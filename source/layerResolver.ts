@@ -6,7 +6,8 @@ import {
     LayerConfigInput,
     LinearLayerConfig, 
     Model,
-    AppendLayerArgs
+    AppendLayerArgs,
+    Conv2dLayerConfig
 } from "./types.js"
 
 type LayerHandlerMap = {
@@ -16,10 +17,10 @@ type LayerHandlerMap = {
 // handles runtime validation of layer types
 const layerHandler: LayerHandlerMap = {
     "linear": (layer_config: LayerConfigInput) => {
-        // destructure layer Input
+        // destructure layer input
         const { linear }  =  layer_config;
         // handle missing linear layer config
-        if(!linear) throw new Error(`[synapse][graphql]: Linear layer config is missing`);
+        if(!linear) throw new Error(`[synapse][layerHandler]: Linear layer config is missing`);
 
         // initialize new layer & its uuid
         let new_layer_config: LinearLayerConfig;
@@ -32,6 +33,33 @@ const layerHandler: LayerHandlerMap = {
             in_features: linear.in_features,
             out_features: linear.out_features,
             bias: linear.bias
+        };
+
+        return new_layer_config;
+    },
+
+    "conv2d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { conv2d } = layer_config;
+
+        if(!conv2d) throw new Error('[synapse][layerHandler]: Conv2d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: Conv2dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "conv2d",
+            name: conv2d.name || `conv2d_${layer_id.substring(0, 4)}`,
+            in_channels: conv2d.in_channels,
+            out_channels: conv2d.out_channels,
+            kernel_size: conv2d.kernel_size,
+            stride: conv2d.stride,
+            padding: conv2d.padding,
+            dilation: conv2d.dilation,
+            groups: conv2d.groups,
+            bias: conv2d.bias,
+            padding_mode: conv2d.padding_mode
         };
 
         return new_layer_config;
@@ -52,10 +80,10 @@ export async function appendLayerResolver (models: Model[], args: AppendLayerArg
     // handle invalid layer
     if(!handler) throw new Error(`[synapse][graphql]: layer ${args.layer_config.type} is invalid`);
     // get the parsed layer 
-    const newLayer = handler(args.layer_config);
+    const new_layer = handler(args.layer_config);
     // push layer to model
-    model.layers_config.push(newLayer)
-    console.log(`[synapse][graphql]: Appended ${args.layer_config.type} layer (ID: ${newLayer.id}) to model ${model.name} (Model ID: ${model.id})`);
+    model.layers_config.push(new_layer)
+    console.log(`[synapse][graphql]: Appended ${args.layer_config.type} layer (ID: ${new_layer.id}) to model ${model.name} (Model ID: ${model.id})`);
             
     // push message to redis
     console.log(`[synapse][graphql]: Appending to redis message Queue`)

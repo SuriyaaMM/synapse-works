@@ -1,0 +1,193 @@
+mutation CreateNeuralNet1 {
+  createModel(name: "NeuralNet1") {
+    id
+    name
+    layers_config { # This will be empty initially
+      id
+    }
+  }
+}
+
+mutation AddLinearLayer($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "linear" 
+      linear: { 
+        in_features: 784
+        out_features:  64
+        name: "InputLinear"
+      }
+    }
+  ) {
+    id
+    name
+    layers_config { # Request details about the layers
+      id
+      type
+      name
+      ... on LinearLayerConfig { # Use inline fragment to get LinearLayer specific fields
+        in_features
+        out_features
+      }
+    }
+  }
+}
+
+mutation AddConv2dLayer($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d" 
+      conv2d: { 
+        in_channels: 1
+        out_channels: 64
+        kernel_size: [3, 3]
+      }
+    }
+  ) {
+    id
+    name
+    layers_config { # Request details about the layers
+      id
+      type
+      name
+      ... on Conv2dLayerConfig { 
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+    }
+  }
+}
+
+mutation SetNeuralNet1TrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "adam"
+      optimizer_config: {
+        lr: 0.001
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    layers_config { 
+      id
+      type
+      name
+      ... on Conv2dLayerConfig { 
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+    }
+    train_config { 
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+      }
+      loss_function
+    }
+  }
+}
+mutation SetNeuralNet1DatasetConfig($modelId: ID!) {
+  setDataset(
+    model_id: $modelId 
+    dataset_config: {
+      name: "mnist"
+      shuffle: true
+      split_length: [0.7, 0.3]            
+      mnist: {
+        root: "./data/mnist"
+        train: true
+        download: true
+      }
+    }
+  ) {
+    id
+    name
+    layers_config { 
+      id
+      type
+      name
+      ... on Conv2dLayerConfig { 
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+    }
+    train_config { 
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+      }
+      loss_function
+    }
+    dataset_config {
+      name
+      batch_size
+      split_length
+      shuffle
+      ... on MNISTDatasetConfig {
+        root
+        train
+        download
+      }
+    }
+  }
+}
+
+mutation TrainNeuralNet1($modelId: ID!) {
+  train(model_id: $modelId) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on Conv2dLayerConfig { 
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+    }
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+      }
+      loss_function
+    }
+    dataset_config {
+      name
+      batch_size
+      split_length
+      shuffle
+      ... on MNISTDatasetConfig {
+        root
+        train
+        download
+      }
+    }
+  }
+}
+
