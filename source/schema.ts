@@ -62,6 +62,12 @@ export const typeDefs = `#graphql
         optimizer_config: OptimizerConfig!
         loss_function: String!
     }
+    type TrainStatus {
+        epoch: Int!
+        loss: Float!
+        accuracy: Float!
+        completed: Boolean!
+    }
     input OptimizerConfigInput {
         lr: Float!
     }
@@ -114,6 +120,8 @@ export const typeDefs = `#graphql
         getModel(id: ID!): Model!
         # get all models
         getModels: [Model!]!
+        # get training status
+        getTrainingStatus: TrainStatus!
     }
     # ---------- Mutations ----------
     type Mutation {

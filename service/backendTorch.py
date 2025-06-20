@@ -1,8 +1,10 @@
-from config import logging
+from config import logging, REDIS_TRAIN_QUEUE_NAME
 from abstractManager import AbstractModelManager
 from typedefs import *
 
 import json
+import redis
+import datetime
 import torch
 
 from torch import nn
@@ -68,6 +70,8 @@ class TorchTrainManager(nn.Module):
         self.layers = layers
         self.neuralNet = nn.Sequential(*layers)
 
+        self.device = "cuda" if torch.cuda.is_available() else "cpu"
+
         optimizerType = torch_optimizer_name_map(train_config["optimizer"])
         
         self.optimizer = optimizerType(self.neuralNet.parameters(), **train_config["optimizer_kwargs"]) # type:ignore
@@ -98,7 +102,8 @@ def _TrainEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]:
     features : torch.Tensor
     labels: torch.Tensor
     for features, labels in train_manager.train_loader:
-
+        features.to(train_manager.device)
+        labels.to(train_manager.device)
         output: torch.Tensor = train_manager.forward(features)
         loss: torch.Tensor = train_manager.loss_function(output, labels)
         train_manager.optimizer.zero_grad()
@@ -112,8 +117,17 @@ def _TrainEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]:
     return running_loss, correct_predictions, total_samples
 
 
-def train(train_manager: TorchTrainManager):
+def train(train_manager: TorchTrainManager, redis_client: redis.Redis):
 
     for epochs in range(train_manager.epochs):
         running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager)
         logging.info(f"epoch: {epochs + 1}, loss: {running_loss}, accuracy: {correct_predictions/total_samples}")
+        update_message = {
+            "epoch" : epochs + 1,
+            "loss" : running_loss,
+            "accuracy" : (correct_predictions/total_samples),
+            "completed" : epochs == train_manager.epochs - 1,
+            "timestamp" : datetime.datetime.now().isoformat()
+        }
+        redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
+        logging.info(f"pushed {json.dumps(update_message)} to redis queue")
