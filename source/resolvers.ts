@@ -13,6 +13,7 @@ import { appendLayerResolver } from "./layerResolver.js";
 import { createModelResolver } from './modelResolver.js';
 import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
+import { dequeueMessage } from "./redisClient.js";
 
 const models: Model[] = [];
 
@@ -25,6 +26,9 @@ export const resolvers = {
             if(layer_config.type === "linear"){
                 // must match the one in schema
                 return 'LinearLayerConfig';
+            }
+            else if(layer_config.type == "conv2d"){
+                return 'Conv2dLayerConfig';
             }
             return null;
         }
@@ -51,6 +55,9 @@ export const resolvers = {
         // getModels query
         // return the models list
         getModels: () => models,
+        // getTrainStatus query
+        // return the status (pop from redis queue)
+        getTrainingStatus: () => dequeueMessage()
     },
     // graphql mutations
     Mutation: {
