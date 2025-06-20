@@ -50,24 +50,35 @@ export type LayerConfigInput = {
 };
 
 // ------------------------------- Training Configuration ----------------------------------
-type OptimizerConfig = {
+export type OptimizerConfig = {
     lr: number;
 };  
-type TrainConfig = {
+
+export type TrainConfig = {
     epochs: number;
     optimizer: string;
     optimizer_config: OptimizerConfig
     loss_function: string;
 };
-type OptimizerConfigInput = {
+
+export type OptimizerConfigInput = {
     lr: number;
 };
-type TrainConfigInput = {
+
+export type TrainConfigInput = {
     epochs: number;
     optimizer: string;
     optimizer_config: OptimizerConfigInput
     loss_function: string;
 };
+
+export type TrainStatus = {
+    epoch: number;
+    loss: number;
+    accuracy: number;
+    completed: boolean;
+    timestamp?: string;
+}
 
 // ------------------------------- Dataset Configuration ----------------------------------
 export interface DatasetConfig {

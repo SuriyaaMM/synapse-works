@@ -1,7 +1,8 @@
 import redis
 import json
 import traceback
-from config import logging
+from config import logging, \
+                    REDIS_HOST, REDIS_MAIN_QUEUE_NAME, REDIS_PORT
 
 from modelManager import ModelManager
 from backendUtils import parseFromLayerConfig, \
@@ -10,11 +11,8 @@ from backendUtils import parseFromLayerConfig, \
 
 from typedefs import *
 
-REDIS_HOST = 'localhost'
-REDIS_PORT = 6379
-REDIS_QUEUE_NAME = 'model_main_queue'
 
-def processMessage(message_data, models: list[ModelManager]):
+def processMessage(message_data, models: list[ModelManager], redis_client: redis.Redis):
     """Processes a single message received from Redis."""
     try:
         # load the string (Json.stringify is called from server-side in typescript)
@@ -57,7 +55,7 @@ def processMessage(message_data, models: list[ModelManager]):
             id = message.get("model_id")
             for model in models:
                 if model.id == id:
-                    model.train()
+                    model.train(redis_client=redis_client)
         else:
             print(f"[synapse][redis]: Unknown event type: {event_type}")
     # ----- exceptions
@@ -73,18 +71,18 @@ def start(models: list[ModelManager]):
         # test connection
         r.ping()
         print("[synapse][redis]: Connected to Redis.")
-        print(f"[synapse][redis]: Waiting for messages in '{REDIS_QUEUE_NAME}'")
+        print(f"[synapse][redis]: Waiting for messages in '{REDIS_MAIN_QUEUE_NAME}'")
 
         while True:
             # blocking right tail pop, we left pushed to the queue
-            _, message_data = r.brpop([REDIS_QUEUE_NAME], timeout=0) # type:ignore
+            _, message_data = r.brpop([REDIS_MAIN_QUEUE_NAME], timeout=0) # type:ignore
             if message_data:
-                processMessage(message_data.decode('utf-8'), models=models)
+                processMessage(message_data.decode('utf-8'), models=models, redis_client=r)
     # ----- exceptions
     except Exception as e:
         print(f"[synapse][redis]: unexpected exception: {e}")
     finally:
-        if 'r' in locals() and r.ping():
+        if 'r_main' in locals() and r.ping():
             print("[synapse][redis]: Redis connection closed.")
 
 if __name__ == '__main__':
