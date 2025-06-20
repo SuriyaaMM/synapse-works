@@ -16,6 +16,7 @@ def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]
     # map for iterating
     layer_name_map = {
         "linear" : nn.Linear,
+        "conv2d": nn.Conv2d,
         "dropout" : nn.Dropout
     }
     # convert to lowercase

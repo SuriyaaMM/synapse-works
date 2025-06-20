@@ -2,7 +2,7 @@ import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { typeDefs } from "./schema.js";
 import { resolvers } from "./resolvers.js";
-import { connectRedis } from "./redisClient.js";
+import { connectRedis, dequeueMessage } from "./redisClient.js";
 
 
 connectRedis();

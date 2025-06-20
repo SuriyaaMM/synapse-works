@@ -34,3 +34,8 @@ consoleHandler.setLevel(logging.INFO)
 consoleHandler.setFormatter(nfFormatter())
 
 nfLogger.addHandler(consoleHandler)
+
+REDIS_TRAIN_QUEUE_NAME = 'model_train_queue'
+REDIS_HOST = 'localhost'
+REDIS_PORT = 6379
+REDIS_MAIN_QUEUE_NAME = 'model_main_queue'
