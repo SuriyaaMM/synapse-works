@@ -10,7 +10,7 @@ type DatasetHandlerMap = {
 export const datasetHandlers: DatasetHandlerMap = {
     "mnist": (dataset: DatasetConfigInput) => {
         // destructure the dataset
-        const {split_length, shuffle, mnist} = dataset;
+        const {split_length, shuffle, batch_size, mnist} = dataset;
         // if mnistConfig is not found, report error
         if(!mnist) throw new Error("[synapse][graphql]: mnist config is missing");
         // create MNISTDataset object & return it
@@ -20,6 +20,7 @@ export const datasetHandlers: DatasetHandlerMap = {
             shuffle: shuffle,
             root: mnist.root,
             train: mnist.train,
+            batch_size: batch_size,
             download: mnist.download
         };
         return newDataset;

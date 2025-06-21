@@ -9,6 +9,5 @@
     "esModuleInterop": true,
     "types": ["node"]
   },
-  // you should add this in tsconfig.json
   "exclude": ["node_modules", "frontend"]
 }

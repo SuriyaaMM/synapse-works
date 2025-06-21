@@ -146,3 +146,40 @@ export const SET_DATASET_CONFIG = gql`
     }
   }
 `;
+
+export const TRAIN_MODEL = gql`
+  mutation TrainMyModel($modelId: ID!) {
+    train(model_id: $modelId) {
+      id
+      name
+      layers_config {
+        id
+        type
+        name
+        ... on LinearLayerConfig { 
+          in_features
+          out_features
+        }
+      }
+      train_config {
+        epochs
+        optimizer
+        optimizer_config {
+          lr
+        }
+        loss_function
+      }
+      dataset_config {
+        name
+        batch_size
+        split_length
+        shuffle
+        ... on MNISTDatasetConfig {
+          root
+          train
+          download
+        }
+      }
+    }
+  }
+`;

@@ -1,8 +1,8 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import client from '$lib/apolloClient';
-  import { APPEND_LINEAR_LAYER } from '$lib/mutations'; // Using your existing mutation
-  import { GET_MODEL } from '$lib/queries'; // Updated to match your schema
+  import { APPEND_LINEAR_LAYER } from '$lib/mutations'; 
+  import { GET_MODEL } from '$lib/queries';
 
   let modelId: string | null = null;
   let loading = false;
@@ -199,8 +199,7 @@
             disabled={loading}
           >
             <option value="linear">Linear</option>
-            <option value="relu">ReLU</option>
-            <option value="sigmoid">Sigmoid</option>
+            <option value="conv2d">Conv2D</option>
             <option value="dropout">Dropout</option>
           </select>
         </div>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import client from '$lib/apolloClient';
-  import { SET_TRAIN_CONFIG } from '$lib/mutations'; // You'll need to add this
+  import { SET_TRAIN_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
 
   let modelId: string | null = null;
@@ -13,23 +13,35 @@
   // Training configuration form fields
   let epochs = 10;
   let optimizer = 'adam';
-  let learningRate = 0.001;
   let lossFunction = 'ce';
+  let optimizerConfig: Record<string, any> = {};
+
+  // Optimizer configurations
+  const optimizerConfigs = {
+    adam: {
+      lr: { type: 'number', default: 0.001, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' }
+    },
+    sgd: {
+      lr: { type: 'number', default: 0.01, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      momentum: { type: 'number', default: 0, min: 0, max: 1, step: 0.01, label: 'Momentum' }
+    }
+  };
 
   // Available options
   const optimizerOptions = [
     { value: 'adam', label: 'Adam' },
-    { value: 'sgd', label: 'SGD' },
-    { value: 'rmsprop', label: 'RMSprop' },
-    { value: 'adagrad', label: 'Adagrad' }
+    { value: 'sgd', label: 'SGD (Stochastic Gradient Descent)' }
   ];
 
   const lossFunctionOptions = [
     { value: 'ce', label: 'Cross Entropy' },
-    { value: 'mse', label: 'Mean Squared Error' },
-    { value: 'mae', label: 'Mean Absolute Error' },
-    { value: 'bce', label: 'Binary Cross Entropy' }
+    { value: 'mse', label: 'Mean Squared Error' }
   ];
+
+  // Initialize optimizer config when optimizer changes
+  $: if (optimizer) {
+    initializeOptimizerConfig();
+  }
 
   // Reactive statement to get modelId from URL params
   $: modelId = $page.url.searchParams.get('modelId');
@@ -39,38 +51,106 @@
     fetchModelDetails();
   }
 
+  function initializeOptimizerConfig() {
+    const config = optimizerConfigs[optimizer as keyof typeof optimizerConfigs];
+    if (!config) return;
+
+    const newConfig: Record<string, any> = {};
+    Object.entries(config).forEach(([key, paramConfig]) => {
+      // Keep existing value if it exists, otherwise use default
+      if (optimizerConfig[key] === undefined) {
+        newConfig[key] = paramConfig.default;
+      } else {
+        newConfig[key] = optimizerConfig[key];
+      }
+    });
+    optimizerConfig = newConfig;
+  }
+
   async function fetchModelDetails() {
     if (!modelId) return;
     
     try {
+      loading = true;
+      error = null;
+      
+      console.log('Fetching model details for ID:', modelId);
+      
       const response = await client.query({
         query: GET_MODEL,
         variables: { id: modelId },
         fetchPolicy: 'network-only'
       });
       
-      modelDetails = response.data?.getModel;
+      console.log('Model query response:', response);
+      
+      if (!response.data?.getModel) {
+        throw new Error(`Model with ID ${modelId} not found`);
+      }
+      
+      modelDetails = response.data.getModel;
+      console.log('Model details loaded:', modelDetails);
       
       // Pre-populate form if training config already exists
       if (modelDetails?.train_config) {
         const config = modelDetails.train_config;
         epochs = config.epochs || 10;
         optimizer = config.optimizer || 'adam';
-        learningRate = config.optimizer_config?.lr || 0.001;
         lossFunction = config.loss_function || 'ce';
+        
+        // Load optimizer-specific config
+        if (config.optimizer_config) {
+          optimizerConfig = { ...config.optimizer_config };
+          console.log('Loaded optimizer config:', optimizerConfig);
+        } else {
+          // Initialize with defaults if no existing config
+          initializeOptimizerConfig();
+        }
+      } else {
+        // Initialize with defaults for new config
+        initializeOptimizerConfig();
       }
     } catch (err) {
       console.error('Error fetching model details:', err);
-      error = 'Failed to fetch model details';
+      error = `Failed to fetch model details: ${err.message || err.toString()}`;
+      
+      // Still initialize optimizer config even if model fetch fails
+      initializeOptimizerConfig();
+    } finally {
+      loading = false;
     }
   }
 
   function validateForm(): string | null {
     if (epochs <= 0) return 'Epochs must be a positive number';
-    if (learningRate <= 0) return 'Learning rate must be a positive number';
     if (!optimizer.trim()) return 'Optimizer is required';
     if (!lossFunction.trim()) return 'Loss function is required';
+    
+    // Validate optimizer-specific parameters
+    const config = optimizerConfigs[optimizer as keyof typeof optimizerConfigs];
+    if (config) {
+      for (const [key, paramConfig] of Object.entries(config)) {
+        const value = optimizerConfig[key];
+        if (paramConfig.type === 'number') {
+          if (typeof value !== 'number' || isNaN(value)) {
+            return `${paramConfig.label} must be a valid number`;
+          }
+          if (value < paramConfig.min || value > paramConfig.max) {
+            return `${paramConfig.label} must be between ${paramConfig.min} and ${paramConfig.max}`;
+          }
+        }
+      }
+    }
+    
     return null;
+  }
+
+  function formatScientificNumber(value: number): string {
+    return value.toExponential(2);
+  }
+
+  function parseScientificNumber(value: string): number {
+    return parseFloat(value) || 0;
   }
 
   async function setTrainingConfig() {
@@ -94,7 +174,7 @@
         modelId,
         epochs,
         optimizer,
-        learningRate,
+        optimizerConfig,
         lossFunction
       });
 
@@ -104,7 +184,7 @@
           modelId,
           epochs,
           optimizer,
-          lr: learningRate,
+          ...optimizerConfig,
           loss_function: lossFunction
         }
       });
@@ -185,7 +265,7 @@
         {/if}
       {/if}
       
-      <form on:submit|preventDefault={setTrainingConfig} class="space-y-6 max-w-lg">
+      <form on:submit|preventDefault={setTrainingConfig} class="space-y-6 max-w-2xl">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="epochs" class="block text-sm font-medium text-gray-700 mb-1">
@@ -205,21 +285,21 @@
           </div>
 
           <div>
-            <label for="learningRate" class="block text-sm font-medium text-gray-700 mb-1">
-              Learning Rate <span class="text-red-500">*</span>
+            <label for="lossFunction" class="block text-sm font-medium text-gray-700 mb-1">
+              Loss Function <span class="text-red-500">*</span>
             </label>
-            <input
-              id="learningRate"
-              type="number"
-              bind:value={learningRate}
-              step="0.0001"
+            <select
+              id="lossFunction"
+              bind:value={lossFunction}
               required
-              min="0.0001"
-              max="1"
               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               disabled={loading}
-            />
-            <p class="text-xs text-gray-500 mt-1">Step size for parameter updates</p>
+            >
+              {#each lossFunctionOptions as option}
+                <option value={option.value}>{option.label}</option>
+              {/each}
+            </select>
+            <p class="text-xs text-gray-500 mt-1">Function to measure prediction error</p>
           </div>
         </div>
 
@@ -241,23 +321,88 @@
           <p class="text-xs text-gray-500 mt-1">Optimization algorithm for training</p>
         </div>
 
-        <div>
-          <label for="lossFunction" class="block text-sm font-medium text-gray-700 mb-1">
-            Loss Function <span class="text-red-500">*</span>
-          </label>
-          <select
-            id="lossFunction"
-            bind:value={lossFunction}
-            required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-            disabled={loading}
-          >
-            {#each lossFunctionOptions as option}
-              <option value={option.value}>{option.label}</option>
-            {/each}
-          </select>
-          <p class="text-xs text-gray-500 mt-1">Function to measure prediction error</p>
-        </div>
+        <!-- Dynamic Optimizer Configuration -->
+        {#if optimizer && optimizerConfigs[optimizer]}
+          <div class="bg-gray-50 p-4 rounded-md">
+            <h3 class="font-semibold text-gray-800 mb-3">
+              {optimizerOptions.find(opt => opt.value === optimizer)?.label} Configuration
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {#each Object.entries(optimizerConfigs[optimizer]) as [paramKey, paramConfig]}
+                <div>
+                  <label for={paramKey} class="block text-sm font-medium text-gray-700 mb-1">
+                    {paramConfig.label}
+                    <span class="text-red-500">*</span>
+                  </label>
+                  
+                  {#if paramConfig.type === 'number'}
+                    {#if paramConfig.format === 'scientific'}
+                      <input
+                        id={paramKey}
+                        type="text"
+                        bind:value={optimizerConfig[paramKey]}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-mono"
+                        disabled={loading}
+                        placeholder={formatScientificNumber(paramConfig.default)}
+                        on:input={(e) => {
+                          const val = parseFloat(e.target.value);
+                          if (!isNaN(val)) optimizerConfig[paramKey] = val;
+                        }}
+                      />
+                    {:else}
+                      <input
+                        id={paramKey}
+                        type="number"
+                        bind:value={optimizerConfig[paramKey]}
+                        step={paramConfig.step}
+                        min={paramConfig.min}
+                        max={paramConfig.max}
+                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        disabled={loading}
+                      />
+                    {/if}
+                  {:else if paramConfig.type === 'boolean'}
+                    <div class="flex items-center py-2">
+                      <input
+                        id={paramKey}
+                        type="checkbox"
+                        bind:checked={optimizerConfig[paramKey]}
+                        class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                        disabled={loading}
+                      />
+                      <label for={paramKey} class="ml-2 text-sm text-gray-600">
+                        Enable {paramConfig.label}
+                      </label>
+                    </div>
+                  {/if}
+                  
+                  <p class="text-xs text-gray-500 mt-1">
+                    {#if paramConfig.type === 'number'}
+                      Range: {paramConfig.min} - {paramConfig.max}
+                      {#if paramConfig.format === 'scientific'}
+                        (scientific notation)
+                      {/if}
+                    {:else if paramConfig.type === 'boolean'}
+                      Default: {paramConfig.default ? 'Enabled' : 'Disabled'}
+                    {/if}
+                  </p>
+                </div>
+              {/each}
+            </div>
+            
+            <!-- Show current config values for debugging -->
+            {#if Object.keys(optimizerConfig).length > 0}
+              <details class="mt-4">
+                <summary class="text-sm font-medium text-gray-600 cursor-pointer">
+                  Current Configuration (Debug)
+                </summary>
+                <pre class="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
+{JSON.stringify(optimizerConfig, null, 2)}
+                </pre>
+              </details>
+            {/if}
+          </div>
+        {/if}
 
         <div class="flex space-x-3 pt-4">
           <button 
@@ -297,7 +442,7 @@
           </h2>
           <div class="bg-green-50 p-4 rounded-md">
             <h3 class="font-semibold text-green-800 mb-2">Configuration Summary</h3>
-            <div class="grid grid-cols-2 gap-4 text-sm">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span class="font-medium text-green-700">Epochs:</span> {result.train_config?.epochs}
               </div>
@@ -305,11 +450,16 @@
                 <span class="font-medium text-green-700">Optimizer:</span> {result.train_config?.optimizer}
               </div>
               <div>
-                <span class="font-medium text-green-700">Learning Rate:</span> {result.train_config?.optimizer_config?.lr}
-              </div>
-              <div>
                 <span class="font-medium text-green-700">Loss Function:</span> {result.train_config?.loss_function}
               </div>
+              {#if result.train_config?.optimizer_config}
+                {#each Object.entries(result.train_config.optimizer_config) as [key, value]}
+                  <div>
+                    <span class="font-medium text-green-700 capitalize">{key.replace('_', ' ')}:</span> 
+                    {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
+                  </div>
+                {/each}
+              {/if}
             </div>
           </div>
           
