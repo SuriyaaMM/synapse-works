@@ -37,6 +37,17 @@ export const GET_MODEL = gql`
   }
 `;
 
+export const GET_TRAINING_STATUS = gql`
+  query GetTrainingStatus {
+    getTrainingStatus {
+      epoch
+      loss
+      accuracy
+      completed
+    }
+  }
+`;
+
 export const GET_MODELS = gql`
   query GetModels {
     getModels {
