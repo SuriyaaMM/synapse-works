@@ -155,3 +155,9 @@ export const TRAIN_MODEL = gql`
     }
   }
 `;
+
+export const START_TENSORBOARD = gql`
+  mutation StartTensorboard {
+    startTensorboard
+  }
+`;
