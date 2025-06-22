@@ -1,3 +1,5 @@
+import torch.utils.tensorboard
+import torch.version
 from config import logging, REDIS_TRAIN_QUEUE_NAME
 from abstractManager import AbstractModelManager
 from typedefs import *
@@ -85,7 +87,7 @@ class TorchTrainManager(nn.Module):
         # initialize dataloaders
         self.train_loader : DataLoader = DataLoader(self.train_dataset, **dataset_config["dataloader_config"])
         self.test_loader: DataLoader = DataLoader(self.test_dataset, **dataset_config["dataloader_config"])
-        
+
 
     def forward(self, x: torch.Tensor):
         # TODO(mms) hardcoded flattening here
@@ -116,18 +118,58 @@ def _TrainEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]:
 
     return running_loss, correct_predictions, total_samples
 
+def _ValidateEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]:
+    train_manager.neuralNet.eval()
+    correct_predictions = 0
+    total_samples = 0
+    running_loss = 0
+
+    features : torch.Tensor
+    labels: torch.Tensor
+
+    with torch.no_grad():
+        for features, labels in train_manager.test_loader:
+            features.to(train_manager.device)
+            labels.to(train_manager.device)
+            output: torch.Tensor = train_manager.forward(features)
+            loss: torch.Tensor = train_manager.loss_function(output, labels)
+            running_loss += loss.item() * features.size(0)
+            predictions = torch.argmax(output, dim = 1)
+            correct_predictions += (predictions == labels).sum().item()
+            total_samples += labels.size(0)
+
+    return running_loss, correct_predictions, total_samples
 
 def train(train_manager: TorchTrainManager, redis_client: redis.Redis):
+    writer = torch.utils.tensorboard.SummaryWriter("./tbsummary")
+    logging.info(f"initialized writer {writer}")
+    logging.info(f"using device {train_manager.device}")
+    logging.info(f"using torch: {torch.__version__}")
 
-    for epochs in range(train_manager.epochs):
+    for epoch in range(train_manager.epochs):
         running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager)
-        logging.info(f"epoch: {epochs + 1}, loss: {running_loss}, accuracy: {correct_predictions/total_samples}")
+        accuracy = correct_predictions/total_samples
+        # write to tensorboard
+        writer.add_scalar("Loss/train", running_loss, epoch)
+        writer.add_scalar("Accuracy/train", accuracy, epoch)
+
+        logging.info(f"epoch: {epoch + 1}, loss: {running_loss}, accuracy: {accuracy}")
+        
+        # TODO(mms) hardcoded validation period here to 5
+        if epoch % 5 == 0:
+            running_val_loss, correct_val_predictions, total_val_samples = _ValidateEpoch(train_manager)
+            accuracy_val = correct_val_predictions/total_val_samples
+            writer.add_scalar("Loss/validation", running_val_loss, epoch)
+            writer.add_scalar("Accuracy/validation", accuracy_val, epoch)
+
         update_message = {
-            "epoch" : epochs + 1,
+            "epoch" : epoch + 1,
             "loss" : running_loss,
             "accuracy" : (correct_predictions/total_samples),
-            "completed" : epochs == train_manager.epochs - 1,
+            "completed" : epoch == train_manager.epochs - 1,
             "timestamp" : datetime.datetime.now().isoformat()
         }
         redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
         logging.info(f"pushed {json.dumps(update_message)} to redis queue")
+
+    writer.close()

@@ -133,6 +133,16 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
             kwargs["train"] = dataset_config["train"]
         if "download" in dataset_config.keys():
             kwargs["download"] = dataset_config["download"]
+
+    elif name == "cifar10":
+        kwargs = cast(CIFAR10DatasetConfig, {
+            "root": root
+        })
+        # optional configurations
+        if "train" in dataset_config.keys():
+            kwargs["train"] = dataset_config["train"]
+        if "download" in dataset_config.keys():
+            kwargs["download"] = dataset_config["download"]
     else:
         raise NotImplementedError(f"{name} dataset is not implemented yet")
     

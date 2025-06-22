@@ -42,6 +42,9 @@ export const resolvers = {
                 // must match the one in schema
                 return 'MNISTDatasetConfig';
             }
+            else if(dataset_config.name === "cifar10"){
+                return 'CIFAR10DatasetConfig';
+            }
             return null;
         }
     },
