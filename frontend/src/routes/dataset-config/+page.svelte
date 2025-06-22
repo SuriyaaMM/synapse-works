@@ -4,11 +4,13 @@
   import { SET_DATASET_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
 
+  import type { Model, DatasetConfig, MNISTDatasetConfig, DatasetConfigInput, MNISTDatasetConfigInput } from '../../../../source/types';
+
   let modelId: string | null = null;
   let loading = false;
   let error: string | null = null;
-  let result: any = null;
-  let modelDetails: any = null;
+  let result: Model | null = null;
+  let modelDetails: Model | null = null;
 
   // Dataset configuration form fields
   let datasetName = 'mnist';
@@ -56,7 +58,7 @@
       
       // Pre-populate form if dataset config already exists
       if (modelDetails?.dataset_config) {
-        const config = modelDetails.dataset_config;
+        const config: DatasetConfig = modelDetails.dataset_config;
         datasetName = config.name || 'mnist';
         batchSize = config.batch_size || 32;
         shuffle = config.shuffle !== undefined ? config.shuffle : true;
@@ -66,10 +68,12 @@
           testSplit = config.split_length[1];
         }
         
-        if (config.mnist) {
-          mnistRoot = config.mnist.root || './data/mnist';
-          mnistTrain = config.mnist.train !== undefined ? config.mnist.train : true;
-          mnistDownload = config.mnist.download !== undefined ? config.mnist.download : true;
+        // Type assertion for MNIST config
+        const mnistConfig = config as MNISTDatasetConfig;
+        if (mnistConfig && datasetName === 'mnist') {
+          mnistRoot = mnistConfig.root || './data/mnist';
+          mnistTrain = mnistConfig.train !== undefined ? mnistConfig.train : true;
+          mnistDownload = mnistConfig.download !== undefined ? mnistConfig.download : true;
         }
       }
     } catch (err) {
@@ -105,29 +109,27 @@
     result = null;
 
     try {
-      console.log('Setting dataset config with variables:', {
-        modelId,
-        datasetName,
-        batchSize,
+      const datasetConfigInput: DatasetConfigInput = {
+        name: datasetName,
+        batch_size: batchSize,
         shuffle,
-        trainSplit,
-        testSplit,
-        mnistRoot,
-        mnistTrain,
-        mnistDownload
-      });
+        split_length: [trainSplit, testSplit]
+      };
+
+      if (datasetName === 'mnist') {
+          const mnistConfig: MNISTDatasetConfigInput = {
+              root: mnistRoot,
+              train: mnistTrain,
+              download: mnistDownload
+          };
+          datasetConfigInput.mnist = mnistConfig;
+      }
 
       const res = await client.mutate({
         mutation: SET_DATASET_CONFIG,
         variables: { 
           modelId,
-          name: datasetName,
-          batchSize,
-          shuffle,
-          splitLength: [trainSplit, testSplit],
-          mnistRoot,
-          mnistTrain,
-          mnistDownload
+          datasetConfig: datasetConfigInput
         }
       });
       
@@ -184,11 +186,6 @@
           {:else}
             <p class="text-xs text-orange-600 mt-2">
               ⚠️ No training configuration found. You may want to configure training first.
-            </p>
-          {/if}
-          {#if modelDetails.dataset_config}
-            <p class="text-xs text-blue-600 mt-2">
-              ℹ️ This model already has dataset configuration. You can update it below.
             </p>
           {/if}
         </div>
@@ -388,10 +385,12 @@
                   {(result.dataset_config.split_length[1] * 100).toFixed(0)}% test
                 {/if}
               </div>
-              {#if result.dataset_config?.mnist}
-                <div class="col-span-2">
-                  <span class="font-medium text-green-700">MNIST Root:</span> {result.dataset_config.mnist.root}
-                </div>
+              {#if result.dataset_config && result.dataset_config.name === 'mnist'}
+                {#if (result.dataset_config as MNISTDatasetConfig).root}
+                  <div class="col-span-2">
+                    <span class="font-medium text-green-700">MNIST Root:</span> {(result.dataset_config as MNISTDatasetConfig).root}
+                  </div>
+                {/if}
               {/if}
             </div>
           </div>
@@ -408,12 +407,6 @@
                 Start Training
               </span>
             </a>
-            <button 
-              on:click={() => { result = null; error = null; }}
-              class="px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Update Configuration
-            </button>
             <a 
               href="/create-model"
               class="px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700"
@@ -421,35 +414,6 @@
               Create New Model
             </a>
           </div>
-        </div>
-      {/if}
-
-      <!-- Model Configuration Summary -->
-      {#if modelDetails && !result}
-        <div class="bg-gray-50 p-4 rounded-md">
-          <h3 class="font-semibold text-gray-800 mb-3">Model Configuration Status</h3>
-          <div class="space-y-2">
-            <div class="flex items-center">
-              <div class="w-4 h-4 rounded-full bg-green-500 mr-2"></div>
-              <span class="text-sm">Model Architecture: {modelDetails.layers_config?.length || 0} layers</span>
-            </div>
-            <div class="flex items-center">
-              <div class="w-4 h-4 rounded-full {modelDetails.train_config ? 'bg-green-500' : 'bg-red-500'} mr-2"></div>
-              <span class="text-sm">Training Configuration: {modelDetails.train_config ? 'Configured' : 'Missing'}</span>
-            </div>
-            <div class="flex items-center">
-              <div class="w-4 h-4 rounded-full {modelDetails.dataset_config ? 'bg-green-500' : 'bg-yellow-500'} mr-2"></div>
-              <span class="text-sm">Dataset Configuration: {modelDetails.dataset_config ? 'Configured' : 'In Progress'}</span>
-            </div>
-          </div>
-          
-          {#if modelDetails.layers_config?.length > 0 && modelDetails.train_config && modelDetails.dataset_config}
-            <div class="mt-3 p-2 bg-green-100 rounded border-l-4 border-green-500">
-              <p class="text-sm text-green-700 font-medium">
-                ✅ Your model is fully configured and ready for training!
-              </p>
-            </div>
-          {/if}
         </div>
       {/if}
     </div>

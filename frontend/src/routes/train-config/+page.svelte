@@ -3,21 +3,23 @@
   import client from '$lib/apolloClient';
   import { SET_TRAIN_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
+  import type { TrainConfig, SetTrainConfigArgs, OptimizerConfig, Model } from '../../../../source/types';
 
+   // State variables
   let modelId: string | null = null;
   let loading = false;
   let error: string | null = null;
-  let result: any = null;
-  let modelDetails: any = null;
+  let result: TrainConfig | null = null;
+  let modelDetails: Model | null = null;
 
-  // Training configuration form fields
+  // Form fields with defaults
   let epochs = 10;
   let optimizer = 'adam';
   let lossFunction = 'ce';
-  let optimizerConfig: Record<string, any> = {};
+  let optimizerConfig: OptimizerConfig = { lr: 0.001 };
 
-  // Optimizer configurations
-  const optimizerConfigs = {
+  // Configuration schemas for different optimizers
+  const optimizerConfigs: Record<string, Record<string, any>> = {
     adam: {
       lr: { type: 'number', default: 0.001, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' }
     },
@@ -27,7 +29,7 @@
     }
   };
 
-  // Available options
+  // Dropdown options
   const optimizerOptions = [
     { value: 'adam', label: 'Adam' },
     { value: 'sgd', label: 'SGD (Stochastic Gradient Descent)' }
@@ -55,13 +57,13 @@
     const config = optimizerConfigs[optimizer as keyof typeof optimizerConfigs];
     if (!config) return;
 
-    const newConfig: Record<string, any> = {};
+    const newConfig: OptimizerConfig = { lr: 0.001 };
     Object.entries(config).forEach(([key, paramConfig]) => {
       // Keep existing value if it exists, otherwise use default
       if (optimizerConfig[key] === undefined) {
-        newConfig[key] = paramConfig.default;
+        (newConfig as any)[key] = paramConfig.default;
       } else {
-        newConfig[key] = optimizerConfig[key];
+        (newConfig as any)[key] = (optimizerConfig as any)[key];
       }
     });
     optimizerConfig = newConfig;
@@ -74,22 +76,17 @@
       loading = true;
       error = null;
       
-      console.log('Fetching model details for ID:', modelId);
-      
       const response = await client.query({
         query: GET_MODEL,
         variables: { id: modelId },
         fetchPolicy: 'network-only'
       });
       
-      console.log('Model query response:', response);
-      
       if (!response.data?.getModel) {
         throw new Error(`Model with ID ${modelId} not found`);
       }
       
       modelDetails = response.data.getModel;
-      console.log('Model details loaded:', modelDetails);
       
       // Pre-populate form if training config already exists
       if (modelDetails?.train_config) {
@@ -112,7 +109,11 @@
       }
     } catch (err) {
       console.error('Error fetching model details:', err);
-      error = `Failed to fetch model details: ${err.message || err.toString()}`;
+      error = `Failed to fetch model details: ${
+        typeof err === 'object' && err !== null && 'message' in err
+          ? (err as { message: string }).message
+          : String(err)
+      }`;
       
       // Still initialize optimizer config even if model fetch fails
       initializeOptimizerConfig();
@@ -154,58 +155,65 @@
   }
 
   async function setTrainingConfig() {
-    if (!modelId) {
-      error = 'Model ID is missing from URL parameters';
-      return;
-    }
+  if (!modelId) {
+    error = 'Model ID is missing from URL parameters';
+    return;
+  }
 
-    const validationError = validateForm();
-    if (validationError) {
-      error = validationError;
-      return;
-    }
-    
-    loading = true;
-    error = null;
-    result = null;
+  const validationError = validateForm();
+  if (validationError) {
+    error = validationError;
+    return;
+  }
+  
+  loading = true;
+  error = null;
+  result = null;
 
-    try {
-      console.log('Setting training config with variables:', {
+  try {
+    // Clean the optimizer config to remove Apollo Client fields like __typename
+    const cleanOptimizerConfig = Object.fromEntries(
+      Object.entries(optimizerConfig).filter(([key]) => !key.startsWith('__'))
+    );
+
+    const setTrainConfigArgs: SetTrainConfigArgs = {
+      model_id: modelId,
+      train_config: {
+        epochs,
+        optimizer,
+        optimizer_config: cleanOptimizerConfig,
+        loss_function: lossFunction
+      }
+    };
+
+    const res = await client.mutate({
+      mutation: SET_TRAIN_CONFIG,
+      variables: {
         modelId,
         epochs,
         optimizer,
-        optimizerConfig,
-        lossFunction
-      });
-
-      const res = await client.mutate({
-        mutation: SET_TRAIN_CONFIG,
-        variables: { 
-          modelId,
-          epochs,
-          optimizer,
-          ...optimizerConfig,
-          loss_function: lossFunction
-        }
-      });
-      
-      console.log('Mutation response:', res);
-      
-      if (!res.data?.setTrainConfig) {
-        throw new Error('Failed to set training configuration - no data returned');
+        optimizerConfig: cleanOptimizerConfig, // Use cleaned config here too
+        loss_function: lossFunction
       }
-      
-      result = res.data.setTrainConfig;
-      
-      // Refresh model details
-      await fetchModelDetails();
-    } catch (err: any) {
-      console.error('Apollo Error:', err);
-      error = err.message || err.toString() || 'Unknown error occurred';
-    } finally {
-      loading = false;
+    });
+
+    console.log('Set training config response:', res);
+
+    if (!res.data?.setTrainConfig) {
+      throw new Error('Failed to set training configuration - no data returned');
     }
+    
+    result = res.data.setTrainConfig;
+    
+    // Refresh model details
+    await fetchModelDetails();
+  } catch (err: any) {
+    console.error('Apollo Error:', err);
+    error = err.message || err.toString() || 'Unknown error occurred';
+  } finally {
+    loading = false;
   }
+}
 </script>
 
 <div class="container mx-auto p-6">
@@ -235,11 +243,6 @@
           <p class="text-sm text-blue-700">
             Total Layers: <span class="font-semibold">{modelDetails.layers_config?.length || 0}</span>
           </p>
-          {#if modelDetails.train_config}
-            <p class="text-xs text-blue-600 mt-2">
-              ℹ️ This model already has training configuration. You can update it below.
-            </p>
-          {/if}
         </div>
 
         <!-- Layer Summary -->
@@ -389,18 +392,6 @@
                 </div>
               {/each}
             </div>
-            
-            <!-- Show current config values for debugging -->
-            {#if Object.keys(optimizerConfig).length > 0}
-              <details class="mt-4">
-                <summary class="text-sm font-medium text-gray-600 cursor-pointer">
-                  Current Configuration (Debug)
-                </summary>
-                <pre class="mt-2 p-2 bg-gray-100 rounded text-xs overflow-auto">
-{JSON.stringify(optimizerConfig, null, 2)}
-                </pre>
-              </details>
-            {/if}
           </div>
         {/if}
 
@@ -412,13 +403,6 @@
           >
             {loading ? 'Saving Configuration...' : 'Save Training Config'}
           </button>
-          
-          <a 
-            href={`/dataset-config?modelId=${modelId}`}
-            class="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors whitespace-nowrap"
-          >
-            Next: Dataset Config
-          </a>
           
           <a 
             href={`/append-layer?modelId=${modelId}`}
@@ -475,12 +459,6 @@
                 Configure Dataset
               </span>
             </a>
-            <button 
-              on:click={() => { result = null; error = null; }}
-              class="px-4 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Update Configuration
-            </button>
           </div>
         </div>
       {/if}

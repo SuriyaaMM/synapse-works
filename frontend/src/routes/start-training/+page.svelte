@@ -5,12 +5,14 @@
   import { TRAIN_MODEL } from '$lib/mutations';
   import { GET_MODEL, GET_TRAINING_STATUS } from '$lib/queries';
 
+  import type { Model, TrainStatus } from '../../../../source/types';
+  
   let modelId: string | null = null;
   let loading = false;
   let training = false;
   let error: string | null = null;
-  let modelDetails: any = null;
-  let trainingStatus: any = null;
+  let modelDetails: Model | null = null;
+  let trainingStatus: TrainStatus | null = null;
   let statusInterval: any = null;
 
   // Reactive statement to get modelId from URL params
@@ -225,14 +227,6 @@
     } finally {
       loading = false;
     }
-  }
-
-  function stopTraining() {
-    if (statusInterval) {
-      clearInterval(statusInterval);
-      statusInterval = null;
-    }
-    training = false;
   }
 </script>
 

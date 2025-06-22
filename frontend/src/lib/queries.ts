@@ -27,11 +27,6 @@ export const GET_MODEL = gql`
         batch_size
         split_length
         shuffle
-        ... on MNISTDatasetConfig {
-          root
-          train
-          download
-        }
       }
     }
   }

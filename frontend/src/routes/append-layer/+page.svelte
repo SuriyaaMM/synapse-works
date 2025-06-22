@@ -3,12 +3,15 @@
   import client from '$lib/apolloClient';
   import { APPEND_LINEAR_LAYER } from '$lib/mutations'; 
   import { GET_MODEL } from '$lib/queries';
+  
+  import type { Model, LinearLayerConfig, LinearLayerConfigInput, LayerConfig, LayerConfigInput } from '../../../../source/types';
 
+  // State variables
   let modelId: string | null = null;
   let loading = false;
   let error: string | null = null;
-  let result: any = null;
-  let modelDetails: any = null;
+  let modelDetails: Model | null = null;
+  let result: Model | null = null;
   let lastLayerOutputFeatures: number | null = null;
 
   // Form fields
@@ -17,7 +20,7 @@
   let inFeatures = '';
   let outFeatures = '';
 
-  // Reactive statement to get modelId from URL params
+  // Get modelId from URL parameters
   $: modelId = $page.url.searchParams.get('modelId');
 
   // Fetch model details when modelId changes
@@ -25,6 +28,7 @@
     fetchModelDetails();
   }
 
+  // Fetches model details from the server and updates layer information
   async function fetchModelDetails() {
     if (!modelId) return;
     
@@ -32,33 +36,40 @@
       const response = await client.query({
         query: GET_MODEL,
         variables: { id: modelId },
-        fetchPolicy: 'network-only' // Always fetch fresh data
+        fetchPolicy: 'network-only'
       });
       
       modelDetails = response.data?.getModel;
-      
-      // Extract the output features from the last layer
-      if (modelDetails?.layers_config && modelDetails.layers_config.length > 0) {
-        const lastLayer = modelDetails.layers_config[modelDetails.layers_config.length - 1];
-        // Handle different layer types - for linear layers, get from the linear config
-        if (lastLayer.type === 'linear') {
-          lastLayerOutputFeatures = lastLayer.out_features;
-        }
-        // Add handling for other layer types as needed
-        
-        // Auto-populate input features if this is not the first layer
-        if (lastLayerOutputFeatures && !inFeatures) {
-          inFeatures = lastLayerOutputFeatures.toString();
-        }
-      } else {
-        lastLayerOutputFeatures = null;
-      }
+      updateLastLayerInfo();
     } catch (err) {
-      console.error('Error fetching model details:', err);
       error = 'Failed to fetch model details';
     }
   }
 
+  
+  //Updates the last layer output features and auto-populates input features
+  function updateLastLayerInfo() {
+    if (modelDetails?.layers_config && modelDetails.layers_config.length > 0) {
+      const lastLayer: LayerConfig = modelDetails.layers_config[modelDetails.layers_config.length - 1];
+      
+      if (lastLayer.type === 'linear') {
+        const linearLayer = lastLayer as LinearLayerConfig;
+        lastLayerOutputFeatures = linearLayer.out_features;
+        
+        // Auto-populate input features for the next layer
+        if (!inFeatures) {
+          inFeatures = lastLayerOutputFeatures.toString();
+        }
+      }
+    } else {
+      lastLayerOutputFeatures = null;
+    }
+  }
+
+  /**
+   * Validates the form fields
+   * @returns Error message or null if valid
+   */
   function validateForm(): string | null {
     if (!layerType.trim()) return 'Layer type is required';
     
@@ -72,7 +83,7 @@
       return 'Output features must be a positive number';
     }
 
-    // Validate that input features match the previous layer's output features
+    // Check if input features match previous layer's output
     if (lastLayerOutputFeatures !== null && inFeaturesNum !== lastLayerOutputFeatures) {
       return `Input features (${inFeaturesNum}) must match the previous layer's output features (${lastLayerOutputFeatures})`;
     }
@@ -80,12 +91,14 @@
     return null;
   }
 
+  // Appends a new layer to the model
   async function appendLayer() {
     if (!modelId) {
       error = 'Model ID is missing from URL parameters';
       return;
     }
 
+    // Validate form before proceeding
     const validationError = validateForm();
     if (validationError) {
       error = validationError;
@@ -97,30 +110,28 @@
     result = null;
 
     try {
+      // Parse form values
       const inFeaturesNum = parseInt(inFeatures, 10);
       const outFeaturesNum = parseInt(outFeatures, 10);
       const layerNameValue = layerName.trim() || `${layerType}Layer`;
-      
-      console.log('Using mutation with variables:', {
-        modelId,
-        type: layerType.trim(),
-        name: layerNameValue,
-        inFeatures: inFeaturesNum,
-        outFeatures: outFeaturesNum
-      });
 
+      // Create typed layer configuration
+      const linearConfig: LinearLayerConfigInput = {
+        name: layerNameValue,
+        in_features: inFeaturesNum,
+        out_features: outFeaturesNum
+      };
+
+      const layerConfig: LayerConfigInput = {
+        type: layerType.trim(),
+        linear: linearConfig
+      };
+
+      // Execute mutation
       const res = await client.mutate({
         mutation: APPEND_LINEAR_LAYER,
-        variables: { 
-          modelId,
-          type: layerType.trim(),
-          inFeatures: inFeaturesNum,
-          outFeatures: outFeaturesNum,
-          name: layerNameValue
-        }
+        variables: { modelId, layerConfig }
       });
-      
-      console.log('Mutation response:', res);
       
       if (!res.data?.appendLayer) {
         throw new Error('Failed to append layer - no data returned');
@@ -128,22 +139,30 @@
       
       result = res.data.appendLayer;
       
-      // Update the last layer output features for the next layer
+      // Update state for next layer
       lastLayerOutputFeatures = outFeaturesNum;
-      
-      // Reset form for next layer, but keep input features as the current output features
-      layerName = '';
-      inFeatures = outFeaturesNum.toString();
-      outFeatures = '';
+      resetFormForNextLayer(outFeaturesNum);
       
       // Refresh model details
       await fetchModelDetails();
     } catch (err: any) {
-      console.error('Apollo Error:', err);
-      error = err.message || err.toString() || 'Unknown error occurred';
+      error = err.message || 'Unknown error occurred';
     } finally {
       loading = false;
     }
+  }
+
+  // Resets form fields for adding the next layer
+  function resetFormForNextLayer(previousOutputFeatures: number) {
+    layerName = '';
+    inFeatures = previousOutputFeatures.toString();
+    outFeatures = '';
+  }
+
+  // Clears result and error messages
+  function clearMessages() {
+    result = null;
+    error = null;
   }
 </script>
 
@@ -151,6 +170,7 @@
   <h1 class="text-3xl font-bold mb-6">Append Linear Layer</h1>
 
   {#if !modelId}
+    <!-- No Model ID Error -->
     <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
       <p>No model ID provided in the URL.</p>
       <p class="mt-2">
@@ -161,10 +181,12 @@
     </div>
   {:else}
     <div class="space-y-6">
+      <!-- Model Information -->
       <p class="text-gray-700">
         Adding layer to model ID: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{modelId}</span>
       </p>
       
+      <!-- Current Model Structure -->
       {#if modelDetails}
         <div class="bg-blue-50 p-4 rounded-md">
           <h3 class="font-semibold text-blue-800 mb-2">Current Model Structure</h3>
@@ -186,7 +208,9 @@
         </div>
       {/if}
       
+      <!-- Layer Configuration Form -->
       <form on:submit|preventDefault={appendLayer} class="space-y-4 max-w-md">
+        <!-- Layer Type -->
         <div>
           <label for="layerType" class="block text-sm font-medium text-gray-700 mb-1">
             Layer Type <span class="text-red-500">*</span>
@@ -199,11 +223,10 @@
             disabled={loading}
           >
             <option value="linear">Linear</option>
-            <option value="conv2d">Conv2D</option>
-            <option value="dropout">Dropout</option>
           </select>
         </div>
 
+        <!-- Layer Name -->
         <div>
           <label for="layerName" class="block text-sm font-medium text-gray-700 mb-1">
             Layer Name <span class="text-gray-400">(optional)</span>
@@ -218,6 +241,7 @@
           />
         </div>
 
+        <!-- Input Features -->
         <div>
           <label for="inFeatures" class="block text-sm font-medium text-gray-700 mb-1">
             Input Features <span class="text-red-500">*</span>
@@ -243,6 +267,7 @@
           {/if}
         </div>
 
+        <!-- Output Features -->
         <div>
           <label for="outFeatures" class="block text-sm font-medium text-gray-700 mb-1">
             Output Features <span class="text-red-500">*</span>
@@ -259,6 +284,7 @@
           />
         </div>
 
+        <!-- Submit Button -->
         <button 
           type="submit"
           disabled={loading}
@@ -268,43 +294,24 @@
         </button>
       </form>
 
-      {#if modelDetails && modelDetails.layers_config && modelDetails.layers_config.length > 0}
-        <div class="mt-4">
-          <a 
-            href={`/train-config?modelId=${modelId}`}
-            class="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-purple-700 text-white rounded-lg hover:from-purple-700 hover:to-purple-800 transition-all duration-200 shadow-lg hover:shadow-xl"
-          >
-            <span class="flex items-center">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
-              </svg>
-              Configure Training Settings
-            </span>
-          </a>
-          <p class="text-sm text-gray-600 mt-2">
-            Ready to configure training? Your model has {modelDetails.layers_config.length} layer{modelDetails.layers_config.length !== 1 ? 's' : ''}.
-          </p>
-        </div>
-      {/if}
-
+      <!-- Error Message -->
       {#if error}
         <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
           {error}
         </div>
       {/if}
 
+      <!-- Success Message -->
       {#if result}
         <div class="mt-6">
           <h2 class="text-2xl font-semibold mb-3 text-green-700">
             Layer Added Successfully
           </h2>
-          <div class="bg-gray-100 p-4 rounded-md overflow-auto">
-            <pre class="text-sm">{JSON.stringify(result, null, 2)}</pre>
-          </div>
-          
+
+          <!-- Action Buttons -->
           <div class="mt-4 space-x-3">
             <button 
-              on:click={() => { result = null; error = null; }}
+              on:click={clearMessages}
               class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
               Add Another Layer
