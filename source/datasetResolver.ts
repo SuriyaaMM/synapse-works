@@ -23,6 +23,22 @@ export const datasetHandlers: DatasetHandlerMap = {
             download: mnist.download
         };
         return newDataset;
+    },
+    "cifar10": (dataset: DatasetConfigInput) => {
+        // destructure the dataset
+        const {split_length, shuffle, cifar10} = dataset;
+        // if mnistConfig is not found, report error
+        if(!cifar10) throw new Error("[synapse][graphql]: cifar10 config is missing");
+        // create MNISTDataset object & return it
+        const newDataset: MNISTDatasetConfig = {
+            name: "cifar10",
+            split_length: split_length,
+            shuffle: shuffle,
+            root: cifar10.root,
+            train: cifar10.train,
+            download: cifar10.download
+        };
+        return newDataset;
     }
 }
 

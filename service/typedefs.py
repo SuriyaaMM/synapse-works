@@ -84,7 +84,12 @@ class MNISTDatasetConfig(TypedDict):
     train: Optional[bool]
     download: Optional[bool]
 
-DatasetKwargs_T = Union[MNISTDatasetConfig]
+class CIFAR10DatasetConfig(TypedDict):
+    root: str
+    train: Optional[bool]
+    download: Optional[bool]
+
+DatasetKwargs_T = Union[MNISTDatasetConfig, CIFAR10DatasetConfig]
 
 class DataLoaderConfig(TypedDict):
     batch_size: Optional[int]
@@ -105,4 +110,13 @@ class TSMNISTDatasetInput(TypedDict):
     train: Optional[bool]
     download: Optional[bool]
 
-TSDatasetInput = Union[TSMNISTDatasetInput]
+class TSCIFAR10DatasetInput(TypedDict):
+    name: str
+    batch_size: Optional[int]
+    split_length: Optional[list[float]]
+    shuffle: Optional[bool]
+    root: str
+    train: Optional[bool]
+    download: Optional[bool]
+
+TSDatasetInput = Union[TSMNISTDatasetInput, TSCIFAR10DatasetInput]

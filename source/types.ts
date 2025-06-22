@@ -94,7 +94,19 @@ export interface MNISTDatasetConfig extends DatasetConfig {
     download?: boolean;
 };
 
+export interface CIFAR10DatasetConfig extends DatasetConfig {
+    root: string;
+    train?: boolean;
+    download?: boolean;
+};
+
 export type MNISTDatasetConfigInput = {
+    root: string;
+    train?: boolean;
+    download?: boolean;
+};
+
+export type CIFAR10DatasetConfigInput = {
     root: string;
     train?: boolean;
     download?: boolean;
@@ -106,6 +118,7 @@ export type DatasetConfigInput  = {
     split_length?: number[];
     shuffle?: boolean;
     mnist?: MNISTDatasetConfigInput
+    cifar10?: CIFAR10DatasetConfigInput
 };
 
 // ------------------------------- Model ----------------------------------
