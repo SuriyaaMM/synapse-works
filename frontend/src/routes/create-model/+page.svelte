@@ -1,17 +1,20 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import client from '$lib/apolloClient';
-  import { CREATE_MODEL} from '$lib/mutations';
-  import { GET_MODELS} from '$lib/queries';
+  import { CREATE_MODEL } from '$lib/mutations';
+  import { GET_MODELS } from '$lib/queries';
   import { onMount } from 'svelte';
-  import { page } from '$app/stores';
+  
+  import type { Model, CreateModelArgs } from '../../../../source/types';
 
-  let modelName = '';
-  let loading = false;
+  // Form state
+  let modelName: string = '';
+  let loading: boolean = false;
   let error: string | null = null;
-  let models = [];
+  let models: Model[] = [];
 
-  async function createModel() {
+  // Create new model and navigate to layer configuration
+  async function createModel(): Promise<void> {
     if (!modelName.trim()) {
       error = 'Please enter a model name';
       return;
@@ -21,16 +24,21 @@
     error = null;
 
     try {
+      const createModelArgs: CreateModelArgs = { 
+        name: modelName.trim() 
+      };
+
       const res = await client.mutate({
         mutation: CREATE_MODEL,
-        variables: { name: modelName.trim() }
+        variables: createModelArgs
       });
 
-      const model = res.data?.createModel;
+      const model: Model | undefined = res.data?.createModel;
       if (!model?.id) {
         throw new Error('Model creation failed - no ID returned');
       }
 
+      // Navigate to layer configuration page
       await goto(`/append-layer?modelId=${model.id}`);
     } catch (err: any) {
       console.error('Apollo Error:', err);
@@ -40,7 +48,8 @@
     }
   }
 
-  async function loadModels() {
+  // Load existing models from server
+  async function loadModels(): Promise<void> {
     try {
       const res = await client.query({
         query: GET_MODELS,
@@ -52,6 +61,7 @@
     }
   }
 
+  // Load models on component mount
   onMount(() => {
     loadModels();
   });
@@ -64,7 +74,6 @@
     <div class="w-10 h-10 rounded-full border border-gray-600 flex items-center justify-center">
       👤
     </div>
-
   </div>
 
   <!-- Main content -->
@@ -77,7 +86,7 @@
         <input
           type="text"
           bind:value={modelName}
-          placeholder="enter the model name"
+          placeholder="Enter the model name"
           required
           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
           disabled={loading}
@@ -88,7 +97,7 @@
           disabled={loading || !modelName.trim()}
           class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Creating...' : 'Create'}
+          {loading ? 'Creating...' : 'Create Model'}
         </button>
 
         {#if error}
@@ -99,18 +108,42 @@
       </form>
     </div>
 
-    <!-- Right Panel: Display Models -->
+    <!-- Right Panel: Existing Models -->
     <div class="w-1/2 p-6">
       <h2 class="text-xl font-semibold mb-4">Your Models</h2>
 
       {#if models.length === 0}
-        <p class="text-gray-500">No models found.</p>
+        <p class="text-gray-500">No models found. Create your first model to get started!</p>
       {:else}
-        <ul class="space-y-2">
+        <div class="space-y-3">
           {#each models as model}
-            <li class="p-2 bg-gray-100 rounded border">{model.name}</li>
+            <div class="p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors">
+              <div class="flex justify-between items-start">
+                <div>
+                  <h3 class="font-semibold text-lg">{model.name}</h3>
+                  <p class="text-sm text-gray-600">ID: {model.id}</p>
+                  <p class="text-sm text-gray-600">
+                    Layers: {model.layers_config?.length || 0}
+                  </p>
+                  {#if model.dataset_config}
+                    <p class="text-sm text-gray-600">
+                      Dataset: {model.dataset_config.name}
+                    </p>
+                  {/if}
+                </div>
+                <div class="flex flex-col gap-2">
+                  <!-- Navigate to layer configuration -->
+                  <button
+                    on:click={() => goto(`/append-layer?modelId=${model.id}`)}
+                    class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
+                  >
+                    Add Layer
+                  </button>
+                </div>
+              </div>
+            </div>
           {/each}
-        </ul>
+        </div>
       {/if}
     </div>
   </div>

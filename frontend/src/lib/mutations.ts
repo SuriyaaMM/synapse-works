@@ -15,21 +15,11 @@ export const CREATE_MODEL = gql`
 export const APPEND_LINEAR_LAYER = gql`
   mutation AddMyLinearLayer(
     $modelId: ID!
-    $type: String!
-    $inFeatures: Int!
-    $outFeatures: Int!
-    $name: String!
+    $layerConfig: LayerConfigInput!
   ) {
     appendLayer(
       model_id: $modelId
-      layer_config: {
-        type: $type
-        linear: {
-          in_features: $inFeatures
-          out_features: $outFeatures
-          name: $name
-        }
-      }
+      layer_config: $layerConfig
     ) {
       id
       name
@@ -51,7 +41,7 @@ export const SET_TRAIN_CONFIG = gql`
     $modelId: ID!
     $epochs: Int!
     $optimizer: String!
-    $lr: Float!
+    $optimizerConfig: OptimizerConfigInput!
     $loss_function: String!
   ) {
     setTrainConfig(
@@ -59,9 +49,7 @@ export const SET_TRAIN_CONFIG = gql`
       train_config: {
         epochs: $epochs
         optimizer: $optimizer
-        optimizer_config: {
-          lr: $lr
-        }
+        optimizer_config: $optimizerConfig
         loss_function: $loss_function
       }
     ) {
@@ -91,27 +79,11 @@ export const SET_TRAIN_CONFIG = gql`
 export const SET_DATASET_CONFIG = gql`
   mutation SetMyDatasetConfig(
     $modelId: ID!
-    $name: String!
-    $batchSize: Int!
-    $shuffle: Boolean!
-    $splitLength: [Float!]!
-    $mnistRoot: String!
-    $mnistTrain: Boolean!
-    $mnistDownload: Boolean!
+    $datasetConfig: DatasetConfigInput!
   ) {
     setDataset(
       model_id: $modelId 
-      dataset_config: {
-        name: $name
-        batch_size: $batchSize
-        shuffle: $shuffle
-        split_length: $splitLength            
-        mnist: {
-          root: $mnistRoot
-          train: $mnistTrain
-          download: $mnistDownload
-        }
-      }
+      dataset_config: $datasetConfig
     ) {
       id
       name
