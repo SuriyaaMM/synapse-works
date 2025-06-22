@@ -175,7 +175,7 @@
 </script>
 
 <div class="container mx-auto p-1">
-  <h1 class="text-3xl font-bold mb-4">Append Linear Layer</h1>
+  <h1 class="text-3xl font-bold mb-4">Add Layer</h1>
 
   {#if !modelId}
     <!-- No Model ID Error -->

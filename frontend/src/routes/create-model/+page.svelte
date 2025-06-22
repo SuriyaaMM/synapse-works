@@ -70,7 +70,13 @@
 <div class="h-screen flex flex-col p-6">
   <!-- Header -->
   <div class="flex justify-between items-center mb-6">
-    <h1 class="text-3xl font-bold">Welcome to Synapse Works</h1>
+    <!-- Left-aligned Icon + Title -->
+    <div class="flex items-center space-x-3">
+      <img src="/brain.png" alt="Brain Icon" class="w-8 h-8" />
+      <h1 class="text-3xl font-bold">Synapse Works</h1>
+    </div>
+
+    <!-- Right-aligned Profile Icon -->
     <div class="w-10 h-10 rounded-full border border-gray-600 flex items-center justify-center">
       👤
     </div>
