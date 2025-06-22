@@ -165,6 +165,8 @@ export const typeDefs = `#graphql
         train(
             model_id: ID!
         ): Model!
+        # start tensorboard
+        startTensorboard() : String!
     }
 `
 
