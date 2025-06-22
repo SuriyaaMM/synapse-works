@@ -5,7 +5,7 @@
   import { TRAIN_MODEL } from '$lib/mutations';
   import { GET_MODEL, GET_TRAINING_STATUS } from '$lib/queries';
 
-  import type { Model, TrainStatus } from '../../../../source/types';
+  import type { Model, TrainStatus } from '../../../../../../source/types';
   
   let modelId: string | null = null;
   let loading = false;
@@ -14,9 +14,18 @@
   let modelDetails: Model | null = null;
   let trainingStatus: TrainStatus | null = null;
   let statusInterval: any = null;
+  let stoppedByUser = false;
 
-  // Reactive statement to get modelId from URL params
-  $: modelId = $page.url.searchParams.get('modelId');
+  // Extract modelId from URL path instead of query parameters
+  $: {
+    const pathParts = $page.url.pathname.split('/');
+    const modelIndex = pathParts.indexOf('model');
+    if (modelIndex !== -1 && modelIndex + 1 < pathParts.length) {
+      modelId = pathParts[modelIndex + 1];
+    } else {
+      modelId = null;
+    }
+  }
 
   // Fetch model details when modelId changes
   $: if (modelId) {
@@ -77,6 +86,28 @@
     } catch (err) {
       console.error('Error checking training status:', err);
     }
+  }
+
+  function stopTraining() {
+    // Stop polling
+    if (statusInterval) {
+      clearInterval(statusInterval);
+      statusInterval = null;
+    }
+    
+    // Reset training state
+    training = false;
+    stoppedByUser = true;  // Add this line
+    
+    // Reset training status
+    if (trainingStatus) {
+      trainingStatus = {
+        ...trainingStatus,
+        completed: true
+      };
+    }
+    
+    console.log('Training stopped by user');
   }
 
   function startStatusPolling() {
@@ -165,6 +196,7 @@
     loading = true;
     training = true;
     error = null;
+    stoppedByUser = false;
 
     try {
       const res = await client.mutate({
@@ -244,10 +276,6 @@
     </div>
   {:else}
     <div class="space-y-6">
-      <p class="text-gray-700">
-        Training model ID: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{modelId}</span>
-      </p>
-      
       {#if modelDetails}
         <div class="bg-blue-50 p-4 rounded-md">
           <h3 class="font-semibold text-blue-800 mb-2">Model Overview</h3>
@@ -386,19 +414,19 @@
           >
             {loading ? 'Starting Training...' : '🚀 Start Training'}
           </button>
-          <a 
-          href={`/dataset-config?modelId=${modelId}`}
-          class="px-6 py-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          ⚙️ Back to Dataset Config
-        </a>
-
-        <a 
-          href="/create-model"
-          class="px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          ➕ Create New Model
-        </a>
+        {:else if training && !trainingStatus?.completed}
+          <button 
+            on:click={stopTraining}
+            class="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            🛑 Stop Training
+          </button>
+          
+          {#if stoppedByUser}
+            <div class="mt-3 p-3 bg-orange-100 border border-orange-400 text-orange-700 rounded">
+              <p class="text-sm">⚠️ Training stopped by user</p>
+            </div>
+          {/if}
         {/if}
       </div>
 
@@ -406,29 +434,6 @@
         <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
           <h4 class="font-semibold">Training Error:</h4>
           <p class="mt-1">{error}</p>
-        </div>
-      {/if}
-
-      {#if trainingStatus?.completed}
-        <div class="bg-green-50 p-4 rounded-md">
-          <h3 class="font-semibold text-green-800 mb-3">🎉 Training Complete!</h3>
-          <p class="text-green-700 mb-4">Your model has finished training.</p>
-          
-          <div class="space-x-3">
-            <a 
-          href={`/dataset-config?modelId=${modelId}`}
-          class="px-6 py-4 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
-        >
-          ⚙️ Back to Dataset Config
-        </a>
-
-        <a 
-          href="/create-model"
-          class="px-6 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-        >
-          ➕ Create New Model
-        </a>
-          </div>
         </div>
       {/if}
     </div>

@@ -10,7 +10,7 @@ type DatasetHandlerMap = {
 export const datasetHandlers: DatasetHandlerMap = {
     "mnist": (dataset: DatasetConfigInput) => {
         // destructure the dataset
-        const {split_length, shuffle, batch_size, mnist} = dataset;
+        const {split_length, shuffle, batch_size,mnist} = dataset;
         // if mnistConfig is not found, report error
         if(!mnist) throw new Error("[synapse][graphql]: mnist config is missing");
         // create MNISTDataset object & return it
@@ -18,10 +18,29 @@ export const datasetHandlers: DatasetHandlerMap = {
             name: "mnist",
             split_length: split_length,
             shuffle: shuffle,
+            batch_size: batch_size,
             root: mnist.root,
             train: mnist.train,
+            download: mnist.download,
+            transform: mnist.transform
+        };
+        return newDataset;
+    },
+    "cifar10": (dataset: DatasetConfigInput) => {
+        // destructure the dataset
+        const {split_length, shuffle, batch_size, cifar10} = dataset;
+        // if mnistConfig is not found, report error
+        if(!cifar10) throw new Error("[synapse][graphql]: cifar10 config is missing");
+        // create MNISTDataset object & return it
+        const newDataset: MNISTDatasetConfig = {
+            name: "cifar10",
+            split_length: split_length,
+            shuffle: shuffle,
             batch_size: batch_size,
-            download: mnist.download
+            root: cifar10.root,
+            train: cifar10.train,
+            download: cifar10.download,
+            transform: cifar10.transform
         };
         return newDataset;
     }
