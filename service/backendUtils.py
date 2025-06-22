@@ -104,13 +104,13 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
     function that requires this
     """
     logging.info(f"Received PARAM(dataset_config):\n{json.dumps(dataset_config, indent=4)}")
-
+    #TODO(mms) implement transforms support from str to torchvision.transforms.Compose mapping
     # non optional kwargs
     name: str = dataset_config["name"]
     root: str = dataset_config["root"]
     parsed_dataset_config: DatasetConfig = cast(DatasetConfig, {
         "name": name,
-        "dataloader_config" : {}
+        "dataloader_config" : {"num_workers": 5, "pin_memory" : True}
     }) 
 
     # optional kwargs
@@ -148,6 +148,13 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
     
     # add dataset specific kwargs
     parsed_dataset_config["kwargs"] = kwargs
-    logging.info(f"Parsed PARAM(dataset_config):\n{json.dumps(parsed_dataset_config, indent=4)}")
+    if "transforms" in dataset_config.keys():
+        parsed_dataset_config["kwargs"]["transform"] = torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor()])
+    else:
+        parsed_dataset_config["kwargs"]["transform"] = torchvision.transforms.Compose([
+            torchvision.transforms.ToTensor()])
+        
+    logging.info(f"Parsed PARAM(dataset_config):\n{json.dumps(parsed_dataset_config, indent=4, default=custom_json_encoder)}")
         
     return parsed_dataset_config

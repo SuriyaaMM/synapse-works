@@ -88,6 +88,7 @@ export const typeDefs = `#graphql
         name: String!
         batch_size: Int
         split_length: [Float]
+        transform: [String]
         shuffle: Boolean
         root: String!
         train: Boolean
@@ -98,6 +99,7 @@ export const typeDefs = `#graphql
         batch_size: Int
         split_length: [Float]
         shuffle: Boolean
+        transform: [String]
         root: String!
         train: Boolean
         download: Boolean
@@ -106,11 +108,13 @@ export const typeDefs = `#graphql
         root: String!
         train: Boolean
         download: Boolean
+        transform: [String]
     }
     input CIFAR10DatasetConfigInput {
         root: String!
         train: Boolean
         download: Boolean
+        transform: [String]
     }
     input DatasetConfigInput {
         name: String!

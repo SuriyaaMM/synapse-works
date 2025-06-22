@@ -54,7 +54,7 @@ class TorchModelManager(AbstractModelManager):
 
     def setDatasetConfig(self, dataset_config: DatasetConfig, debug: bool = True):
         self.dataset_config = dataset_config
-        logging.info(f"Set DatasetConfig {json.dumps(dataset_config, indent=4)}")
+        logging.info(f"Set DatasetConfig {json.dumps(dataset_config, indent=4, default=custom_json_encoder)}")
         
     def setTrainConfig(self, train_config: TrainConfig,  debug: bool = True):
         self.train_config: TrainConfig = train_config
@@ -70,9 +70,8 @@ class TorchTrainManager(nn.Module):
         # initialize nn.Module
         super().__init__()
         self.layers = layers
-        self.neuralNet = nn.Sequential(*layers)
-
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
+        self.neuralNet = nn.Sequential(*layers).to(self.device)
 
         optimizerType = torch_optimizer_name_map(train_config["optimizer"])
         
@@ -80,8 +79,7 @@ class TorchTrainManager(nn.Module):
         self.loss_function = torch_loss_function_name_map(train_config["loss_function"], debug)()
         self.epochs = train_config["epochs"]
 
-        # TODO(mms) hardcoded transform here
-        self.dataset = torch_dataset_name_map(dataset_config["name"], debug)(transform=ToTensor(), **dataset_config["kwargs"]) # type:ignore
+        self.dataset = torch_dataset_name_map(dataset_config["name"], debug)(**dataset_config["kwargs"]) # type:ignore
         # split datasets
         self.train_dataset, self.test_dataset = random_split(self.dataset, dataset_config["split_length"])
         # initialize dataloaders
@@ -104,8 +102,8 @@ def _TrainEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]:
     features : torch.Tensor
     labels: torch.Tensor
     for features, labels in train_manager.train_loader:
-        features.to(train_manager.device)
-        labels.to(train_manager.device)
+        features = features.to(train_manager.device)
+        labels = labels.to(train_manager.device)
         output: torch.Tensor = train_manager.forward(features)
         loss: torch.Tensor = train_manager.loss_function(output, labels)
         train_manager.optimizer.zero_grad()
@@ -129,8 +127,8 @@ def _ValidateEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]
 
     with torch.no_grad():
         for features, labels in train_manager.test_loader:
-            features.to(train_manager.device)
-            labels.to(train_manager.device)
+            features = features.to(train_manager.device)
+            labels = labels.to(train_manager.device)
             output: torch.Tensor = train_manager.forward(features)
             loss: torch.Tensor = train_manager.loss_function(output, labels)
             running_loss += loss.item() * features.size(0)

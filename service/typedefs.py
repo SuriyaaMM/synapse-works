@@ -1,4 +1,5 @@
 from typing import TypedDict, Union, Optional, NotRequired, Tuple
+import torchvision
 
 """ ------------------------------------ Layer Config ----------------------------------- """
 class LinearLayerKwargs(TypedDict):
@@ -83,17 +84,21 @@ class MNISTDatasetConfig(TypedDict):
     root: str
     train: Optional[bool]
     download: Optional[bool]
+    transform: torchvision.transforms.Compose
 
 class CIFAR10DatasetConfig(TypedDict):
     root: str
     train: Optional[bool]
     download: Optional[bool]
+    transform: torchvision.transforms.Compose
 
 DatasetKwargs_T = Union[MNISTDatasetConfig, CIFAR10DatasetConfig]
 
 class DataLoaderConfig(TypedDict):
     batch_size: Optional[int]
-    shuffle: Optional[bool] 
+    shuffle: Optional[bool]
+    num_workers: int
+    pin_memory: bool
 
 class DatasetConfig(TypedDict):
     name: str
@@ -106,6 +111,7 @@ class TSMNISTDatasetInput(TypedDict):
     batch_size: Optional[int]
     split_length: Optional[list[float]]
     shuffle: Optional[bool]
+    transforms: list[str]
     root: str
     train: Optional[bool]
     download: Optional[bool]
@@ -115,8 +121,15 @@ class TSCIFAR10DatasetInput(TypedDict):
     batch_size: Optional[int]
     split_length: Optional[list[float]]
     shuffle: Optional[bool]
+    transforms: list[str]
     root: str
     train: Optional[bool]
     download: Optional[bool]
 
 TSDatasetInput = Union[TSMNISTDatasetInput, TSCIFAR10DatasetInput]
+
+
+def custom_json_encoder(obj):
+    if isinstance(obj, (torchvision.transforms.Compose)):
+        return f"{obj.__class__.__name__} is non serializeable"
+    raise TypeError(f"Object of type {obj.__class__.__name__} is not JSON serializable")
