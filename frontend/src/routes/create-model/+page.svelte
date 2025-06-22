@@ -39,7 +39,7 @@
       }
 
       // Navigate to layer configuration page
-      await goto(`/append-layer?modelId=${model.id}`);
+      await goto(`/model/${model.id}/layers`);
     } catch (err: any) {
       console.error('Apollo Error:', err);
       error = err.message || err.toString() || 'Unknown error occurred';
@@ -134,10 +134,10 @@
                 <div class="flex flex-col gap-2">
                   <!-- Navigate to layer configuration -->
                   <button
-                    on:click={() => goto(`/append-layer?modelId=${model.id}`)}
+                    on:click={() => goto(`/model/${model.id}/layers`)}
                     class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
                   >
-                    Add Layer
+                    View
                   </button>
                 </div>
               </div>

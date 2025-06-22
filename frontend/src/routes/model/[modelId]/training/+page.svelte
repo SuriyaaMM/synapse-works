@@ -3,7 +3,7 @@
   import client from '$lib/apolloClient';
   import { SET_TRAIN_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
-  import type { TrainConfig, SetTrainConfigArgs, OptimizerConfig, Model } from '../../../../source/types';
+  import type { TrainConfig, SetTrainConfigArgs, OptimizerConfig, Model } from '../../../../../../source/types';
 
    // State variables
   let modelId: string | null = null;
@@ -45,8 +45,16 @@
     initializeOptimizerConfig();
   }
 
-  // Reactive statement to get modelId from URL params
-  $: modelId = $page.url.searchParams.get('modelId');
+  // Extract modelId from URL path instead of query parameters
+  $: {
+    const pathParts = $page.url.pathname.split('/');
+    const modelIndex = pathParts.indexOf('model');
+    if (modelIndex !== -1 && modelIndex + 1 < pathParts.length) {
+      modelId = pathParts[modelIndex + 1];
+    } else {
+      modelId = null;
+    }
+  }
 
   // Fetch model details when modelId changes
   $: if (modelId) {
@@ -230,10 +238,6 @@
     </div>
   {:else}
     <div class="space-y-6">
-      <p class="text-gray-700">
-        Configuring training for model ID: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{modelId}</span>
-      </p>
-      
       {#if modelDetails}
         <div class="bg-blue-50 p-4 rounded-md">
           <h3 class="font-semibold text-blue-800 mb-2">Model Overview</h3>
@@ -403,13 +407,6 @@
           >
             {loading ? 'Saving Configuration...' : 'Save Training Config'}
           </button>
-          
-          <a 
-            href={`/append-layer?modelId=${modelId}`}
-            class="px-4 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-          >
-            Back to Layers
-          </a>
         </div>
       </form>
 
@@ -445,20 +442,6 @@
                 {/each}
               {/if}
             </div>
-          </div>
-          
-          <div class="mt-4 space-x-3">
-            <a 
-              href={`/dataset-config?modelId=${modelId}`}
-              class="inline-block px-6 py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 transition-all duration-200 shadow-lg hover:shadow-xl"
-            >
-              <span class="flex items-center">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                </svg>
-                Configure Dataset
-              </span>
-            </a>
           </div>
         </div>
       {/if}

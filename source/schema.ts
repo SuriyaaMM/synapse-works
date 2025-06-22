@@ -88,7 +88,18 @@ export const typeDefs = `#graphql
         name: String!
         batch_size: Int
         split_length: [Float]
+        transform: [String]
         shuffle: Boolean
+        root: String!
+        train: Boolean
+        download: Boolean
+    }
+    type CIFAR10DatasetConfig implements DatasetConfig {
+        name: String!
+        batch_size: Int
+        split_length: [Float]
+        shuffle: Boolean
+        transform: [String]
         root: String!
         train: Boolean
         download: Boolean
@@ -97,6 +108,13 @@ export const typeDefs = `#graphql
         root: String!
         train: Boolean
         download: Boolean
+        transform: [String]
+    }
+    input CIFAR10DatasetConfigInput {
+        root: String!
+        train: Boolean
+        download: Boolean
+        transform: [String]
     }
     input DatasetConfigInput {
         name: String!
@@ -104,6 +122,7 @@ export const typeDefs = `#graphql
         split_length: [Float!]
         shuffle: Boolean
         mnist: MNISTDatasetConfigInput
+        cifar10: CIFAR10DatasetConfigInput
     }
     # ---------- Model ----------
     # Model type
@@ -146,6 +165,8 @@ export const typeDefs = `#graphql
         train(
             model_id: ID!
         ): Model!
+        # start tensorboard
+        startTensorboard : String!
     }
 `
 

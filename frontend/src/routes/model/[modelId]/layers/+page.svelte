@@ -4,7 +4,7 @@
   import { APPEND_LINEAR_LAYER } from '$lib/mutations'; 
   import { GET_MODEL } from '$lib/queries';
   
-  import type { Model, LinearLayerConfig, LinearLayerConfigInput, LayerConfig, LayerConfigInput } from '../../../../source/types';
+  import type { Model, LinearLayerConfig, LinearLayerConfigInput, LayerConfig, LayerConfigInput } from '../../../../../../source/types';
 
   // State variables
   let modelId: string | null = null;
@@ -20,8 +20,16 @@
   let inFeatures = '';
   let outFeatures = '';
 
-  // Get modelId from URL parameters
-  $: modelId = $page.url.searchParams.get('modelId');
+  // Extract modelId from URL path instead of query parameters
+  $: {
+    const pathParts = $page.url.pathname.split('/');
+    const modelIndex = pathParts.indexOf('model');
+    if (modelIndex !== -1 && modelIndex + 1 < pathParts.length) {
+      modelId = pathParts[modelIndex + 1];
+    } else {
+      modelId = null;
+    }
+  }
 
   // Fetch model details when modelId changes
   $: if (modelId) {
@@ -166,12 +174,12 @@
   }
 </script>
 
-<div class="container mx-auto p-6">
-  <h1 class="text-3xl font-bold mb-6">Append Linear Layer</h1>
+<div class="container mx-auto p-1">
+  <h1 class="text-3xl font-bold mb-4">Append Linear Layer</h1>
 
   {#if !modelId}
     <!-- No Model ID Error -->
-    <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+    <div class="p-1 bg-red-100 border border-red-400 text-red-700 rounded">
       <p>No model ID provided in the URL.</p>
       <p class="mt-2">
         <a href="/create-model" class="text-blue-600 underline">
@@ -180,15 +188,19 @@
       </p>
     </div>
   {:else}
-    <div class="space-y-6">
-      <!-- Model Information -->
-      <p class="text-gray-700">
-        Adding layer to model ID: <span class="font-mono bg-gray-100 px-2 py-1 rounded">{modelId}</span>
-      </p>
-      
+    <!-- Success Message -->
+    {#if result}
+      <div class="mb-6">
+        <h2 class="text-2xl font-semibold mb-3 text-green-700">
+          Layer Added Successfully
+        </h2>
+      </div>
+    {/if}
+
+    <div class="space-y-2">     
       <!-- Current Model Structure -->
       {#if modelDetails}
-        <div class="bg-blue-50 p-4 rounded-md">
+        <div class="bg-blue-50 p-3 rounded-md">
           <h3 class="font-semibold text-blue-800 mb-2">Current Model Structure</h3>
           <p class="text-sm text-blue-700">
             Layers: {modelDetails.layers_config?.length || 0}
@@ -209,7 +221,7 @@
       {/if}
       
       <!-- Layer Configuration Form -->
-      <form on:submit|preventDefault={appendLayer} class="space-y-4 max-w-md">
+      <form on:submit|preventDefault={appendLayer} class="space-y-2 max-w-md">
         <!-- Layer Type -->
         <div>
           <label for="layerType" class="block text-sm font-medium text-gray-700 mb-1">
@@ -298,37 +310,6 @@
       {#if error}
         <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
           {error}
-        </div>
-      {/if}
-
-      <!-- Success Message -->
-      {#if result}
-        <div class="mt-6">
-          <h2 class="text-2xl font-semibold mb-3 text-green-700">
-            Layer Added Successfully
-          </h2>
-
-          <!-- Action Buttons -->
-          <div class="mt-4 space-x-3">
-            <button 
-              on:click={clearMessages}
-              class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Add Another Layer
-            </button>
-            <a 
-              href={`/train-config?modelId=${modelId}`}
-              class="inline-block px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
-            >
-              Configure Training
-            </a>
-            <a 
-              href="/create-model"
-              class="inline-block px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-            >
-              Create New Model
-            </a>
-          </div>
         </div>
       {/if}
     </div>
