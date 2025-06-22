@@ -76,6 +76,7 @@ export type TrainStatus = {
     epoch: number;
     loss: number;
     accuracy: number;
+    started: boolean;
     completed: boolean;
     timestamp?: string;
 }
