@@ -13,7 +13,7 @@ Architect, Train & Evaluate your Neural Networks in seconds
 ![Training Screen](./assets/Training.png)
 
 ## Getting started
-### Pre-requsities
+### Pre-requsities (Linux/Mac)(Unfortunately WSL is required for running in Windows)
 - [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/install#linux-terminal-installer)
 - [redis-server](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/)
 
@@ -46,7 +46,7 @@ conda create env -f environment.yaml
 ```
 ### Initialize npm modules
 ```bash
-npm install
+npm install && cd frontend && npm install && cd ../
 ```
 
 ## Instructions for Running

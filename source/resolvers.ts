@@ -15,6 +15,7 @@ import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
 import { dequeueMessage } from "./redisClient.js";
 import { spawn } from "child_process";
+import { loadResolver, saveResolver } from "./save.js";
 
 const models: Model[] = [];
 
@@ -129,6 +130,15 @@ export const resolvers = {
         train: async (_:unknown, args: TrainArgs) => {
             return await trainResolver(models, args);
         },
+        // save mutation
+        save: async(_:unknown) => {
+            return await saveResolver(models);
+        },
+        // load mutation
+        load: async(_:unknown) => {
+            return await loadResolver();
+        },
+        // startTensorboard mutation
         startTensorboard: async(_:unknown) => {
             const tb = spawn('tensorboard', ['--logdir', './tbsummary']);
 
@@ -144,7 +154,6 @@ export const resolvers = {
             console.log(`[TensorBoard exited with code ${code}]`);
             });
 
-            // Optional: return the expected URL
             return `http://localhost:6006`;
         }
     }

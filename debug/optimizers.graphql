@@ -1,0 +1,251 @@
+mutation SetAdamTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "adam"
+      optimizer_config: {
+        lr: 0.001
+        betas: [0.9, 0.999] # for adam family
+        weight_decay: 0.0001
+        eps: 1e-8
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        betas
+        weight_decay
+        eps
+      }
+      loss_function
+    }
+  }
+}
+mutation SetAdamWTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "adamw"
+      optimizer_config: {
+        lr: 0.0005
+        betas: [0.9, 0.999]
+        weight_decay: 0.01
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        betas
+        weight_decay
+      }
+      loss_function
+    }
+  }
+}
+
+mutation SetAdadeltaTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "adadelta"
+      optimizer_config: {
+        lr: 1.0
+        rho: 0.9
+        eps: 1e-6
+        weight_decay: 0.0001
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        rho
+        eps
+        weight_decay
+      }
+      loss_function
+    }
+  }
+}
+
+mutation SetAdafactorTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "adafactor"
+      optimizer_config: {
+        lr: 0.01
+        beta2_decay: 0.99
+        eps: 1e-30
+        d: 1e-6
+        weight_decay: 0.0001
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        beta2_decay
+        eps
+        d
+        weight_decay
+      }
+      loss_function
+    }
+  }
+}
+
+mutation SetASGDTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "asgd"
+      optimizer_config: {
+        lr: 0.01
+        lambd: 0.0001
+        alpha: 0.75
+        t0: 1000000.0
+        weight_decay: 0.0001
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        lambd
+        alpha
+        t0
+        weight_decay
+      }
+      loss_function
+    }
+  }
+}
+
+mutation SetLBFGSTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 1 # Typically 1 epoch with LBFGS might mean many internal iterations
+      optimizer: "lbfgs"
+      optimizer_config: {
+        lr: 1.0
+        max_iter: 20
+        max_eval: 25
+        tolerance_grad: 1e-7
+        tolerance_change: 1e-9
+        # history_size is in OptimizerConfig but not in your `optional_keys` for LBFGS
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        max_iter
+        max_eval
+        tolerance_grad
+        tolerance_change
+      }
+      loss_function
+    }
+  }
+}
+
+mutation SetRpropTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "rprop"
+      optimizer_config: {
+        lr: 0.01
+        etas: [0.5, 1.2]
+        step_sizes: [1e-6, 50.0]
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        etas
+        step_sizes
+      }
+      loss_function
+    }
+  }
+}
+
+mutation SetSGDTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 10
+      optimizer: "sgd"
+      optimizer_config: {
+        lr: 0.01
+        momentum: 0.9
+        dampening: 0.0
+        weight_decay: 0.0001
+        nesterov: true
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+        momentum
+        dampening
+        weight_decay
+        nesterov
+      }
+      loss_function
+    }
+  }
+}

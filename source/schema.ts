@@ -455,6 +455,10 @@ export const typeDefs = `#graphql
         train(
             model_id: ID!
         ): Model!
+        # save model
+        save: Boolean
+        # load model
+        load: [Model]!
         # start tensorboard
         startTensorboard : String!
     }

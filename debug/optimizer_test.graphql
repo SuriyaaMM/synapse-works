@@ -1,0 +1,101 @@
+# --- 1. Create the Model ---
+# First, create an empty model to get its ID.
+mutation CreateMyOptimizerTestModel {
+  createModel(name: "OptimizerTestModel") {
+    id
+    name
+    layers_config { # This will be empty initially
+      id
+    }
+  }
+}
+
+# 2. Append Conv2d Layer (replace $modelId with your actual model ID)
+mutation AppendConv2dLayer($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      name: "Conv1"
+      in_channels: 3 # For color images like CIFAR10
+      out_channels: 32
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  ) {
+    id
+    layers_config {
+      id
+      type
+      name
+    }
+  }
+}
+
+# 3. Append MaxPool2d Layer (replace $modelId with your actual model ID)
+mutation AppendMaxPool2dLayer($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      name: "Pool1"
+      kernel_size: [2, 2]
+      stride: [2, 2]
+    }
+  ) {
+    id
+    layers_config {
+      id
+      type
+      name
+    }
+  }
+}
+
+# 4. Append Linear Layer (replace $modelId with your actual model ID)
+# Note: 'in_features' for a linear layer after conv/pool blocks depends on the exact
+# output size, which you'd normally calculate. For testing mutation structure,
+# a placeholder value is used here. Adjust if you need a runnable model.
+mutation AppendLinearLayer($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "linear"
+      name: "Fc1"
+      in_features: 32768 # Placeholder: adjust based on actual input size from previous layers
+      out_features: 10 # For CIFAR10 classes
+    }
+  ) {
+    id
+    layers_config {
+      id
+      type
+      name
+    }
+  }
+}
+
+
+# 5. Set Dataset Configuration (replace $modelId with your actual model ID)
+mutation SetCIFAR10DatasetConfig($modelId: ID!) {
+  setDataset(
+    model_id: $modelId
+    dataset_config: {
+      name: "cifar10"
+      batch_size: 64
+      shuffle: true
+      cifar10: {
+        root: "./data" # Path where dataset will be stored/downloaded
+        train: true # Use the training split
+        download: true # Download if not present
+      }
+    }
+  ) {
+    id
+    dataset_config {
+      name
+      batch_size
+      shuffle
+    }
+  }
+}

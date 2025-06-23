@@ -290,13 +290,95 @@ TSLayerInput = Union[TSLinearLayerInput,
                      TSTanhLayerInput]
 
 """ ------------------------------------ Train Configurations ---------------------------- """
+class AdadeltaOptimizerKwargs_T(TypedDict):
+    lr: float
+    rho: NotRequired[float]
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+class AdafactorOptimizerKwargs_T(TypedDict):
+    lr: float
+    beta2_decay: NotRequired[float]
+    eps: NotRequired[float]
+    d: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+# TODO(mms) adagrad
 class AdamOptimizerKwargs_T(TypedDict):
     lr: float
+    betas: NotRequired[Tuple[float, float]]
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+class AdamWOptimizerKwargs_T(TypedDict):
+    lr: float
+    betas: NotRequired[Tuple[float, float]]
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+class SparseAdamOptimizerKwargs_T(TypedDict):
+    lr: float
+    betas: NotRequired[Tuple[float, float]]
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+class AdamaxOptimizerKwargs_T(TypedDict):
+    lr: float
+    betas: NotRequired[Tuple[float, float]]
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+class ASGDOptimizerKwargs_T(TypedDict):
+    lr: float
+    lambd: NotRequired[float]
+    alpha: NotRequired[float]
+    t0: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+class LBFGSOptimizerKwargs_T(TypedDict):
+    lr: float
+    max_iter: NotRequired[int]
+    max_eval: NotRequired[int]
+    tolerance_grad: NotRequired[int]
+    tolerance_change: NotRequired[int]
+
+class RAdamOptimizerKwargs_T(TypedDict):
+    lr: float
+    betas: NotRequired[Tuple[float, float]]
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+
+class RMSpropOptimizerKwargs_T(TypedDict):
+    lr: float
+    alpha: NotRequired[float]
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+    momentum: NotRequired[float]
+
+class RpropOptimizerKwargs_T(TypedDict):
+    lr: float
+    etas: NotRequired[Tuple[float, float]]
+    step_sizes: NotRequired[Tuple[float, float]]
 
 class SGDOptimizerKwargs_T(TypedDict):
-    momentum: float
+    lr: float
+    momentum: NotRequired[float]
+    dampening: NotRequired[float]
+    weight_decay: NotRequired[float]
+    nesterov: NotRequired[bool]
 
-OptimizerKwargs_T = Union[AdamOptimizerKwargs_T | SGDOptimizerKwargs_T]
+OptimizerKwargs_T = Union[AdadeltaOptimizerKwargs_T,
+                          AdafactorOptimizerKwargs_T,
+                          AdamOptimizerKwargs_T,
+                          AdamWOptimizerKwargs_T,
+                          SparseAdamOptimizerKwargs_T,
+                          AdamaxOptimizerKwargs_T,
+                          ASGDOptimizerKwargs_T,
+                          LBFGSOptimizerKwargs_T,
+                          RAdamOptimizerKwargs_T,
+                          RMSpropOptimizerKwargs_T,
+                          RpropOptimizerKwargs_T,
+                          SGDOptimizerKwargs_T]
 class TrainConfig(TypedDict):
     epochs: int
     optimizer: str
