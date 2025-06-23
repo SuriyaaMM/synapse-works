@@ -64,7 +64,7 @@ def processMessage(message_data, models: list[ModelManager], redis_client: redis
         # handle DESERIALIZE_MODEL
         elif event_type == "DESERIALIZE_MODEL":
             models = deserialize_model_manager()
-            logging.info(f"{models[0].__getstate__()}")
+            logging.info(f"{[model.__getstate__() for model in models]}")
         else:
             print(f"[synapse][redis]: Unknown event type: {event_type}")
     # ----- exceptions

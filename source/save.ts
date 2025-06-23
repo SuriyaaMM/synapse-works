@@ -3,11 +3,11 @@ import { writeFile, readFile, mkdir } from "fs/promises";
 import path  from "path";
 import { enqueueMessage } from "./redisClient.js";
 
-export async function serialize(model: Model, dirname: string = "./savefile") {
+export async function serialize(models: Model[], dirname: string = "./savefile") {
 
-    if(!model) throw new Error(`[synapse][serialization]: Model was empty! nothing to serialize`);
+    if(!models) throw new Error(`[synapse][serialization]: Models was empty! nothing to serialize`);
 
-    const jsonified_model = JSON.stringify(model, null, 4);
+    const jsonified_model = JSON.stringify(models, null, 4);
     const file_path = path.join(dirname, "savefile.json");
 
     await mkdir(dirname, { recursive: true });
@@ -31,10 +31,8 @@ export async function deserialize(dirname: string = "./savefile"){
 }
 
 export async function saveResolver(models: Model[], dirname: string = "./savefile"){
-    for(const model of models){
-        serialize(model, dirname);
-    }
 
+    serialize(models);
     // push message to redis
     console.log(`[synapse][graphql]: Appending to redis message Queue`)
     const message = {
