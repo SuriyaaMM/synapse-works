@@ -4,7 +4,7 @@
   import { SET_DATASET_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
 
-  import type { Model, DatasetConfig, MNISTDatasetConfig, DatasetConfigInput, MNISTDatasetConfigInput } from '../../../../../../source/types';
+  import type { Model, DatasetConfig, MNISTDatasetConfig, DatasetConfigInput, MNISTDatasetConfigInput, CIFAR10DatasetConfigInput, CIFAR10DatasetConfig } from '../../../../../../source/types';
 
   let modelId: string | null = null;
   let loading = false;
@@ -18,14 +18,21 @@
   let shuffle = true;
   let trainSplit = 0.7;
   let testSplit = 0.3;
+
+  // MNIST specific variables
   let mnistRoot = './data/mnist';
   let mnistTrain = true;
   let mnistDownload = true;
 
+  // CIFAR-10 specific variables
+  let cifar10Root = './data/cifar10';
+  let cifar10Train = true;
+  let cifar10Download = true;
+
   // Available dataset options
   const datasetOptions = [
     { value: 'mnist', label: 'MNIST (Handwritten Digits)' },
-    { value: 'cifar10', label: 'CIFAR-10 (Coming Soon)', disabled: true },
+    { value: 'cifar10', label: 'CIFAR-10 (Colored Images)' },
     { value: 'custom', label: 'Custom Dataset (Coming Soon)', disabled: true }
   ];
 
@@ -76,12 +83,20 @@
           testSplit = config.split_length[1];
         }
         
-        // Type assertion for MNIST config
+        // Handle MNIST config
         const mnistConfig = config as MNISTDatasetConfig;
         if (mnistConfig && datasetName === 'mnist') {
           mnistRoot = mnistConfig.root || './data/mnist';
           mnistTrain = mnistConfig.train !== undefined ? mnistConfig.train : true;
           mnistDownload = mnistConfig.download !== undefined ? mnistConfig.download : true;
+        }
+
+        // Handle CIFAR-10 config
+        const cifar10Config = config as CIFAR10DatasetConfig;
+        if (cifar10Config && datasetName === 'cifar10') {
+          cifar10Root = cifar10Config.root || './data/cifar10';
+          cifar10Train = cifar10Config.train !== undefined ? cifar10Config.train : true;
+          cifar10Download = cifar10Config.download !== undefined ? cifar10Config.download : true;
         }
       }
     } catch (err) {
@@ -97,6 +112,7 @@
     if (Math.abs(trainSplit + testSplit - 1.0) > 0.001) return 'Train and test splits must sum to 1.0';
     if (!datasetName.trim()) return 'Dataset name is required';
     if (datasetName === 'mnist' && !mnistRoot.trim()) return 'MNIST root path is required';
+    if (datasetName === 'cifar10' && !cifar10Root.trim()) return 'CIFAR-10 root path is required';
     return null;
   }
 
@@ -131,6 +147,14 @@
               download: mnistDownload
           };
           datasetConfigInput.mnist = mnistConfig;
+        }
+      else if (datasetName === 'cifar10') {
+        const cifar10Config: CIFAR10DatasetConfigInput = {
+          root: cifar10Root,
+          train: cifar10Train,
+          download: cifar10Download
+        };
+        datasetConfigInput.cifar10 = cifar10Config;
       }
 
       const res = await client.mutate({
@@ -341,6 +365,59 @@
           </div>
         {/if}
 
+        <!-- CIFAR-10 Specific Settings -->
+        {#if datasetName === 'cifar10'}
+          <div class="border-t pt-6">
+            <h3 class="text-lg font-semibold text-gray-800 mb-4">CIFAR-10 Dataset Settings</h3>
+            
+            <div class="space-y-4">
+              <div>
+                <label for="cifar10Root" class="block text-sm font-medium text-gray-700 mb-1">
+                  Data Root Path <span class="text-red-500">*</span>
+                </label>
+                <input
+                  id="cifar10Root"
+                  type="text"
+                  bind:value={cifar10Root}
+                  required
+                  placeholder="./data/cifar10"
+                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  disabled={loading}
+                />
+                <p class="text-xs text-gray-500 mt-1">Local path where CIFAR-10 data will be stored</p>
+              </div>
+
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="flex items-center">
+                  <input
+                    id="cifar10Train"
+                    type="checkbox"
+                    bind:checked={cifar10Train}
+                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    disabled={loading}
+                  />
+                  <label for="cifar10Train" class="ml-2 block text-sm text-gray-900">
+                    Use training set
+                  </label>
+                </div>
+
+                <div class="flex items-center">
+                  <input
+                    id="cifar10Download"
+                    type="checkbox"
+                    bind:checked={cifar10Download}
+                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    disabled={loading}
+                  />
+                  <label for="cifar10Download" class="ml-2 block text-sm text-gray-900">
+                    Auto-download if missing
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        {/if}
+
         <div class="flex space-x-3 pt-6">
           <button 
             type="submit"
@@ -363,34 +440,6 @@
           <h2 class="text-2xl font-semibold mb-3 text-green-700">
             Dataset Configuration Saved Successfully
           </h2>
-          <div class="bg-green-50 p-4 rounded-md">
-            <h3 class="font-semibold text-green-800 mb-2">Dataset Summary</h3>
-            <div class="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="font-medium text-green-700">Dataset:</span> {result.dataset_config?.name}
-              </div>
-              <div>
-                <span class="font-medium text-green-700">Batch Size:</span> {result.dataset_config?.batch_size}
-              </div>
-              <div>
-                <span class="font-medium text-green-700">Shuffle:</span> {result.dataset_config?.shuffle ? 'Yes' : 'No'}
-              </div>
-              <div>
-                <span class="font-medium text-green-700">Split:</span> 
-                {#if result.dataset_config?.split_length}
-                  {(result.dataset_config.split_length[0] * 100).toFixed(0)}% train, 
-                  {(result.dataset_config.split_length[1] * 100).toFixed(0)}% test
-                {/if}
-              </div>
-              {#if result.dataset_config && result.dataset_config.name === 'mnist'}
-                {#if (result.dataset_config as MNISTDatasetConfig).root}
-                  <div class="col-span-2">
-                    <span class="font-medium text-green-700">MNIST Root:</span> {(result.dataset_config as MNISTDatasetConfig).root}
-                  </div>
-                {/if}
-              {/if}
-            </div>
-          </div>
         </div>
       {/if}
     </div>

@@ -18,26 +18,105 @@
   let lossFunction = 'ce';
   let optimizerConfig: OptimizerConfig = { lr: 0.001 };
 
-  // Configuration schemas for different optimizers
+  // Configuration schemas for optimizers
   const optimizerConfigs: Record<string, Record<string, any>> = {
+    adadelta: {
+      lr: { type: 'number', default: 1.0, min: 0.001, max: 10, step: 0.001, label: 'Learning Rate' },
+      rho: { type: 'number', default: 0.9, min: 0, max: 1, step: 0.01, label: 'Rho (ρ) - decay rate' },
+      eps: { type: 'number', default: 1e-6, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' },
+      weight_decay: { type: 'number', default: 0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' }
+    },
+    adafactor: {
+      lr: { type: 'number', default: 1e-3, min: 1e-5, max: 1, step: 1e-5, label: 'Learning Rate', format: 'scientific' },
+      eps: { type: 'number', default: 1e-6, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' },
+      weight_decay: { type: 'number', default: 0.0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' },
+      beta2_decay: {type: 'number', default: -0.8, min: -1, max: 0, step: 0.01, label: 'Beta2 Decay (for squared gradient averaging)'},
+      d: {type: 'number', default: 1.0, min: 0.1, max: 10, step: 0.1,label: 'Clipping Threshold (d)'}
+    },
     adam: {
-      lr: { type: 'number', default: 0.001, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' }
+      lr: { type: 'number', default: 0.001, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      eps: { type: 'number', default: 1e-8, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' },
+      weight_decay: { type: 'number', default: 0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' },
+      betas: { type: 'array', default: [0.9, 0.999], label: 'Beta Parameters (β1, β2)', subtype: 'number', min: 0, max: 1, step: 0.001 }
+    },
+    adamw: {
+      lr: { type: 'number', default: 0.001, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      eps: { type: 'number', default: 1e-8, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' },
+      weight_decay: { type: 'number', default: 0.01, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' },
+      betas: { type: 'array', default: [0.9, 0.999], label: 'Beta Parameters (β1, β2)', subtype: 'number', min: 0, max: 1, step: 0.001 }
+    },
+    sparseadam: {
+      lr: { type: 'number', default: 0.001, min: 1e-5, max: 1, step: 1e-5, label: 'Learning Rate', format: 'scientific' },
+      betas: { type: 'array', default: [0.9, 0.999], label: 'Beta Parameters (β1, β2)', subtype: 'number', min: 0, max: 1, step: 0.001 },
+      eps: { type: 'number', default: 1e-8, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' }
+    },
+    adamax: {
+      lr: { type: 'number', default: 0.002, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      betas: { type: 'array', default: [0.9, 0.999], label: 'Beta Parameters (β1, β2)', subtype: 'number', min: 0, max: 1, step: 0.001 },
+      eps: { type: 'number', default: 1e-8, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' },
+      weight_decay: { type: 'number', default: 0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' }
+    },
+    asgd: {
+      lr: { type: 'number', default: 0.01, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      lambd: { type: 'number', default: 0.0001, min: 0, max: 1, step: 0.0001, label: 'Lambda (λ)' },
+      alpha: { type: 'number', default: 0.75, min: 0, max: 1, step: 0.01, label: 'Alpha (α)' },
+      t0: { type: 'number', default: 1000000, min: 1, max: 10000000, step: 1, label: 'T0 (averaging start point)' },
+      weight_decay: { type: 'number', default: 0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' }
+    },
+    lbfgs: {
+      lr: { type: 'number', default: 0.01, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      max_iter: { type: 'number', default: 20, min: 1, max: 1000, step: 1, label: 'Max Iterations' },
+      max_eval: { type: 'number', default: 25, min: 1, max: 1000, step: 1, label: 'Max Function Evaluations' },
+      tolerance_grad: { type: 'number', default: 1e-7, min: 1e-12, max: 1e-3, step: 1e-8, label: 'Gradient Tolerance', format: 'scientific' },
+      tolerance_change: { type: 'number', default: 1e-9, min: 1e-15, max: 1e-3, step: 1e-10, label: 'Change Tolerance', format: 'scientific' },
+      history_size: { type: 'number', default: 100, min: 1, max: 1000, step: 1, label: 'History Size' }
+    },
+    radam: {
+      lr: { type: 'number', default: 0.01, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      betas: { type: 'array', default: [0.9, 0.999], label: 'Beta Parameters (β1, β2)', subtype: 'number', min: 0, max: 1, step: 0.001 },
+      eps: { type: 'number', default: 1e-8, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' },
+      weight_decay: { type: 'number', default: 0.0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' }
+    },
+    rmsprop: {
+      lr: { type: 'number', default: 0.01, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      alpha: { type: 'number', default: 0.99, min: 0, max: 1, step: 0.01, label: 'Alpha (smoothing constant)' },
+      eps: { type: 'number', default: 1e-8, min: 1e-12, max: 1e-4, step: 1e-9, label: 'Epsilon', format: 'scientific' },
+      weight_decay: { type: 'number', default: 0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' },
+      momentum: { type: 'number', default: 0, min: 0, max: 1, step: 0.01, label: 'Momentum' }
+    },
+    rprop: {
+      lr: { type: 'number', default: 0.01, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
+      etas: { type: 'array', default: [0.5, 1.2], label: 'Eta Parameters (η-, η+)', subtype: 'number', min: 0.1, max: 2, step: 0.1 },
+      step_sizes: { type: 'array', default: [1e-6, 50], label: 'Step Size Range (min, max)', subtype: 'number', min: 1e-8, max: 100, step: 0.00000001 }
     },
     sgd: {
       lr: { type: 'number', default: 0.01, min: 0.0001, max: 1, step: 0.0001, label: 'Learning Rate' },
-      momentum: { type: 'number', default: 0, min: 0, max: 1, step: 0.01, label: 'Momentum' }
-    }
+      momentum: { type: 'number', default: 0, min: 0, max: 1, step: 0.01, label: 'Momentum' },
+      dampening: { type: 'number', default: 0, min: 0, max: 1, step: 0.01, label: 'Dampening' },
+      weight_decay: { type: 'number', default: 0, min: 0, max: 1, step: 0.0001, label: 'Weight Decay' },
+      nesterov: { type: 'boolean', default: false, label: 'Nesterov Momentum' }
+    },
   };
 
-  // Dropdown options
+  // Dropdown options for optimizers
   const optimizerOptions = [
+    { value: 'adadelta', label: 'Adadelta' },
+    { value: 'adafactor', label: 'Adafactor' },
     { value: 'adam', label: 'Adam' },
+    { value: 'adamw', label: 'AdamW' },
+    { value: 'sparseadam', label: 'SparseAdam' },
+    { value: 'adamax', label: 'Adamax' },
+    { value: 'asgd', label: 'ASGD (Averaged Stochastic Gradient Descent)' },
+    { value: 'lbfgs', label: 'L-BFGS' },
+    { value: 'radam', label: 'RAdam' },
+    { value: 'rmsprop', label: 'RMSprop' },
+    { value: 'rprop', label: 'Rprop' },
     { value: 'sgd', label: 'SGD (Stochastic Gradient Descent)' }
   ];
 
   const lossFunctionOptions = [
     { value: 'ce', label: 'Cross Entropy' },
-    { value: 'mse', label: 'Mean Squared Error' }
+    { value: 'bce', label: 'Binary Cross Entropy' }
   ];
 
   // Initialize optimizer config when optimizer changes
@@ -68,8 +147,10 @@
     const newConfig: OptimizerConfig = { lr: 0.001 };
     Object.entries(config).forEach(([key, paramConfig]) => {
       // Keep existing value if it exists, otherwise use default
-      if (optimizerConfig[key] === undefined) {
-        (newConfig as any)[key] = paramConfig.default;
+      if ((optimizerConfig as any)[key] === undefined) {
+        (newConfig as any)[key] = Array.isArray(paramConfig.default) 
+          ? [...paramConfig.default] 
+          : paramConfig.default;
       } else {
         (newConfig as any)[key] = (optimizerConfig as any)[key];
       }
@@ -139,13 +220,28 @@
     const config = optimizerConfigs[optimizer as keyof typeof optimizerConfigs];
     if (config) {
       for (const [key, paramConfig] of Object.entries(config)) {
-        const value = optimizerConfig[key];
+        const value = (optimizerConfig as any)[key];
+        
         if (paramConfig.type === 'number') {
           if (typeof value !== 'number' || isNaN(value)) {
             return `${paramConfig.label} must be a valid number`;
           }
           if (value < paramConfig.min || value > paramConfig.max) {
             return `${paramConfig.label} must be between ${paramConfig.min} and ${paramConfig.max}`;
+          }
+        } else if (paramConfig.type === 'array') {
+          if (!Array.isArray(value)) {
+            return `${paramConfig.label} must be an array`;
+          }
+          if (paramConfig.subtype === 'number') {
+            for (let i = 0; i < value.length; i++) {
+              if (typeof value[i] !== 'number' || isNaN(value[i])) {
+                return `${paramConfig.label}[${i}] must be a valid number`;
+              }
+              if (value[i] < paramConfig.min || value[i] > paramConfig.max) {
+                return `${paramConfig.label}[${i}] must be between ${paramConfig.min} and ${paramConfig.max}`;
+              }
+            }
           }
         }
       }
@@ -162,66 +258,65 @@
     return parseFloat(value) || 0;
   }
 
+  function updateArrayValue(key: string, index: number, value: string) {
+    const currentArray = (optimizerConfig as any)[key] as number[] || [];
+    const numValue = parseFloat(value);
+    if (!isNaN(numValue)) {
+      currentArray[index] = numValue;
+      optimizerConfig = { ...optimizerConfig, [key]: [...currentArray] };
+    }
+  }
+
   async function setTrainingConfig() {
-  if (!modelId) {
-    error = 'Model ID is missing from URL parameters';
-    return;
-  }
+    if (!modelId) {
+      error = 'Model ID is missing from URL parameters';
+      return;
+    }
 
-  const validationError = validateForm();
-  if (validationError) {
-    error = validationError;
-    return;
-  }
-  
-  loading = true;
-  error = null;
-  result = null;
-
-  try {
-    // Clean the optimizer config to remove Apollo Client fields like __typename
-    const cleanOptimizerConfig = Object.fromEntries(
-      Object.entries(optimizerConfig).filter(([key]) => !key.startsWith('__'))
-    );
-
-    const setTrainConfigArgs: SetTrainConfigArgs = {
-      model_id: modelId,
-      train_config: {
-        epochs,
-        optimizer,
-        optimizer_config: cleanOptimizerConfig,
-        loss_function: lossFunction
-      }
-    };
-
-    const res = await client.mutate({
-      mutation: SET_TRAIN_CONFIG,
-      variables: {
-        modelId,
-        epochs,
-        optimizer,
-        optimizerConfig: cleanOptimizerConfig, // Use cleaned config here too
-        loss_function: lossFunction
-      }
-    });
-
-    console.log('Set training config response:', res);
-
-    if (!res.data?.setTrainConfig) {
-      throw new Error('Failed to set training configuration - no data returned');
+    const validationError = validateForm();
+    if (validationError) {
+      error = validationError;
+      return;
     }
     
-    result = res.data.setTrainConfig;
-    
-    // Refresh model details
-    await fetchModelDetails();
-  } catch (err: any) {
-    console.error('Apollo Error:', err);
-    error = err.message || err.toString() || 'Unknown error occurred';
-  } finally {
-    loading = false;
+    loading = true;
+    error = null;
+    result = null;
+
+    try {
+      // Clean the optimizer config to remove Apollo Client fields like __typename
+      const cleanOptimizerConfig = Object.fromEntries(
+        Object.entries(optimizerConfig).filter(([key]) => !key.startsWith('__'))
+      );
+
+      const res = await client.mutate({
+        mutation: SET_TRAIN_CONFIG,
+        variables: {
+          modelId,
+          epochs,
+          optimizer,
+          optimizerConfig: cleanOptimizerConfig,
+          loss_function: lossFunction
+        }
+      });
+
+      console.log('Set training config response:', res);
+
+      if (!res.data?.setTrainConfig) {
+        throw new Error('Failed to set training configuration - no data returned');
+      }
+      
+      result = res.data.setTrainConfig;
+      
+      // Refresh model details
+      await fetchModelDetails();
+    } catch (err: any) {
+      console.error('Apollo Error:', err);
+      error = err.message || err.toString() || 'Unknown error occurred';
+    } finally {
+      loading = false;
+    }
   }
-}
 </script>
 
 <div class="container mx-auto p-6">
@@ -261,7 +356,7 @@
                   </span>
                   <span class="text-xs text-gray-600">
                     {layer.type}
-                    {#if layer.type === 'linear'}
+                    {#if layer.type === 'linear' && 'in_features' in layer && 'out_features' in layer}
                       ({layer.in_features} → {layer.out_features})
                     {/if}
                   </span>
@@ -272,7 +367,7 @@
         {/if}
       {/if}
       
-      <form on:submit|preventDefault={setTrainingConfig} class="space-y-6 max-w-2xl">
+      <form on:submit|preventDefault={setTrainingConfig} class="space-y-6 max-w-4xl">
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label for="epochs" class="block text-sm font-medium text-gray-700 mb-1">
@@ -336,7 +431,7 @@
             </h3>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               {#each Object.entries(optimizerConfigs[optimizer]) as [paramKey, paramConfig]}
-                <div>
+                <div class="{paramConfig.type === 'array' ? 'md:col-span-2' : ''}">
                   <label for={paramKey} class="block text-sm font-medium text-gray-700 mb-1">
                     {paramConfig.label}
                     <span class="text-red-500">*</span>
@@ -347,20 +442,20 @@
                       <input
                         id={paramKey}
                         type="text"
-                        bind:value={optimizerConfig[paramKey]}
+                        bind:value={(optimizerConfig as any)[paramKey]}
                         class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-mono"
                         disabled={loading}
                         placeholder={formatScientificNumber(paramConfig.default)}
                         on:input={(e) => {
-                          const val = parseFloat(e.target.value);
-                          if (!isNaN(val)) optimizerConfig[paramKey] = val;
+                          const val = parseFloat((e.target as HTMLInputElement).value);
+                          if (!isNaN(val)) (optimizerConfig as any)[paramKey] = val;
                         }}
                       />
                     {:else}
                       <input
                         id={paramKey}
                         type="number"
-                        bind:value={optimizerConfig[paramKey]}
+                        bind:value={(optimizerConfig as any)[paramKey]}
                         step={paramConfig.step}
                         min={paramConfig.min}
                         max={paramConfig.max}
@@ -373,13 +468,33 @@
                       <input
                         id={paramKey}
                         type="checkbox"
-                        bind:checked={optimizerConfig[paramKey]}
+                        bind:checked={(optimizerConfig as any)[paramKey]}
                         class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
                         disabled={loading}
                       />
                       <label for={paramKey} class="ml-2 text-sm text-gray-600">
                         Enable {paramConfig.label}
                       </label>
+                    </div>
+                  {:else if paramConfig.type === 'array'}
+                    <div class="space-y-2">
+                      {#each ((optimizerConfig as any)[paramKey] || paramConfig.default) as arrayValue, arrayIndex}
+                        <div class="flex items-center space-x-2">
+                          <span class="text-sm text-gray-600 min-w-[60px]">
+                            [{arrayIndex}]:
+                          </span>
+                          <input
+                            type="number"
+                            value={arrayValue}
+                            step={paramConfig.step}
+                            min={paramConfig.min}
+                            max={paramConfig.max}
+                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            disabled={loading}
+                            on:input={(e) => updateArrayValue(paramKey, arrayIndex, (e.target as HTMLInputElement).value)}
+                          />
+                        </div>
+                      {/each}
                     </div>
                   {/if}
                   
@@ -391,6 +506,8 @@
                       {/if}
                     {:else if paramConfig.type === 'boolean'}
                       Default: {paramConfig.default ? 'Enabled' : 'Disabled'}
+                    {:else if paramConfig.type === 'array'}
+                      Each value: {paramConfig.min} - {paramConfig.max}
                     {/if}
                   </p>
                 </div>
@@ -421,28 +538,6 @@
           <h2 class="text-2xl font-semibold mb-3 text-green-700">
             Training Configuration Saved Successfully
           </h2>
-          <div class="bg-green-50 p-4 rounded-md">
-            <h3 class="font-semibold text-green-800 mb-2">Configuration Summary</h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="font-medium text-green-700">Epochs:</span> {result.train_config?.epochs}
-              </div>
-              <div>
-                <span class="font-medium text-green-700">Optimizer:</span> {result.train_config?.optimizer}
-              </div>
-              <div>
-                <span class="font-medium text-green-700">Loss Function:</span> {result.train_config?.loss_function}
-              </div>
-              {#if result.train_config?.optimizer_config}
-                {#each Object.entries(result.train_config.optimizer_config) as [key, value]}
-                  <div>
-                    <span class="font-medium text-green-700 capitalize">{key.replace('_', ' ')}:</span> 
-                    {typeof value === 'boolean' ? (value ? 'Yes' : 'No') : value}
-                  </div>
-                {/each}
-              {/if}
-            </div>
-          </div>
         </div>
       {/if}
     </div>

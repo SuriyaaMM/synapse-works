@@ -36,18 +36,18 @@
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 
                 hover:bg-gray-200 
-                {($currentStep === 'dataset') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/dataset`)}
-      >
-         Configure Dataset
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
                 {($currentStep === 'training') ? 'bg-blue-100 font-semibold' : ''}"
         on:click={() => goto(`/model/${modelId}/training`)}
       >
          Configure Training
+      </button>
+      <button
+        class="w-full text-left py-2 px-4 rounded-lg transition 
+                hover:bg-gray-200 
+                {($currentStep === 'dataset') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/dataset`)}
+      >
+         Configure Dataset
       </button>
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 
