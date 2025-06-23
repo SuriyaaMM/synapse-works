@@ -73,8 +73,17 @@ def torch_optimizer_name_map(optimizer_name: str, debug: bool = True) -> type[to
     """
     # map for iterating
     optimizer_map = {
+        "adadelta" : torch.optim.Adadelta,
+        "adafactor" : torch.optim.Adafactor,
         "adam" : torch.optim.Adam,
         "adamw" : torch.optim.AdamW,
+        "sparseadam" : torch.optim.SparseAdam,
+        "adamax" : torch.optim.Adamax,
+        "asgd" : torch.optim.ASGD,
+        "lbfgs" : torch.optim.LBFGS,
+        "radam" : torch.optim.RAdam,
+        "rmsprop" : torch.optim.RMSprop,
+        "rprop" : torch.optim.Rprop,
         "sgd" : torch.optim.SGD
     }
     # convert to lowercase

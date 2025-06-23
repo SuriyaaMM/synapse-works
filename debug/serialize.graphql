@@ -1,0 +1,376 @@
+# --- 1. Create the Model ---
+# First, create an empty model to get its ID.
+mutation CreateMyCIFAR10Model {
+  createModel(name: "CIFAR10_CNN_Model") {
+    id
+    name
+    layers_config { # This will be empty initially
+      id
+    }
+  }
+}
+
+# Variable to hold the modelId obtained from the CreateMyCIFAR10Model mutation.
+# Example: "some-generated-model-id"
+# const modelId = "YOUR_GENERATED_MODEL_ID";
+
+# --- 2. Add First Conv2d Layer ---
+# Input: (batch_size, 3, 32, 32) for CIFAR-10 color images
+# Output: (batch_size, 32, 32, 32) if padding=1 (kernel_size 3x3)
+mutation AddConv2dLayer1CIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Conv1"
+        in_channels: 3 # RGB color image for CIFAR-10
+        out_channels: 32 # Arbitrary number of filters
+        kernel_size: [3, 3]
+        padding: [1, 1] # To maintain spatial dimensions (32x32 -> 32x32)
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on Conv2dLayerConfig {
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+      }
+    }
+  }
+}
+
+# --- 3. Add First MaxPool2d Layer ---
+# Input: (batch_size, 32, 32, 32) from Conv1
+# Output: (batch_size, 32, 16, 16) (32/2 = 16)
+mutation AddMaxPool2dLayer1CIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "MaxPool1"
+        kernel_size: [2, 2] # Reduce spatial dimensions by half
+        stride: [2, 2]
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on MaxPool2dLayerConfig {
+        kernel_size
+        stride
+      }
+    }
+  }
+}
+
+# --- 4. Add Second Conv2d Layer ---
+# Input: (batch_size, 32, 16, 16) from MaxPool1
+# Output: (batch_size, 64, 16, 16) if padding=1 (kernel_size 3x3)
+mutation AddConv2dLayer2CIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Conv2"
+        in_channels: 32 # Matches out_channels of previous Conv1/MaxPool1
+        out_channels: 64 # More filters
+        kernel_size: [3, 3]
+        padding: [1, 1] # To maintain spatial dimensions (16x16 -> 16x16)
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on Conv2dLayerConfig {
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+      }
+    }
+  }
+}
+
+# --- 5. Add Second MaxPool2d Layer ---
+# Input: (batch_size, 64, 16, 16) from Conv2
+# Output: (batch_size, 64, 8, 8) (16/2 = 8)
+mutation AddMaxPool2dLayer2CIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "MaxPool2"
+        kernel_size: [2, 2] # Reduce spatial dimensions by half
+        stride: [2, 2]
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on MaxPool2dLayerConfig {
+        kernel_size
+        stride
+      }
+    }
+  }
+}
+
+# --- 6. Add Flatten Layer ---
+# Input: (batch_size, 64, 8, 8) from MaxPool2
+# Output: (batch_size, 64 * 8 * 8) = (batch_size, 4096)
+mutation AddFlattenLayerCIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "flatten"
+      flatten: {
+        name: "Flatten"
+        start_dim: 1 # Flatten from the channel dimension onwards
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on FlattenLayerConfig {
+        start_dim
+        end_dim
+      }
+    }
+  }
+}
+
+# --- 7. Add First Linear (Dense) Layer ---
+# Input: (batch_size, 4096) from Flatten
+# Output: (batch_size, 256) (arbitrary choice for hidden units)
+mutation AddLinearLayer1CIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "linear"
+      linear: {
+        name: "HiddenLinear"
+        in_features: 4096 # 64 * 8 * 8 from the previous flattened output
+        out_features: 256
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on LinearLayerConfig {
+        in_features
+        out_features
+      }
+    }
+  }
+}
+
+# --- 8. Add ReLU Activation Layer ---
+mutation AddReLULayerCIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "ReLU1"
+        inplace: true
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on ReLULayerConfig {
+        inplace
+      }
+    }
+  }
+}
+
+# --- 9. Add Dropout Layer ---
+mutation AddDropoutLayerCIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "dropout"
+      dropout: {
+        name: "Dropout"
+        p: 0.5
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on DropoutLayerConfig {
+        p
+      }
+    }
+  }
+}
+
+# --- 10. Add Final Linear (Output) Layer ---
+# Input: (batch_size, 256) from previous Linear/ReLU/Dropout
+# Output: (batch_size, 10) for 10 CIFAR-10 classes
+mutation AddLinearLayer2CIFAR($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "linear"
+      linear: {
+        name: "OutputLinear"
+        in_features: 256 # Matches out_features of previous linear layer
+        out_features: 10 # 10 classes for CIFAR-10
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on LinearLayerConfig {
+        in_features
+        out_features
+      }
+    }
+  }
+}
+
+# --- 11. Set Training Configuration ---
+mutation SetMyModelCIFARTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 50 # Start with fewer epochs, adjust as needed
+      optimizer: "adam"
+      optimizer_config: {
+        lr: 0.001
+      }
+      loss_function: "ce" # Corrected loss function
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+      }
+      loss_function
+    }
+  }
+}
+
+# --- 12. Set Dataset Configuration for CIFAR-10 ---
+mutation SetMyCIFAR10DatasetConfig($modelId: ID!) {
+  setDataset(
+    model_id: $modelId
+    dataset_config: {
+      name: "cifar10" # Specify CIFAR-10 dataset
+      shuffle: true
+      split_length: [0.8, 0.2]
+      batch_size: 128
+      cifar10: { # Use cifar10 specific input
+        root: "./data/cifar10"
+        train: true
+        download: true
+        transform: ["ToTensor", "Normalize"] # Example transformations
+      }
+    }
+  ) {
+    id
+    name
+    dataset_config {
+      name
+      batch_size
+      split_length
+      shuffle
+      ... on CIFAR10DatasetConfig { # Ensure you query the correct type
+        root
+        train
+        download
+        transform
+      }
+    }
+  }
+}
+
+# --- 13. Train the Model ---
+mutation TrainMyCIFAR10Model($modelId: ID!) {
+  train(model_id: $modelId) {
+    id
+    name
+  }
+}
+
+# --- 14. Query Training Status ---
+query GetCurrentTrainingStatus {
+  getTrainingStatus {
+    epoch
+    loss
+    accuracy
+    completed
+  }
+}
+
+# --- Optional: Start Tensorboard ---
+mutation StartTensorboard {
+  startTensorboard
+}
+
+mutation SaveModel {
+  save
+}
+
+mutation LoadModel {
+  load{
+    id
+    name
+    layers_config { # This will be empty initially
+      id
+      type
+      name
+    }
+  }
+}

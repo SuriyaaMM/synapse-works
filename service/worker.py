@@ -2,12 +2,13 @@ import redis
 import json
 import traceback
 from config import logging, \
-                    REDIS_HOST, REDIS_MAIN_QUEUE_NAME, REDIS_PORT
+                    REDIS_HOST, REDIS_MAIN_QUEUE_NAME, REDIS_PORT, REDIS_TRAIN_QUEUE_NAME
 
 from modelManager import ModelManager
 from backendUtils import parseFromLayerConfig, \
                         parseFromTrainConfig, \
                         parseFromDataset
+from serializationUtils import serialize_model_manager, deserialize_model_manager
 
 from typedefs import *
 
@@ -56,6 +57,14 @@ def processMessage(message_data, models: list[ModelManager], redis_client: redis
             for model in models:
                 if model.id == id:
                     model.train(redis_client=redis_client)
+        # handle SERIALIZE_MODEL
+        elif event_type == "SERIALIZE_MODEL":
+            serialize_model_manager(models)
+            logging.info("Serialized Models!")
+        # handle DESERIALIZE_MODEL
+        elif event_type == "DESERIALIZE_MODEL":
+            models = deserialize_model_manager()
+            logging.info(f"{models[0].__getstate__()}")
         else:
             print(f"[synapse][redis]: Unknown event type: {event_type}")
     # ----- exceptions
@@ -72,7 +81,6 @@ def start(models: list[ModelManager]):
         r.ping()
         print("[synapse][redis]: Connected to Redis.")
         print(f"[synapse][redis]: Waiting for messages in '{REDIS_MAIN_QUEUE_NAME}'")
-
         while True:
             # blocking right tail pop, we left pushed to the queue
             _, message_data = r.brpop([REDIS_MAIN_QUEUE_NAME], timeout=0) # type:ignore
@@ -82,6 +90,9 @@ def start(models: list[ModelManager]):
     except Exception as e:
         print(f"[synapse][redis]: unexpected exception: {e}")
     finally:
+        logging.info(f"Deleting {REDIS_TRAIN_QUEUE_NAME} & {REDIS_MAIN_QUEUE_NAME}")
+        r.delete(REDIS_MAIN_QUEUE_NAME)
+        r.delete(REDIS_TRAIN_QUEUE_NAME)
         if 'r_main' in locals() and r.ping():
             print("[synapse][redis]: Redis connection closed.")
 

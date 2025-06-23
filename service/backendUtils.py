@@ -274,11 +274,137 @@ def parseFromTrainConfig(train_config: TSTrainConfigInput) -> TrainConfig:
     # optimizer dependent configuration
     optimizer_config: TSOptimizerConfigInput = train_config["optimizer_config"]
 
+    # handle for adadelta optimizer
+    if optimizer == "adadelta":
+        optimizer_kwargs = cast(AdadeltaOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["rho", "eps", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for adafactor optimizer
+    elif optimizer == "adafactor":
+        optimizer_kwargs = cast(AdafactorOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["beta2_decay", "eps", "d", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
     # handle for adam optimizer
-    if optimizer == "adam":
+    elif optimizer == "adam":
         optimizer_kwargs = cast(AdamOptimizerKwargs_T, {
             "lr" : optimizer_config["lr"]
         })
+        optional_keys = ["betas", "eps", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for adamw optimizer
+    elif optimizer == "adamw":
+        optimizer_kwargs = cast(AdamWOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["betas", "eps", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    elif optimizer == "sparseadam":
+        optimizer_kwargs = cast(SparseAdamOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["betas", "eps", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for adamax optimizer
+    elif optimizer == "adamax":
+        optimizer_kwargs = cast(AdamaxOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["betas", "eps", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for asgd optimizer
+    elif optimizer == "asgd":
+        optimizer_kwargs = cast(ASGDOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["lambd", "alpha", "t0", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for lbfgs optimizer
+    elif optimizer == "lbfgs":
+        optimizer_kwargs = cast(LBFGSOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["max_iter", "max_eval", "tolerance_grad", "tolerance_change"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for radam optimizer
+    elif optimizer == "radam":
+        optimizer_kwargs = cast(RAdamOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["betas", "eps", "weight_decay"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for rmsprop optimizer
+    elif optimizer == "rmsprop":
+        optimizer_kwargs = cast(RMSpropOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["alpha", "eps", "weight_decay", "momentum"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for rprop optimizer
+    elif optimizer == "rprop":
+        optimizer_kwargs = cast(RpropOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["etas", "step_sizes"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
+    # handle for sgd optimizer
+    elif optimizer == "sgd":
+        optimizer_kwargs = cast(SGDOptimizerKwargs_T, {
+            "lr" : optimizer_config["lr"]
+        })
+        optional_keys = ["momentum", "dampening", "weight_decay", "nesterov"]
+        for optional_key in optional_keys:
+            if optional_key in optimizer_config.keys():
+                optimizer_kwargs[optional_key] = optimizer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {optimizer_config.__class__.__name__}, skipping")
     else:
         raise NotImplementedError(f"{optimizer} is not implemented yet")
     
