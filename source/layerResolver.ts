@@ -7,7 +7,22 @@ import {
     LinearLayerConfig, 
     Model,
     AppendLayerArgs,
-    Conv2dLayerConfig
+    Conv2dLayerConfig,
+    Conv1dLayerConfig,
+    MaxPool2dLayerConfig,
+    MaxPool1dLayerConfig,
+    AvgPool2dLayerConfig,
+    AvgPool1dLayerConfig,
+    BatchNorm2dLayerConfig,
+    BatchNorm1dLayerConfig,
+    FlattenLayerConfig,
+    DropoutLayerConfig,
+    ELULayerConfig,
+    ReLULayerConfig,
+    LeakyReLULayerConfig,
+    SigmoidLayerConfig,
+    LogSigmoidLayerConfig,
+    TanhLayerConfig
 } from "./types.js"
 
 type LayerHandlerMap = {
@@ -16,6 +31,7 @@ type LayerHandlerMap = {
 
 // handles runtime validation of layer types
 const layerHandler: LayerHandlerMap = {
+    // ---------- linear ----------
     "linear": (layer_config: LayerConfigInput) => {
         // destructure layer input
         const { linear }  =  layer_config;
@@ -37,7 +53,7 @@ const layerHandler: LayerHandlerMap = {
 
         return new_layer_config;
     },
-
+    // ---------- conv2d ----------
     "conv2d": (layer_config: LayerConfigInput) => {
         // destructure layer input
         const { conv2d } = layer_config;
@@ -60,6 +76,327 @@ const layerHandler: LayerHandlerMap = {
             groups: conv2d.groups,
             bias: conv2d.bias,
             padding_mode: conv2d.padding_mode
+        };
+
+        return new_layer_config;
+    },
+    // ---------- conv1d ----------
+    "conv1d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { conv1d } = layer_config;
+
+        if(!conv1d) throw new Error('[synapse][layerHandler]: Conv1d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: Conv1dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "conv1d",
+            name: conv1d.name || `conv1d_${layer_id.substring(0, 4)}`,
+            in_channels: conv1d.in_channels,
+            out_channels: conv1d.out_channels,
+            kernel_size: conv1d.kernel_size,
+            stride: conv1d.stride,
+            padding: conv1d.padding,
+            dilation: conv1d.dilation,
+            groups: conv1d.groups,
+            bias: conv1d.bias,
+            padding_mode: conv1d.padding_mode
+        };
+
+        return new_layer_config;
+    },
+    // ---------- maxpool2d ----------
+    "maxpool2d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { maxpool2d } = layer_config;
+
+        if(!maxpool2d) throw new Error('[synapse][layerHandler]: MaxPool2d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: MaxPool2dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "maxpool2d",
+            name: maxpool2d.name || `maxpool2d_${layer_id.substring(0, 4)}`,
+            kernel_size: maxpool2d.kernel_size,
+            stride: maxpool2d.stride,
+            padding: maxpool2d.padding,
+            dilation: maxpool2d.dilation,
+            return_indices: maxpool2d.return_indices,
+            ceil_mode: maxpool2d.ceil_mode
+        };
+
+        return new_layer_config;
+    },
+    // ---------- maxpool1d ----------
+    "maxpool1d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { maxpool1d } = layer_config;
+
+        if(!maxpool1d) throw new Error('[synapse][layerHandler]: MaxPool1d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: MaxPool1dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "maxpool1d",
+            name: maxpool1d.name || `maxpool1d_${layer_id.substring(0, 4)}`,
+            kernel_size: maxpool1d.kernel_size,
+            stride: maxpool1d.stride,
+            padding: maxpool1d.padding,
+            dilation: maxpool1d.dilation,
+            return_indices: maxpool1d.return_indices,
+            ceil_mode: maxpool1d.ceil_mode
+        };
+
+        return new_layer_config;
+    },
+    // ---------- avgpool2d ----------
+    "avgpool2d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { avgpool2d } = layer_config;
+
+        if(!avgpool2d) throw new Error('[synapse][layerHandler]: AvgPool2d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: AvgPool2dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "avgpool2d",
+            name: avgpool2d.name || `avgpool2d_${layer_id.substring(0, 4)}`,
+            kernel_size: avgpool2d.kernel_size,
+            stride: avgpool2d.stride,
+            padding: avgpool2d.padding,
+            count_include_pad: avgpool2d.count_include_pad,
+            divisor_override: avgpool2d.divisor_override,
+            ceil_mode: avgpool2d.ceil_mode
+        };
+
+        return new_layer_config;
+    },
+    // ---------- avgpool1d ----------
+    "avgpool1d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { avgpool1d } = layer_config;
+
+        if(!avgpool1d) throw new Error('[synapse][layerHandler]: AvgPool1d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: AvgPool1dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "avgpool1d",
+            name: avgpool1d.name || `avgpool1d_${layer_id.substring(0, 4)}`,
+            kernel_size: avgpool1d.kernel_size,
+            stride: avgpool1d.stride,
+            padding: avgpool1d.padding,
+            count_include_pad: avgpool1d.count_include_pad,
+            divisor_override: avgpool1d.divisor_override,
+            ceil_mode: avgpool1d.ceil_mode
+        };
+
+        return new_layer_config;
+    },
+    // ---------- batchnorm2d ----------
+    "batchnorm2d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { batchnorm2d } = layer_config;
+
+        if(!batchnorm2d) throw new Error('[synapse][layerHandler]: BatchNorm2d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: BatchNorm2dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "batchnorm2d",
+            name: batchnorm2d.name || `batchnorm2d_${layer_id.substring(0, 4)}`,
+            num_features: batchnorm2d.num_features,
+            eps: batchnorm2d.eps,
+            momentum: batchnorm2d.momentum,
+            affine: batchnorm2d.affine,
+            track_running_status: batchnorm2d.track_running_status
+        };
+
+        return new_layer_config;
+    },
+    // ---------- batchnorm1d ----------
+    "batchnorm1d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { batchnorm1d } = layer_config;
+
+        if(!batchnorm1d) throw new Error('[synapse][layerHandler]: BatchNorm1d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: BatchNorm1dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "batchnorm1d",
+            name: batchnorm1d.name || `batchnorm1d_${layer_id.substring(0, 4)}`,
+            num_features: batchnorm1d.num_features,
+            eps: batchnorm1d.eps,
+            momentum: batchnorm1d.momentum,
+            affine: batchnorm1d.affine,
+            track_running_status: batchnorm1d.track_running_status
+        };
+
+        return new_layer_config;
+    },
+    // ---------- flatten ----------
+    "flatten": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { flatten } = layer_config;
+
+        if(!flatten) throw new Error('[synapse][layerHandler]: Flatten layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: FlattenLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "flatten",
+            name: flatten.name || `flatten_${layer_id.substring(0, 4)}`,
+            start_dim: flatten.start_dim,
+            end_dim: flatten.end_dim,
+        };
+
+        return new_layer_config;
+    },
+    // ---------- dropout ----------
+    "dropout": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { dropout } = layer_config;
+
+        if(!dropout) throw new Error('[synapse][layerHandler]: Dropout layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: DropoutLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "dropout",
+            name: dropout.name || `dropout_${layer_id.substring(0, 4)}`,
+            p: dropout.p
+        };
+
+        return new_layer_config;
+    },
+    // ---------- elu ----------
+    "elu": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { elu } = layer_config;
+
+        if(!elu) throw new Error('[synapse][layerHandler]: ELU layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: ELULayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "dropout",
+            name: elu.name || `dropout_${layer_id.substring(0, 4)}`,
+            alpha: elu.alpha,
+            inplace: elu.inplace
+        };
+
+        return new_layer_config;
+    },
+    // ---------- relu ----------
+    "relu": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { relu } = layer_config;
+
+        if(!relu) throw new Error('[synapse][layerHandler]: ReLU layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: ReLULayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "relu",
+            name: relu.name || `relu_${layer_id.substring(0, 4)}`,
+            inplace: relu.inplace
+        };
+
+        return new_layer_config;
+    },
+    // ---------- leakurelu ----------
+    "leakyrelu": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { leakyrelu } = layer_config;
+
+        if(!leakyrelu) throw new Error('[synapse][layerHandler]: LeakyReLU layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: LeakyReLULayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "leakyrelu",
+            name: leakyrelu.name || `leakyrelu_${layer_id.substring(0, 4)}`,
+            negative_slope: leakyrelu.negative_slope,
+            inplace: leakyrelu.inplace
+        };
+
+        return new_layer_config;
+    },
+    // ---------- sigmoid ----------
+    "sigmoid": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { sigmoid } = layer_config;
+
+        if(!sigmoid) throw new Error('[synapse][layerHandler]: Sigmoid layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: SigmoidLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "sigmoid",
+            name: sigmoid.name || `sigmoid_${layer_id.substring(0, 4)}`,
+        };
+
+        return new_layer_config;
+    },
+    // ---------- logsigmoid ----------
+    "logsigmoid": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { logsigmoid } = layer_config;
+
+        if(!logsigmoid) throw new Error('[synapse][layerHandler]: LogSigmoid layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: LogSigmoidLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "logsigmoid",
+            name: logsigmoid.name || `logsigmoid_${layer_id.substring(0, 4)}`,
+        };
+
+        return new_layer_config;
+    },
+    // ---------- tanh ----------
+    "tanh": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { tanh } = layer_config;
+
+        if(!tanh) throw new Error('[synapse][layerHandler]: Tanh layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: TanhLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "tanh",
+            name: tanh.name || `tanh_${layer_id.substring(0, 4)}`,
         };
 
         return new_layer_config;

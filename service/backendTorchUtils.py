@@ -17,7 +17,21 @@ def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]
     layer_name_map = {
         "linear" : nn.Linear,
         "conv2d": nn.Conv2d,
-        "dropout" : nn.Dropout
+        "conv1d": nn.Conv1d,
+        "maxpool2d": nn.MaxPool2d,
+        "maxpool1d": nn.MaxPool1d,
+        "avgpool2d": nn.AvgPool2d,
+        "avgpool1d": nn.AvgPool1d,
+        "batchnorm2d": nn.BatchNorm2d,
+        "batchnorm1d": nn.BatchNorm1d,
+        "flatten" : nn.Flatten,
+        "dropout" : nn.Dropout,
+        "elu" : nn.ELU,
+        "relu" : nn.ReLU,
+        "leakyrelu" : nn.LeakyReLU,
+        "sigmoid": nn.Sigmoid,
+        "logsigmoid": nn.LogSigmoid,
+        "tanh" : nn.Tanh
     }
     # convert to lowercase
     layer_name = layer_name.lower()

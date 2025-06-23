@@ -27,9 +27,13 @@ def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> Laye
             "out_features": layer_config["out_features"],
         })
         # optional configurations
-        if "bias" in layer_config.keys():
-            kwargs["bias"] = layer_config["bias"] # type:ignore
-
+        optional_keys = ["bias"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for conv2d layer
     elif layer_type == "conv2d":
         layer_config = cast(TSConv2dLayerInput, layer_config)
         # conv2d layer specific kwargs object
@@ -39,23 +43,208 @@ def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> Laye
             "kernel_size": layer_config["kernel_size"]
         })
         # optional configurations
-        if "stride" in layer_config.keys():
-            kwargs["stride"] = layer_config["stride"] # type:ignore
-
-        if "padding" in layer_config.keys():
-            kwargs["padding"] = layer_config["padding"] # type:ignore
-
-        if "dilation" in layer_config.keys():
-            kwargs["dilation"] = layer_config["dilation"] # type:ignore
-
-        if "groups" in layer_config.keys():
-            kwargs["groups"] = layer_config["groups"] # type:ignore
-
-        if "bias" in layer_config.keys():
-            kwargs["bias"] = layer_config["bias"] # type:ignore
-            
-        if "padding_mode" in layer_config.keys():
-            kwargs["padding_mode"] = layer_config["padding_mode"] # type:ignore
+        optional_keys = ["stride", "padding", "dilation", "groups", "bias", "padding_mode"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for conv1d layer
+    elif layer_type == "conv1d":
+        layer_config = cast(TSConv1dLayerInput, layer_config)
+        # conv1d layer specific kwargs object
+        kwargs = cast(Conv1dLayerKwargs, {
+            "in_channels": layer_config["in_channels"],
+            "out_channels": layer_config["out_channels"],
+            "kernel_size": layer_config["kernel_size"]
+        })
+        # optional configurations
+        optional_keys = ["stride", "padding", "dilation", "groups", "bias", "padding_mode"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for maxpool2d layer
+    elif layer_type == "maxpool2d":
+        layer_config = cast(TSMaxPool2dLayerInput, layer_config)
+        # maxpool2d layer specific kwargs object
+        kwargs = cast(MaxPool2dLayerKwargs, {
+            "kernel_size": layer_config["kernel_size"]
+        })
+        # optional configurations
+        optional_keys = ["stride", "padding", "dilation", "return_indices", "ceil_mode"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for maxpool1d layer
+    elif layer_type == "maxpool1d":
+        layer_config = cast(TSMaxPool1dLayerInput, layer_config)
+        # maxpool1d layer specific kwargs object
+        kwargs = cast(MaxPool1dLayerKwargs, {
+            "kernel_size": layer_config["kernel_size"]
+        })
+        # optional configurations
+        optional_keys = ["stride", "padding", "dilation", "return_indices", "ceil_mode"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for avgpool2d layer
+    elif layer_type == "avgpool2d":
+        layer_config = cast(TSAvgPool2dLayerInput, layer_config)
+        # avgpool2d layer specific kwargs object
+        kwargs = cast(AvgPool2dLayerKwargs, {
+            "kernel_size": layer_config["kernel_size"]
+        })
+        # optional configurations
+        optional_keys = ["stride", "padding", "count_include_pad", "divisor_override", "ceil_mode"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for avgpool1d layer
+    elif layer_type == "avgpool1d":
+        layer_config = cast(TSAvgPool1dLayerInput, layer_config)
+        # avgpool1d layer specific kwargs object
+        kwargs = cast(AvgPool1dLayerKwargs, {
+            "kernel_size": layer_config["kernel_size"]
+        })
+        # optional configurations
+        optional_keys = ["stride", "padding", "count_include_pad", "divisor_override", "ceil_mode"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for batchnorm2d layer
+    elif layer_type == "batchnorm2d":
+        layer_config = cast(TSBatchNorm2dLayerInput, layer_config)
+        # batchnorm2d layer specific kwargs object
+        kwargs = cast(BatchNorm2dLayerKwargs, {
+            "num_features": layer_config["num_features"]
+        })
+        # optional configurations
+        optional_keys = ["eps", "momentum", "affine", "track_running_status"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for batchnorm1d layer
+    elif layer_type == "batchnorm1d":
+        layer_config = cast(TSBatchNorm1dLayerInput, layer_config)
+        # batchnorm1d layer specific kwargs object
+        kwargs = cast(BatchNorm1dLayerKwargs, {
+            "num_features": layer_config["num_features"]
+        })
+        # optional configurations
+        optional_keys = ["eps", "momentum", "affine", "track_running_status"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for flatten layer
+    elif layer_type == "flatten":
+        layer_config = cast(TSFlattenLayerInput, layer_config)
+        # batchnorm2d layer specific kwargs object
+        kwargs = cast(FlattenLayerKwargs, {})
+        # optional configurations
+        optional_keys = ["start_dim", "end_dim"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for dropout layer
+    elif layer_type == "dropout":
+        layer_config = cast(TSDropoutLayerInput, layer_config)
+        # batchnorm2d layer specific kwargs object
+        kwargs = cast(DropoutLayerKwargs, {})
+        # optional configurations
+        optional_keys = ["p"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for elu layer
+    elif layer_type == "elu":
+        layer_config = cast(TSELULayerInput, layer_config)
+        # batchnorm2d layer specific kwargs object
+        kwargs = cast(ELULayerKwargs, {})
+        # optional configurations
+        optional_keys = ["alpha", "inplace"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for relu layer
+    elif layer_type == "relu":
+        layer_config = cast(TSReLULayerInput, layer_config)
+        # relu layer specific kwargs object
+        kwargs = cast(ReLULayerKwargs, {})
+        # optional configurations
+        optional_keys = ["inplace"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for leakyrelu
+    elif layer_type == "leakyrelu":
+        layer_config = cast(TSLeakyReLULayerInput, layer_config)
+        # leakyrelu layer specific kwargs object
+        kwargs = cast(LeakyReLULayerKwargs, {})
+        # optional configurations
+        optional_keys = ["negative_slope", "inplace"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for sigmoid layer
+    elif layer_type == "sigmoid":
+        layer_config = cast(TSSigmoidLayerInput, layer_config)
+        # leakyrelu layer specific kwargs object
+        kwargs = cast(SigmoidLayerKwargs, {})
+        # optional configurations
+        optional_keys = []
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for logsigmoid layer
+    elif layer_type == "logsigmoid":
+        layer_config = cast(TSLogSigmoidLayerInput, layer_config)
+        # leakyrelu layer specific kwargs object
+        kwargs = cast(LogSigmoidLayerKwargs, {})
+        # optional configurations
+        optional_keys = []
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for tanh layer
+    elif layer_type == "tanh":
+        layer_config = cast(TSTanhLayerInput, layer_config)
+        # leakyrelu layer specific kwargs object
+        kwargs = cast(TanhLayerKwargs, {})
+        # optional configurations
+        optional_keys = []
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.info(f"{optional_key} not found in {layer_config.__class__.__name__}")
     else:
         raise NotImplementedError(f"layer({layer_type}) is not implemented yet")
     

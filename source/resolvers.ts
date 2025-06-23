@@ -25,11 +25,55 @@ export const resolvers = {
         __resolveType(layer_config: LayerConfig, _: unknown){
             
             if(layer_config.type === "linear"){
-                // must match the one in schema
                 return 'LinearLayerConfig';
             }
             else if(layer_config.type == "conv2d"){
                 return 'Conv2dLayerConfig';
+            }
+            else if(layer_config.type == "conv1d"){
+                return 'Conv1dLayerConfig';
+            }
+            else if(layer_config.type == "maxpool2d"){
+                return 'MaxPool2dLayerConfig';
+            }
+            else if(layer_config.type == "maxpool1d"){
+                return 'MaxPool1dLayerConfig';
+            }
+            else if(layer_config.type == "avgpool2d"){
+                return 'AvgPool2dLayerConfig';
+            }
+            else if(layer_config.type == "avgpool1d"){
+                return 'AvgPool1dLayerConfig';
+            }
+            else if(layer_config.type == "batchnorm2d"){
+                return 'BatchNorm2dLayerConfig';
+            }
+            else if(layer_config.type == "batchnorm1d"){
+                return 'BatchNorm1dLayerConfig';
+            }
+            else if(layer_config.type == "flatten"){
+                return 'FlattenLayerConfig';
+            }
+            else if(layer_config.type == "dropout"){
+                return 'DropoutLayerConfig';
+            }
+            else if(layer_config.type == "elu"){
+                return 'ELULayerConfig';
+            }
+            else if(layer_config.type == "relu"){
+                return 'ReLULayerConfig';
+            }
+            else if(layer_config.type == "leakyrelu"){
+                return 'LeakyReLULayerConfig';
+            }
+            else if(layer_config.type == "sigmoid"){
+                return 'SigmoidLayerConfig';
+            }
+            else if(layer_config.type == "logsigmoid"){
+                return 'LogSigmoidLayerConfig';
+            }
+            else if(layer_config.type == "tanh"){
+                return 'TanhLayerConfig';
             }
             return null;
         }
