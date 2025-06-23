@@ -18,10 +18,107 @@ class Conv2dLayerKwargs(TypedDict):
     bias: NotRequired[bool]
     padding_mode: NotRequired[str]
 
-class DropoutLayerKwargs(TypedDict):
-    p: float
+class Conv1dLayerKwargs(TypedDict):
+    in_channels: int
+    out_channels: int
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    groups: NotRequired[Tuple[int, ...]]
+    bias: NotRequired[bool]
+    padding_mode: NotRequired[str]
 
-LayerKwargs_T = Union[LinearLayerKwargs, Conv2dLayerKwargs, DropoutLayerKwargs]
+class MaxPool2dLayerKwargs(TypedDict):
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    return_indices: NotRequired[bool]
+    ceil_mode: NotRequired[bool]
+
+class MaxPool1dLayerKwargs(TypedDict):
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    return_indices: NotRequired[bool]
+    ceil_mode: NotRequired[bool]
+
+class AvgPool2dLayerKwargs(TypedDict):
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    count_include_pad: NotRequired[bool]
+    divisor_override: NotRequired[int]
+    ceil_mode: NotRequired[bool]
+
+class AvgPool1dLayerKwargs(TypedDict):
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    count_include_pad: NotRequired[bool]
+    divisor_override: NotRequired[int]
+    ceil_mode: NotRequired[bool]
+
+class BatchNorm2dLayerKwargs(TypedDict):
+    num_features: int
+    eps: NotRequired[float]
+    momentum: NotRequired[float]
+    affine: NotRequired[bool]
+    track_running_status: NotRequired[bool]
+
+class BatchNorm1dLayerKwargs(TypedDict):
+    num_features: int
+    eps: NotRequired[float]
+    momentum: NotRequired[float]
+    affine: NotRequired[bool]
+    track_running_status: NotRequired[bool]
+
+class FlattenLayerKwargs(TypedDict):
+    start_dim: NotRequired[int]
+    end_dim: NotRequired[int]
+
+class DropoutLayerKwargs(TypedDict):
+    p: NotRequired[float]
+
+class ELULayerKwargs(TypedDict):
+    alpha: NotRequired[float]
+    inplace: NotRequired[bool]
+
+class ReLULayerKwargs(TypedDict):
+    inplace: NotRequired[bool]
+
+class LeakyReLULayerKwargs(TypedDict):
+    negative_slope: NotRequired[float]
+    inplace: NotRequired[bool]
+
+class SigmoidLayerKwargs(TypedDict):
+    pass
+
+class LogSigmoidLayerKwargs(TypedDict):
+    pass
+
+class TanhLayerKwargs(TypedDict):
+    pass
+
+LayerKwargs_T = Union[LinearLayerKwargs, 
+                      Conv2dLayerKwargs,
+                      Conv2dLayerKwargs,
+                      MaxPool2dLayerKwargs,
+                      MaxPool1dLayerKwargs,
+                      AvgPool2dLayerKwargs,
+                      AvgPool1dLayerKwargs,
+                      BatchNorm2dLayerKwargs,
+                      BatchNorm1dLayerKwargs,
+                      FlattenLayerKwargs,
+                      DropoutLayerKwargs,
+                      ELULayerKwargs,
+                      ReLULayerKwargs,
+                      LeakyReLULayerKwargs,
+                      SigmoidLayerKwargs,
+                      LogSigmoidLayerKwargs,
+                      TanhLayerKwargs]
 class LayerConfig(TypedDict):
     type: str
     kwargs: LayerKwargs_T
@@ -48,13 +145,149 @@ class TSConv2dLayerInput(TypedDict):
     bias: NotRequired[bool]
     padding_mode: NotRequired[str]
 
+class TSConv1dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    in_channels: int
+    out_channels: int
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    groups: NotRequired[Tuple[int, ...]]
+    bias: NotRequired[bool]
+    padding_mode: NotRequired[str]
+
+class TSMaxPool2dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    return_indices: NotRequired[bool]
+    ceil_mode: NotRequired[bool]
+
+class TSMaxPool1dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    return_indices: NotRequired[bool]
+    ceil_mode: NotRequired[bool]
+
+class TSAvgPool2dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    count_include_pad: NotRequired[bool]
+    divisor_override: NotRequired[int]
+    ceil_mode: NotRequired[bool]
+
+class TSAvgPool1dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    count_include_pad: NotRequired[bool]
+    divisor_override: NotRequired[int]
+    ceil_mode: NotRequired[bool]
+
+class TSBatchNorm2dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    num_features: int
+    eps: NotRequired[float]
+    momentum: NotRequired[float]
+    affine: NotRequired[bool]
+    track_running_status: NotRequired[bool]
+
+class TSBatchNorm1dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    num_features: int
+    eps: NotRequired[float]
+    momentum: NotRequired[float]
+    affine: NotRequired[bool]
+    track_running_status: NotRequired[bool]
+
+class TSFlattenLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    start_dim: NotRequired[int]
+    end_dim: NotRequired[int]
+
 class TSDropoutLayerInput(TypedDict):
     id: str
     type: str
-    name: str
-    p: float
+    name: NotRequired[str]
+    p: NotRequired[float]
 
-TSLayerInput = Union[TSLinearLayerInput, TSConv2dLayerInput, TSDropoutLayerInput]
+class TSELULayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    alpha: NotRequired[float]
+    inplace: NotRequired[bool]
+
+class TSReLULayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    inplace: NotRequired[bool]
+
+class TSLeakyReLULayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    negative_slope: NotRequired[float]
+    inplace: NotRequired[bool]
+
+class TSSigmoidLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+
+class TSLogSigmoidLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+
+class TSTanhLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+
+TSLayerInput = Union[TSLinearLayerInput, 
+                     TSConv2dLayerInput,
+                     TSConv1dLayerInput,
+                     TSMaxPool2dLayerInput,
+                     TSMaxPool1dLayerInput,
+                     TSAvgPool2dLayerInput,
+                     TSAvgPool1dLayerInput,
+                     TSBatchNorm2dLayerInput,
+                     TSBatchNorm1dLayerInput,
+                     TSFlattenLayerInput, 
+                     TSDropoutLayerInput,
+                     TSELULayerInput,
+                     TSReLULayerInput,
+                     TSLeakyReLULayerInput,
+                     TSSigmoidLayerInput,
+                     TSLogSigmoidLayerInput,
+                     TSTanhLayerInput]
 
 """ ------------------------------------ Train Configurations ---------------------------- """
 class AdamOptimizerKwargs_T(TypedDict):

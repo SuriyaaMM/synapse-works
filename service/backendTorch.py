@@ -89,7 +89,7 @@ class TorchTrainManager(nn.Module):
 
     def forward(self, x: torch.Tensor):
         # TODO(mms) hardcoded flattening here
-        x = x.view(x.shape[0], -1)
+        #x = x.view(x.shape[0], -1)
         return self.neuralNet(x)
 
 # refer: https://github.com/SuriyaaMM/dl-analysis/blob/main/analysis/regularization/train.py
