@@ -72,6 +72,9 @@ class TorchTrainManager(nn.Module):
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.neuralNet = nn.Sequential(*layers).to(self.device)
 
+        self.train_config = train_config
+        self.dataset_config = dataset_config
+
         optimizerType = torch_optimizer_name_map(train_config["optimizer"])
         
         self.optimizer = optimizerType(self.neuralNet.parameters(), **train_config["optimizer_kwargs"]) # type:ignore
@@ -84,7 +87,9 @@ class TorchTrainManager(nn.Module):
         # initialize dataloaders
         self.train_loader : DataLoader = DataLoader(self.train_dataset, **dataset_config["dataloader_config"])
         self.test_loader: DataLoader = DataLoader(self.test_dataset, **dataset_config["dataloader_config"])
-
+        # dummy tensor for computation graph visualization
+        self.dummy_tensor_for_computation_graph = next(iter(self.train_loader))[0]
+        self.dummy_tensor_for_computation_graph = self.dummy_tensor_for_computation_graph.to(self.device)
 
     def forward(self, x: torch.Tensor):
         # TODO(mms) hardcoded flattening here
@@ -92,7 +97,9 @@ class TorchTrainManager(nn.Module):
         return self.neuralNet(x)
 
 # refer: https://github.com/SuriyaaMM/dl-analysis/blob/main/analysis/regularization/train.py
-def _TrainEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]:
+def _TrainEpoch(train_manager: TorchTrainManager,
+                current_epoch: int, 
+                writer: torch.utils.tensorboard.SummaryWriter) -> tuple[float, float, int]:
     train_manager.train()
     running_loss = 0.0
     correct_predictions = 0
@@ -100,13 +107,32 @@ def _TrainEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]:
     
     features : torch.Tensor
     labels: torch.Tensor
-    for features, labels in train_manager.train_loader:
+    for batch_idx, (features, labels) in enumerate(train_manager.train_loader):
         features = features.to(train_manager.device)
         labels = labels.to(train_manager.device)
         output: torch.Tensor = train_manager.forward(features)
         loss: torch.Tensor = train_manager.loss_function(output, labels)
         train_manager.optimizer.zero_grad()
         loss.backward()
+
+        # gradient visualization
+        current_global_step = current_epoch * len(train_manager.train_loader) + batch_idx
+        for name, param in train_manager.neuralNet.named_parameters():
+            if param.grad is not None:
+                writer.add_histogram(f"grads/{name.replace('.', '/')}", param.grad, current_global_step)
+        
+        # lr visualization
+        writer.add_scalar("Learning Rate", train_manager.optimizer.param_groups[0]['lr'], current_global_step)
+
+        # gradient norm visualization
+        total_gradient_norm = 0.0
+        for p in train_manager.neuralNet.parameters():
+            if p.grad is not None:
+                total_gradient_norm += p.grad.data.norm(2).item() ** 2
+        
+        total_gradient_norm = total_gradient_norm ** 0.5
+        writer.add_scalar("Gradient Norm", total_gradient_norm, current_global_step)
+
         train_manager.optimizer.step()
         running_loss += loss.item() * features.size(0)
         predictions = torch.argmax(output, dim = 1)
@@ -143,13 +169,23 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis):
     logging.info(f"using device {train_manager.device}")
     logging.info(f"using torch: {torch.__version__}")
 
+    writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
+
     for epoch in range(train_manager.epochs):
-        running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager)
+        running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager, epoch, writer)
         accuracy = correct_predictions/total_samples
         # write to tensorboard
         writer.add_scalar("Loss/train", running_loss, epoch)
         writer.add_scalar("Accuracy/train", accuracy, epoch)
 
+        # weights & biases distribution
+        for name, param in train_manager.neuralNet.named_parameters():
+            # log weights
+            writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
+            # log params if they exist
+            if param.dim() == 1:
+                writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
+        
         logging.info(f"epoch: {epoch + 1}, loss: {running_loss}, accuracy: {accuracy}")
         
         # TODO(mms) hardcoded validation period here to 5
@@ -169,4 +205,17 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis):
         redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
         logging.info(f"pushed {json.dumps(update_message)} to redis queue")
 
+    hparam_dict = {
+        "learning_rate": train_manager.train_config["optimizer_kwargs"]["lr"],
+        "optimizer": train_manager.train_config["optimizer"],
+        "epochs": train_manager.epochs,
+        "batch_size": train_manager.dataset_config["dataloader_config"]["batch_size"],
+        "loss_fn": train_manager.train_config["loss_function"],
+    }
+   
+    metric_dict = {
+        "hparam/accuracy_train": accuracy, 
+        "hparam/loss_train": running_loss,
+    }
+    writer.add_hparams(hparam_dict, metric_dict)    
     writer.close()
