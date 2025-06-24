@@ -4,20 +4,34 @@ FROM node:24-bookworm-slim
 # Set the working directory in the container
 WORKDIR /app
 
-# --- Install Python 3.12 ---
+# --- Install system dependencies for Conda and build tools ---
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3.12 \
-    python3-pip \
-    python3.12-venv \ 
+    wget \
+    bzip2 \
+    ca-certificates \
     build-essential \ 
     libssl-dev \ 
     libffi-dev \ 
     && rm -rf /var/lib/apt/lists/*
 
-# Link python3 to python if not already done, for consistency
-RUN update-alternatives --install /usr/bin/python python /usr/bin/python3.12 1
+# --- Install Miniconda ---
+RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+    /bin/bash ~/miniconda.sh -b -p /opt/conda && \
+    rm ~/miniconda.sh
 
-# Verify Python and pip installations
+# Add conda to PATH
+ENV PATH="/opt/conda/bin:$PATH"
+
+# Initialize conda
+RUN conda init bash
+
+# --- Install Python 3.12 via Conda ---
+RUN conda install -y python=3.12
+
+# Create a symlink for consistency (optional)
+RUN ln -sf /opt/conda/bin/python /usr/local/bin/python
+
+# Verify Python installation
 RUN python --version
 RUN pip --version
 
@@ -25,7 +39,7 @@ RUN pip --version
 RUN apt-get update && apt-get install -y --no-install-recommends redis-server \
     && rm -rf /var/lib/apt/lists/*
 
-# Verify Redis version (it might not be exactly 7.0.15, but should be close)
+# Verify Redis version
 RUN redis-server --version
 
 # Copy the requirements file into the container at /app
