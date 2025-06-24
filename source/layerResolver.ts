@@ -22,7 +22,8 @@ import {
     LeakyReLULayerConfig,
     SigmoidLayerConfig,
     LogSigmoidLayerConfig,
-    TanhLayerConfig
+    TanhLayerConfig,
+    DeleteLayerArgs
 } from "./types.js"
 
 type LayerHandlerMap = {
@@ -403,7 +404,7 @@ const layerHandler: LayerHandlerMap = {
     }
 }
 
-export async function appendLayerResolver (models: Model[], args: AppendLayerArgs) {
+export async function appendLayerResolver(models: Model[], args: AppendLayerArgs) {
     // find the model 
     const model = models.find(m => m.id === args.model_id);
 
@@ -419,15 +420,40 @@ export async function appendLayerResolver (models: Model[], args: AppendLayerArg
     // get the parsed layer 
     const new_layer = handler(args.layer_config);
     // push layer to model
-    model.layers_config.push(new_layer)
+    model.layers_config.push(new_layer);
     console.log(`[synapse][graphql]: Appended ${args.layer_config.type} layer (ID: ${new_layer.id}) to model ${model.name} (Model ID: ${model.id})`);
             
     // push message to redis
-    console.log(`[synapse][graphql]: Appending to redis message Queue`)
+    console.log(`[synapse][graphql]: Appending to redis message Queue`);
     const message = {
         event_type: "LAYER_ADDED",
         model_id: model.id,
         layer_config: model.layers_config.at(-1),
+        timestamp: new Date().toISOString()
+    };
+    await enqueueMessage(message);
+
+    // return model
+    return model;
+}
+
+export async function deleteLayerResolver(models: Model[], args: DeleteLayerArgs) {
+    // find the model 
+    const model = models.find(m => m.id === args.model_id);
+
+    // handle model doesn't exist 
+    if(!model){
+        throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`);
+    }
+
+    model.layers_config = model.layers_config.filter(layer_config => layer_config.id !== args.layer_id);
+            
+    // push message to redis
+    console.log(`[synapse][graphql]: Appending to redis message Queue`);
+    const message = {
+        event_type: "LAYER_DELETED",
+        model_id: args.model_id,
+        layer_id: args.layer_id,
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);

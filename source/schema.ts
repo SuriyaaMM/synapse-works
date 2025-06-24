@@ -450,6 +450,10 @@ export const typeDefs = `#graphql
             model_id: ID!
             layer_config: LayerConfigInput!
         ): Model!
+        # delete layer
+        deleteLayer(
+            model_id: ID!, 
+            layer_id: ID!): Model!
         # set's training configuration
         setTrainConfig(
             model_id: ID!

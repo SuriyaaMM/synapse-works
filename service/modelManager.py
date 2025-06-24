@@ -3,7 +3,7 @@ from typedefs import *
 import json
 import redis
 
-from backendTorch import TorchModelManager, TorchTrainManager, train
+from backendTorch import TorchModelManager, TorchTrainManager, train, nn
 
 class ModelManager(object):
 
@@ -29,7 +29,11 @@ class ModelManager(object):
 
     def dumpNetworkForTraining(self):
         if(self.backend == "torch"):
-            self._train_manager = TorchTrainManager(self._internal_manager.layers,
+            layers: list[nn.Module] = []
+            for torch_layer in self._internal_manager.layers:
+                layers.append(torch_layer.layer)
+
+            self._train_manager = TorchTrainManager(layers,
                                                    self._internal_manager.train_config,
                                                    self._internal_manager.dataset_config)
         else:
@@ -44,14 +48,14 @@ class ModelManager(object):
         self._internal_manager.appendLayer(layer_config=layer_config)
         logging.info(f"Appended layer({layer_config['type']} to model(id = {self.id}) with kwargs\n{json.dumps(layer_config["kwargs"], indent=4)})")
     
-    def deleteLayer(self, layer_config: LayerConfig):
+    def deleteLayer(self, layer_id: str):
         R"""Deletes the layer in model
 
         Args:
             layer_name: str, graphql object layerName
         """
-        self._internal_manager.deleteLayer(layer_config=layer_config)
-        logging.info(f"Deleted layer({layer_config['type']} from model(id = {self.id}) with kwargs\n{json.dumps(layer_config["kwargs"], indent=4)})")
+        self._internal_manager.deleteLayer(layer_id=layer_id)
+        
 
     def setTrainingConfig(self, train_config_td: TrainConfig):
         R"""Sets training configuration for the model

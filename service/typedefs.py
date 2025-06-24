@@ -120,6 +120,7 @@ LayerKwargs_T = Union[LinearLayerKwargs,
                       LogSigmoidLayerKwargs,
                       TanhLayerKwargs]
 class LayerConfig(TypedDict):
+    id: str
     type: str
     kwargs: LayerKwargs_T
 

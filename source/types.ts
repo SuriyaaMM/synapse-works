@@ -412,6 +412,12 @@ export type AppendLayerArgs = {
     layer_config: LayerConfigInput;
 };
 
+// deleteLayer function args
+export type DeleteLayerArgs = {
+    model_id: string;
+    layer_id: string;
+};
+
 // setTrainConfig function args
 export type SetTrainConfigArgs = {
     model_id: string;

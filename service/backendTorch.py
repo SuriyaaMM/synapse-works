@@ -16,6 +16,10 @@ from torchvision.transforms import ToTensor
 from backendTorchUtils import torch_dataset_name_map, torch_layer_name_map, \
                                 torch_loss_function_name_map, torch_optimizer_name_map
 
+class TorchLayer:
+    layer: nn.Module
+    id: str
+
 """
 Implementation of AbstractManager for pytorch backend
 """
@@ -23,7 +27,7 @@ class TorchModelManager(AbstractModelManager):
     # TODO(mms): default trainConfig get's passed when the model is created, handle that!
     def __init__(self):
         super().__init__()
-        self.layers: list[nn.Module] = []
+        self.layers: list[TorchLayer] = []
 
     def appendLayer(self, layer_config: LayerConfig, debug: bool = True):
         if(debug):
@@ -35,22 +39,17 @@ class TorchModelManager(AbstractModelManager):
         else:
             layer = torch_layer_name_map(layer_config["type"])(**layer_config["kwargs"])
 
+        torch_layer = TorchLayer()
+        torch_layer.layer = layer
+        torch_layer.id = layer_config["id"]
         # append to existing layers
-        self.layers.append(layer)
+        self.layers.append(torch_layer)
 
-    def deleteLayer(self, layer_config: LayerConfig, debug: bool = True):
-        if(debug):
-            try:
-                layer = torch_layer_name_map(layer_config["type"])(layer_config["kwargs"])
-            # ----- exceptions
-            except TypeError as e:
-                logging.error(f"type error {e}")
-        else:
-            layer = torch_layer_name_map(layer_config["type"])(layer_config["kwargs"])
-
-        # search in layers & remove it
-        if layer in self.layers:
-            self.layers.remove(layer)
+    def deleteLayer(self, layer_id: str, debug: bool = True):
+        for layer in self.layers:
+            if layer.id == layer_id:
+                self.layers.remove(layer)
+                logging.info(f"Deleted layer {layer.__class__.__name__} with id({layer_id})")
 
     def setDatasetConfig(self, dataset_config: DatasetConfig, debug: bool = True):
         self.dataset_config = dataset_config

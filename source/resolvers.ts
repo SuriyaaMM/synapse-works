@@ -6,18 +6,20 @@ import {
     SetTrainConfigArgs,
     CreateModelArgs,
     DatasetConfig,
-    TrainArgs
+    TrainArgs,
+    DeleteLayerArgs
 } from "./types.js"
 
-import { appendLayerResolver } from "./layerResolver.js";
+import { appendLayerResolver, deleteLayerResolver } from "./layerResolver.js";
 import { createModelResolver, validateModelResolver } from './modelResolver.js';
 import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
 import { dequeueMessage } from "./redisClient.js";
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
 import { loadResolver, saveResolver } from "./save.js";
 
 const models: Model[] = [];
+export let tensorboardProcess: ChildProcess = null;
 
 export const resolvers = {
     // graphql interface inferring for Layer
@@ -122,6 +124,10 @@ export const resolvers = {
         appendLayer: async (_: unknown, args : AppendLayerArgs) => {
             return await appendLayerResolver(models, args);
         },
+        // deleteLayer mutation
+        deleteLayer: async(_:unknown, args: DeleteLayerArgs) => {
+            return await deleteLayerResolver(models, args)
+        },
         // setTrainConfig mutation
         setTrainConfig: async (_:unknown, args: SetTrainConfigArgs) => {
             return await setTrainConfigResolver(models, args);
@@ -144,17 +150,17 @@ export const resolvers = {
         },
         // startTensorboard mutation
         startTensorboard: async(_:unknown) => {
-            const tb = spawn('tensorboard', ['--logdir', './tbsummary']);
+            tensorboardProcess = spawn('tensorboard', ['--logdir', './tbsummary']);
 
-            tb.stdout.on('data', (data) => {
+            tensorboardProcess.stdout.on('data', (data) => {
             console.log(`[TensorBoard]: ${data}`);
             });
 
-            tb.stderr.on('data', (data) => {
+            tensorboardProcess.stderr.on('data', (data) => {
             console.error(`[TensorBoard Error]: ${data}`);
             });
 
-            tb.on('close', (code) => {
+            tensorboardProcess.on('close', (code) => {
             console.log(`[TensorBoard exited with code ${code}]`);
             });
 
