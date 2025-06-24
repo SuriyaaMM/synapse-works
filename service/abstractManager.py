@@ -14,7 +14,7 @@ class AbstractModelManager(ABC):
         pass
 
     @abstractmethod
-    def deleteLayer(self, layer_config: LayerConfig, debug: bool = True):
+    def deleteLayer(self, layer_id: str, debug: bool = True):
         pass
 
     @abstractmethod

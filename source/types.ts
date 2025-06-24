@@ -392,6 +392,15 @@ export type Model  = {
     dataset_config: DatasetConfig;
 };
 
+export type ModelDimensionResolveStatusStruct = {
+    layer_id: string;
+    message: string;
+}
+
+export type ModelDimensionResolveStatus = {
+    status?: ModelDimensionResolveStatusStruct[];
+}
+
 // createModel function args
 export type CreateModelArgs = {
     name: string;
@@ -401,6 +410,12 @@ export type CreateModelArgs = {
 export type AppendLayerArgs = {
     model_id: string;
     layer_config: LayerConfigInput;
+};
+
+// deleteLayer function args
+export type DeleteLayerArgs = {
+    model_id: string;
+    layer_id: string;
 };
 
 // setTrainConfig function args

@@ -6,18 +6,20 @@ import {
     SetTrainConfigArgs,
     CreateModelArgs,
     DatasetConfig,
-    TrainArgs
+    TrainArgs,
+    DeleteLayerArgs
 } from "./types.js"
 
-import { appendLayerResolver } from "./layerResolver.js";
-import { createModelResolver } from './modelResolver.js';
+import { appendLayerResolver, deleteLayerResolver } from "./layerResolver.js";
+import { createModelResolver, validateModelResolver } from './modelResolver.js';
 import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
 import { dequeueMessage } from "./redisClient.js";
-import { spawn } from "child_process";
+import { spawn, ChildProcess } from "child_process";
 import { loadResolver, saveResolver } from "./save.js";
 
 const models: Model[] = [];
+export let tensorboardProcess: ChildProcess = null;
 
 export const resolvers = {
     // graphql interface inferring for Layer
@@ -106,7 +108,11 @@ export const resolvers = {
         getModels: () => models,
         // getTrainStatus query
         // return the status (pop from redis queue)
-        getTrainingStatus: () => dequeueMessage()
+        getTrainingStatus: () => dequeueMessage(),
+        // validateModel query
+        validateModel: async (_: unknown, {id, in_dimension} : {id: string, in_dimension:number[]}) => {
+            return validateModelResolver(models.find(m => m.id === id), in_dimension);
+        }
     },
     // graphql mutations
     Mutation: {
@@ -117,6 +123,10 @@ export const resolvers = {
         // appendLayer mutation
         appendLayer: async (_: unknown, args : AppendLayerArgs) => {
             return await appendLayerResolver(models, args);
+        },
+        // deleteLayer mutation
+        deleteLayer: async(_:unknown, args: DeleteLayerArgs) => {
+            return await deleteLayerResolver(models, args)
         },
         // setTrainConfig mutation
         setTrainConfig: async (_:unknown, args: SetTrainConfigArgs) => {
@@ -140,17 +150,17 @@ export const resolvers = {
         },
         // startTensorboard mutation
         startTensorboard: async(_:unknown) => {
-            const tb = spawn('tensorboard', ['--logdir', './tbsummary']);
+            tensorboardProcess = spawn('tensorboard', ['--logdir', './tbsummary']);
 
-            tb.stdout.on('data', (data) => {
+            tensorboardProcess.stdout.on('data', (data) => {
             console.log(`[TensorBoard]: ${data}`);
             });
 
-            tb.stderr.on('data', (data) => {
+            tensorboardProcess.stderr.on('data', (data) => {
             console.error(`[TensorBoard Error]: ${data}`);
             });
 
-            tb.on('close', (code) => {
+            tensorboardProcess.on('close', (code) => {
             console.log(`[TensorBoard exited with code ${code}]`);
             });
 

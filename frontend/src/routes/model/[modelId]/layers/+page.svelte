@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import client from '$lib/apolloClient';
-  import { APPEND_LAYER } from '$lib/mutations'; 
+  import { APPEND_LINEAR_LAYER } from '$lib/mutations'; 
   import { GET_MODEL } from '$lib/queries';
   
   import type { Model, LinearLayerConfig, LinearLayerConfigInput, LayerConfig, LayerConfigInput } from '../../../../../../source/types';
@@ -137,7 +137,7 @@
 
       // Execute mutation
       const res = await client.mutate({
-        mutation: APPEND_LAYER,
+        mutation: APPEND_LINEAR_LAYER,
         variables: { modelId, layerConfig }
       });
       

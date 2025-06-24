@@ -423,6 +423,13 @@ export const typeDefs = `#graphql
         train_config: TrainConfig!
         dataset_config: DatasetConfig!
     }
+    type ModelDimensionResolveStatusStruct {
+        layer_id: ID!
+        message: String!
+    }
+    type ModelDimensionResolveStatus {
+        status: [ModelDimensionResolveStatusStruct]
+    }
     # ---------- Queries ----------
     type Query {
         # get the model by id
@@ -431,6 +438,8 @@ export const typeDefs = `#graphql
         getModels: [Model!]!
         # get training status
         getTrainingStatus: TrainStatus!
+        # validate model
+        validateModel(id: ID!, in_dimension: [Int!]!): ModelDimensionResolveStatus!
     }
     # ---------- Mutations ----------
     type Mutation {
@@ -441,6 +450,10 @@ export const typeDefs = `#graphql
             model_id: ID!
             layer_config: LayerConfigInput!
         ): Model!
+        # delete layer
+        deleteLayer(
+            model_id: ID!, 
+            layer_id: ID!): Model!
         # set's training configuration
         setTrainConfig(
             model_id: ID!
