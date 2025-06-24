@@ -51,5 +51,6 @@ python service/worker.py
 ```
 in third one
 ```bash
+cd frontend
 npm run dev
 ```
