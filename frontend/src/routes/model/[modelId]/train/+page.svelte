@@ -314,7 +314,6 @@
   function openTensorBoard() {
     window.open('http://localhost:6006', '_blank');
   }
-  
 </script>
 
 <div class="container mx-auto p-6">
@@ -430,7 +429,7 @@
       <!-- Training Status -->
       {#if trainingStatus}
         <div class="bg-yellow-50 p-4 rounded-md border-l-4 border-yellow-500">
-          <h3 class="font-semibold text-gray-800 mb-3">Training Status</h3>
+          <h3 class="font-semibold text-yellow-800 mb-3">Training Status</h3>
           
           {#if trainingStatus.completed}
             <div class="text-green-700">

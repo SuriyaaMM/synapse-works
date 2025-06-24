@@ -12,7 +12,7 @@ export const CREATE_MODEL = gql`
   }
 `;
 
-export const APPEND_LINEAR_LAYER = gql`
+export const APPEND_LAYER = gql`
   mutation AddMyLinearLayer(
     $modelId: ID!
     $layerConfig: LayerConfigInput!
@@ -30,6 +30,28 @@ export const APPEND_LINEAR_LAYER = gql`
         ... on LinearLayerConfig {
           in_features
           out_features
+        }
+        ... on Conv1dLayerConfig {
+          in_channels
+          out_channels
+          kernel_size
+          stride
+          padding
+          dilation
+          groups
+          bias
+          padding_mode
+        }
+        ... on Conv2dLayerConfig {
+          in_channels
+          out_channels
+          kernel_size
+          stride
+          padding
+          dilation
+          groups
+          bias
+          padding_mode
         }
       }
     }
@@ -159,5 +181,25 @@ export const TRAIN_MODEL = gql`
 export const START_TENSORBOARD = gql`
   mutation StartTensorboard {
     startTensorboard
+  }
+`;
+
+export const SAVE_MODEL = gql`
+  mutation SaveModel {
+    save
+  }
+`;
+
+export const LOAD_MODEL = gql`
+  mutation LoadModel {
+    load {
+      id
+      name
+      layers_config {
+        id
+        type
+        name
+      }
+    }
   }
 `;
