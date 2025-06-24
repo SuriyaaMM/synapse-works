@@ -10,7 +10,7 @@ import {
 } from "./types.js"
 
 import { appendLayerResolver } from "./layerResolver.js";
-import { createModelResolver } from './modelResolver.js';
+import { createModelResolver, validateModelResolver } from './modelResolver.js';
 import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
 import { dequeueMessage } from "./redisClient.js";
@@ -106,7 +106,11 @@ export const resolvers = {
         getModels: () => models,
         // getTrainStatus query
         // return the status (pop from redis queue)
-        getTrainingStatus: () => dequeueMessage()
+        getTrainingStatus: () => dequeueMessage(),
+        // validateModel query
+        validateModel: async (_: unknown, {id, in_dimension} : {id: string, in_dimension:number[]}) => {
+            return validateModelResolver(models.find(m => m.id === id), in_dimension);
+        }
     },
     // graphql mutations
     Mutation: {
