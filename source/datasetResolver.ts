@@ -1,5 +1,5 @@
 import { enqueueMessage } from "./redisClient.js";
-import { DatasetConfigInput, MNISTDatasetConfig, Model, SetDatasetArgs } from "./types";
+import { CIFAR10DatasetConfig, CustomCSVDatasetConfig, DatasetConfigInput, MNISTDatasetConfig, Model, SetDatasetArgs } from "./types";
 import { DatasetConfig  } from "./types";
 
 type DatasetHandlerMap = {
@@ -14,7 +14,7 @@ export const datasetHandlers: DatasetHandlerMap = {
         // if mnistConfig is not found, report error
         if(!mnist) throw new Error("[synapse][graphql]: mnist config is missing");
         // create MNISTDataset object & return it
-        const newDataset: MNISTDatasetConfig = {
+        const new_dataset: MNISTDatasetConfig = {
             name: "mnist",
             split_length: split_length,
             shuffle: shuffle,
@@ -24,15 +24,15 @@ export const datasetHandlers: DatasetHandlerMap = {
             download: mnist.download,
             transform: mnist.transform
         };
-        return newDataset;
+        return new_dataset;
     },
     "cifar10": (dataset: DatasetConfigInput) => {
         // destructure the dataset
         const {split_length, shuffle, batch_size, cifar10} = dataset;
-        // if mnistConfig is not found, report error
+        // if cifar10 is not found, report error
         if(!cifar10) throw new Error("[synapse][graphql]: cifar10 config is missing");
-        // create MNISTDataset object & return it
-        const newDataset: MNISTDatasetConfig = {
+        // create CIFAR10Dataset object & return it
+        const new_dataset: CIFAR10DatasetConfig = {
             name: "cifar10",
             split_length: split_length,
             shuffle: shuffle,
@@ -42,7 +42,26 @@ export const datasetHandlers: DatasetHandlerMap = {
             download: cifar10.download,
             transform: cifar10.transform
         };
-        return newDataset;
+        return new_dataset;
+    },
+    "custom_csv": (dataset: DatasetConfigInput) => {
+        // destructure the dataset
+        const {split_length, shuffle, batch_size, custom_csv} = dataset;
+        // if custom_csv is not found, report error
+        if(!custom_csv) throw new Error("[synapse][graphql]: custom csv config is missing");
+        // create CustomCSVDatasetConfig
+        const new_dataset: CustomCSVDatasetConfig = {
+            name: "custom_csv",
+            split_length: split_length,
+            shuffle: shuffle,
+            batch_size: batch_size,
+            path_to_csv: custom_csv.path_to_csv,
+            feature_columns: custom_csv.feature_columns,
+            label_columns: custom_csv.label_columns,
+            transform: custom_csv.transform
+        }
+
+        return new_dataset;
     }
 }
 

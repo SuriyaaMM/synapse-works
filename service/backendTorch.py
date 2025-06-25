@@ -20,11 +20,11 @@ class TorchLayer:
     layer: nn.Module
     id: str
 
+
 """
 Implementation of AbstractManager for pytorch backend
 """
 class TorchModelManager(AbstractModelManager):
-    # TODO(mms): default trainConfig get's passed when the model is created, handle that!
     def __init__(self):
         super().__init__()
         self.layers: list[TorchLayer] = []
@@ -205,11 +205,15 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis):
         redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
         logging.info(f"pushed {json.dumps(update_message)} to redis queue")
 
+    batch_size = 1
+    if "batch_size" in train_manager.dataset_config.keys():
+        batch_size = train_manager.dataset_config["dataloader_config"]["batch_size"] # type:ignore
+
     hparam_dict = {
         "learning_rate": train_manager.train_config["optimizer_kwargs"]["lr"],
         "optimizer": train_manager.train_config["optimizer"],
         "epochs": train_manager.epochs,
-        "batch_size": train_manager.dataset_config["dataloader_config"]["batch_size"],
+        "batch_size": batch_size,
         "loss_fn": train_manager.train_config["loss_function"],
     }
    

@@ -3,10 +3,17 @@
 ## Overview
 Architect, Train & Evaluate your Neural Networks in seconds
 
-### Features
-- Intuitive UI for creating neural networks, training them and visualizing them
-- Supports multiple backends (although currently only pytorch)(future implementations might have keras, tf and jax)
-- Visualize `gradient_norm`, `loss`, `accuracy`, `hyperparameters`, `flow of gradients`, `weight & biases`, `computation graph`
+# Your Project Title (e.g., Synapse: Neural Network Builder)
+
+## Features
+
+-   Intuitive UI for creating neural networks, training them, and visualizing them.
+-   Supports multiple backends (currently only PyTorch; future implementations might include Keras, TensorFlow, and Jax).
+-   Visualize `gradient_norm`, `loss`, `accuracy`, `hyperparameters`, `flow of gradients`, `weights & biases`, and the `computation graph`.
+-   Asynchronous Task Processing / Distributed Task Queue & Decoupled Architecture leverages the power of Redis and GraphQL to achieve this.
+-   Flexible Deployment, Run your web server on one machine and offload computationally intensive model training to powerful GPU-equipped worker machines, seamlessly connected via the Redis message queue.
+
+
 
 ### Gallery
 [Visit Gallery](./gallery/README.md)

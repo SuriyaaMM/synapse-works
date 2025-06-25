@@ -4,6 +4,7 @@ import torch
 from torch import nn
 from torch.utils import data as tdu
 from torchvision.datasets import MNIST, CIFAR10, CIFAR100
+from backendTorchDataset import TorchCustomCSVDataset
 
 def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]:
     R"""maps layer_name to respective torch.nn.Module
@@ -54,7 +55,8 @@ def torch_dataset_name_map(dataset_name: str, debug: bool = True) -> type[tdu.Da
     dataset_map = {
         "mnist" : MNIST,
         "cifar10" : CIFAR10,
-        "cifar100" : CIFAR100
+        "cifar100" : CIFAR100,
+        "custom_csv": TorchCustomCSVDataset
     }
     # convert to lowercase
     dataset_name = dataset_name.lower()

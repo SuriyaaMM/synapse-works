@@ -394,6 +394,16 @@ export const typeDefs = `#graphql
         train: Boolean
         download: Boolean
     }
+    type CustomCSVDatasetConfig implements DatasetConfig {
+        name: String!
+        batch_size: Int
+        split_length: [Float]
+        shuffle: Boolean
+        transform: [String]
+        path_to_csv: String!
+        feature_columns: [String!]!
+        label_columns: [String!]!
+    }
     input MNISTDatasetConfigInput {
         root: String!
         train: Boolean
@@ -406,6 +416,12 @@ export const typeDefs = `#graphql
         download: Boolean
         transform: [String]
     }
+    input CustomCSVDatasetConfigInput {
+        transform: [String]
+        path_to_csv: String!
+        feature_columns: [String!]!
+        label_columns: [String!]!
+    }
     input DatasetConfigInput {
         name: String!
         batch_size: Int
@@ -413,8 +429,36 @@ export const typeDefs = `#graphql
         shuffle: Boolean
         mnist: MNISTDatasetConfigInput
         cifar10: CIFAR10DatasetConfigInput
+        custom_csv: CustomCSVDatasetConfigInput 
     }
     # ---------- Model ----------
+    interface EncoderDecoderArchitecture {
+        encoder_layers_config: [LayerConfig!]!
+        decoder_layers_config: [LayerConfig!]!
+    }
+    enum VAELayerTarget {
+        Encoder,
+        Decoder,
+        Mean,
+        Logvar
+    }
+    type VAEArchitecture implements EncoderDecoderArchitecture {
+        encoder_layers_config: [LayerConfig!]!
+        decoder_layers_config: [LayerConfig!]!
+        mean_layers_config: [LayerConfig!]
+        log_var_layers_config: [LayerConfig!]
+        latent_dim: Int!
+    }
+    input VAEArchitectureInput {
+        latent_dim: Int!
+        target: VAELayerTarget!
+    }
+    input SpecialModelArchitectureInput {
+        vae: VAEArchitectureInput
+    }
+    type SpecialModelArchitecture {
+        vae: VAEArchitecture
+    }
     # Model type
     type Model {
         id: ID!
@@ -422,6 +466,7 @@ export const typeDefs = `#graphql
         layers_config: [LayerConfig!]! 
         train_config: TrainConfig!
         dataset_config: DatasetConfig!
+        special: SpecialModelArchitecture
     }
     type ModelDimensionResolveStatusStruct {
         layer_id: ID!
@@ -449,6 +494,7 @@ export const typeDefs = `#graphql
         appendLayer(
             model_id: ID!
             layer_config: LayerConfigInput!
+            special: SpecialModelArchitectureInput
         ): Model!
         # delete layer
         deleteLayer(

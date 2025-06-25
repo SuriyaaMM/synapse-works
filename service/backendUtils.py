@@ -423,7 +423,6 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
     #TODO(mms) implement transforms support from str to torchvision.transforms.Compose mapping
     # non optional kwargs
     name: str = dataset_config["name"]
-    root: str = dataset_config["root"]
     parsed_dataset_config: DatasetConfig = cast(DatasetConfig, {
         "name": name,
         "dataloader_config" : {"num_workers": 5, "pin_memory" : True}
@@ -431,46 +430,60 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
 
     # optional kwargs
     if "batch_size" in dataset_config.keys():
-        parsed_dataset_config["dataloader_config"]["batch_size"] = dataset_config["batch_size"]
+        parsed_dataset_config["dataloader_config"]["batch_size"] = dataset_config["batch_size"] # type:ignore
     if "split_length" in dataset_config.keys():
         parsed_dataset_config["split_length"] = dataset_config["split_length"] # type:ignore
     else:
         parsed_dataset_config["split_length"] = [0.8, 0.2]
     if "shuffle" in dataset_config.keys():
-        parsed_dataset_config["dataloader_config"]["shuffle"] = dataset_config["shuffle"]
+        parsed_dataset_config["dataloader_config"]["shuffle"] = dataset_config["shuffle"] # type:ignore
 
     # handle for mnist dataset
     if name == "mnist":
+        dataset_config = cast(TSMNISTDatasetInput, dataset_config)
+        root: str = dataset_config["root"] # type:ignore
         kwargs = cast(MNISTDatasetConfig, {
             "root": root
         })
         # optional configurations
         if "train" in dataset_config.keys():
-            kwargs["train"] = dataset_config["train"]
+            kwargs["train"] = dataset_config["train"] # type:ignore
         if "download" in dataset_config.keys():
-            kwargs["download"] = dataset_config["download"]
+            kwargs["download"] = dataset_config["download"] # type:ignore
+
+        kwargs["transform"]= torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
 
     elif name == "cifar10":
+        dataset_config = cast(TSCIFAR10DatasetInput, dataset_config)
+        root: str = dataset_config["root"] # type:ignore
         kwargs = cast(CIFAR10DatasetConfig, {
             "root": root
         })
         # optional configurations
         if "train" in dataset_config.keys():
-            kwargs["train"] = dataset_config["train"]
+            kwargs["train"] = dataset_config["train"] # type:ignore
         if "download" in dataset_config.keys():
-            kwargs["download"] = dataset_config["download"]
+            kwargs["download"] = dataset_config["download"] # type:ignore
+
+        kwargs["transform"]= torchvision.transforms.Compose([torchvision.transforms.ToTensor()])
+        
+    elif name == "custom_csv":
+        dataset_config = cast(TSCustomCSVDatasetInput, dataset_config)
+        path_to_csv: str = dataset_config["path_to_csv"]
+        feature_columns: list[str] = dataset_config["feature_columns"]
+        label_columns: list[str] = dataset_config["label_columns"]
+
+        kwargs = cast(CustomCSVDatasetConfig, {
+            "path_to_csv": path_to_csv,
+            "feature_columns": feature_columns,
+            "label_columns": label_columns
+        }) 
+    
     else:
         raise NotImplementedError(f"{name} dataset is not implemented yet")
     
     # add dataset specific kwargs
-    parsed_dataset_config["kwargs"] = kwargs
-    if "transforms" in dataset_config.keys():
-        parsed_dataset_config["kwargs"]["transform"] = torchvision.transforms.Compose([
-            torchvision.transforms.ToTensor()])
-    else:
-        parsed_dataset_config["kwargs"]["transform"] = torchvision.transforms.Compose([
-            torchvision.transforms.ToTensor()])
-        
+    parsed_dataset_config["kwargs"] = kwargs        
     logging.info(f"Parsed PARAM(dataset_config):\n{json.dumps(parsed_dataset_config, indent=4, default=custom_json_encoder)}")
         
     return parsed_dataset_config

@@ -93,6 +93,9 @@ export const resolvers = {
             else if(dataset_config.name === "cifar10"){
                 return 'CIFAR10DatasetConfig';
             }
+            else if(dataset_config.name == "custom_csv"){
+                return 'CustomCSVDatasetConfig';
+            }
             return null;
         }
     },

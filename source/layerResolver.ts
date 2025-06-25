@@ -23,7 +23,11 @@ import {
     SigmoidLayerConfig,
     LogSigmoidLayerConfig,
     TanhLayerConfig,
-    DeleteLayerArgs
+    DeleteLayerArgs,
+    SpecialModelArchitectureInput,
+    VAELayerTarget,
+    REDISSpecialModelArchitectureMessage,
+    REDISLayerAddedMessage
 } from "./types.js"
 
 type LayerHandlerMap = {
@@ -404,10 +408,35 @@ const layerHandler: LayerHandlerMap = {
     }
 }
 
-export async function appendLayerResolver(models: Model[], args: AppendLayerArgs) {
+async function specialModelArchitectureLayerResolver(
+    model: Model, 
+    parsed_layer_config: LayerConfig,
+    args: AppendLayerArgs,
+    special_message: REDISSpecialModelArchitectureMessage){
+    // set respective arguements for vae
+    if(args.special.vae){
+        model.special.vae.latent_dim = args.special.vae.latent_dim;
+        switch(args.special.vae.target){
+            case VAELayerTarget.Encoder:
+                model.special.vae.encoder_layers_config.push(parsed_layer_config);
+            case VAELayerTarget.Decoder:
+                model.special.vae.decoder_layers_config.push(parsed_layer_config);
+            case VAELayerTarget.Mean:
+                model.special.vae.mean_layers_config.push(parsed_layer_config);
+            case VAELayerTarget.Logvar:
+                model.special.vae.log_var_layers_config.push(parsed_layer_config);
+        }
+        special_message.vae.latent_dim = model.special.vae.latent_dim;
+        special_message.vae.target = args.special.vae.target;
+    }    
+}
+
+export async function appendLayerResolver(
+    models: Model[], 
+    args: AppendLayerArgs) {
     // find the model 
     const model = models.find(m => m.id === args.model_id);
-
+    
     // handle model doesn't exist 
     if(!model){
         throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`)
@@ -419,16 +448,24 @@ export async function appendLayerResolver(models: Model[], args: AppendLayerArgs
     if(!handler) throw new Error(`[synapse][graphql]: layer ${args.layer_config.type} is invalid`);
     // get the parsed layer 
     const new_layer = handler(args.layer_config);
-    // push layer to model
-    model.layers_config.push(new_layer);
-    console.log(`[synapse][graphql]: Appended ${args.layer_config.type} layer (ID: ${new_layer.id}) to model ${model.name} (Model ID: ${model.id})`);
+    
+    let special_message: REDISSpecialModelArchitectureMessage = {};
+    if(args.special){
+        await specialModelArchitectureLayerResolver(model, new_layer, args, special_message);
+    }
+    else{
+        // push layer to model
+        model.layers_config.push(new_layer);
+        console.log(`[synapse][graphql]: Appended ${args.layer_config.type} layer (ID: ${new_layer.id}) to model ${model.name} (Model ID: ${model.id})`);
+    }
             
     // push message to redis
     console.log(`[synapse][graphql]: Appending to redis message Queue`);
-    const message = {
+    const message: REDISLayerAddedMessage = {
         event_type: "LAYER_ADDED",
         model_id: model.id,
-        layer_config: model.layers_config.at(-1),
+        layer_config: new_layer,
+        special: special_message,
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);

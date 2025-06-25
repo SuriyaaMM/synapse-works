@@ -398,21 +398,29 @@ class TSTrainConfigInput(TypedDict):
 # refer: https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.MNIST.html
 class MNISTDatasetConfig(TypedDict):
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
     transform: torchvision.transforms.Compose
 
 class CIFAR10DatasetConfig(TypedDict):
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
     transform: torchvision.transforms.Compose
 
-DatasetKwargs_T = Union[MNISTDatasetConfig, CIFAR10DatasetConfig]
+class CustomCSVDatasetConfig(TypedDict):
+    path_to_csv: str
+    feature_columns: list[str]
+    label_columns: list[str]
+    transform: NotRequired[torchvision.transforms.Compose]
+
+DatasetKwargs_T = Union[MNISTDatasetConfig, 
+                        CIFAR10DatasetConfig, 
+                        CustomCSVDatasetConfig]
 
 class DataLoaderConfig(TypedDict):
-    batch_size: Optional[int]
-    shuffle: Optional[bool]
+    batch_size: NotRequired[int]
+    shuffle: NotRequired[bool]
     num_workers: int
     pin_memory: bool
 
@@ -424,25 +432,37 @@ class DatasetConfig(TypedDict):
 
 class TSMNISTDatasetInput(TypedDict):
     name: str
-    batch_size: Optional[int]
-    split_length: Optional[list[float]]
-    shuffle: Optional[bool]
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
     transforms: list[str]
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
 
 class TSCIFAR10DatasetInput(TypedDict):
     name: str
-    batch_size: Optional[int]
-    split_length: Optional[list[float]]
-    shuffle: Optional[bool]
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
     transforms: list[str]
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
 
-TSDatasetInput = Union[TSMNISTDatasetInput, TSCIFAR10DatasetInput]
+class TSCustomCSVDatasetInput(TypedDict):
+    name: str
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
+    transforms: list[str]
+    path_to_csv: str
+    feature_columns: list[str]
+    label_columns: list[str]
+
+TSDatasetInput = Union[TSMNISTDatasetInput, 
+                       TSCIFAR10DatasetInput, 
+                       TSCustomCSVDatasetInput]
 
 
 def custom_json_encoder(obj):

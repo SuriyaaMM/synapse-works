@@ -360,6 +360,13 @@ export interface CIFAR10DatasetConfig extends DatasetConfig {
     transform?: string[];
 };
 
+export interface CustomCSVDatasetConfig extends DatasetConfig {
+    path_to_csv: string;
+    feature_columns: string[];
+    label_columns: string[];
+    transform?: string[];
+}
+
 export type MNISTDatasetConfigInput = {
     root: string;
     train?: boolean;
@@ -374,6 +381,13 @@ export type CIFAR10DatasetConfigInput = {
     transform?: string[];
 };
 
+export type CustomCSVDatasetConfigInput = {
+    path_to_csv: string;
+    feature_columns: string[];
+    label_columns: string[];
+    transform?: string[];
+}
+
 export type DatasetConfigInput  = {
     name: string;
     batch_size?: number;
@@ -381,15 +395,48 @@ export type DatasetConfigInput  = {
     shuffle?: boolean;
     mnist?: MNISTDatasetConfigInput
     cifar10?: CIFAR10DatasetConfigInput
+    custom_csv?: CustomCSVDatasetConfigInput;
 };
 
 // ------------------------------- Model ----------------------------------
+export interface EncoderDecoderArchitecture {
+    encoder_layers_config: LayerConfig[];
+    decoder_layers_config: LayerConfig[];
+};
+
+export interface VAEArchitecture extends EncoderDecoderArchitecture {
+    mean_layers_config?: LayerConfig[];
+    log_var_layers_config?: LayerConfig[];
+    latent_dim: number;
+};
+
+export enum VAELayerTarget {
+    Encoder,
+    Decoder,
+    Mean,
+    Logvar
+}
+
+export type VAEArchitectureInput = {
+    latent_dim: number;
+    target: VAELayerTarget;
+}
+
+export type SpecialModelArchitectureInput = {
+    vae?: VAEArchitectureInput;
+}
+
+export type SpecialModelArchitecture =  {
+    vae?: VAEArchitecture;
+}
+
 export type Model  = {
     id: string;
     name: string;
     layers_config: LayerConfig[];
     train_config: TrainConfig;
     dataset_config: DatasetConfig;
+    special?: SpecialModelArchitecture;
 };
 
 export type ModelDimensionResolveStatusStruct = {
@@ -401,6 +448,18 @@ export type ModelDimensionResolveStatus = {
     status?: ModelDimensionResolveStatusStruct[];
 }
 
+export type REDISSpecialModelArchitectureMessage = {
+    vae?: VAEArchitectureInput;
+}
+
+export type REDISLayerAddedMessage = {
+    event_type: string;
+    model_id: string;
+    layer_config: LayerConfig;
+    timestamp: string;
+    special?: REDISSpecialModelArchitectureMessage;
+}
+
 // createModel function args
 export type CreateModelArgs = {
     name: string;
@@ -410,6 +469,7 @@ export type CreateModelArgs = {
 export type AppendLayerArgs = {
     model_id: string;
     layer_config: LayerConfigInput;
+    special?: SpecialModelArchitectureInput;
 };
 
 // deleteLayer function args
@@ -434,4 +494,3 @@ export type SetDatasetArgs = {
 export type TrainArgs = {
     model_id: string;
 };
-
