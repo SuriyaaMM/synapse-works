@@ -16,6 +16,15 @@ Architect, Train & Evaluate your Neural Networks in seconds
 [Visit Gallery](./gallery/README.md)
 
 ### Instructions for Building DockerImage
+#### If you wish not to build the image, there's a pre-built version
+```bash
+sudo docker pull suriyaamm2705/synapse-works:latest
+```
+```bash
+sudo docker run -it --rm   -p 5173:5173 -p 4000:4000 -p 6379:6379 -p 6000:6000  synapse-works
+```
+#### Steps for building & running
+This will take upto 15 mins
 ```bash
 sudo docker build -t synapse-works .
 ```
@@ -23,7 +32,7 @@ sudo docker build -t synapse-works .
 sudo docker run -it --rm   -p 5173:5173 -p 4000:4000 -p 6379:6379 -p 6000:6000  synapse-works
 ```
 
-## Installation
+## Manual Installation
 ### Pre-requsities
 - [miniconda](https://www.anaconda.com/docs/getting-started/miniconda/install#linux-terminal-installer)
 - [redis-server](https://redis.io/docs/latest/operate/oss_and_stack/install/install-stack/)
