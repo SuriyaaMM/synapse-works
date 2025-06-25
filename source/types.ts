@@ -75,7 +75,7 @@ export interface BatchNorm2dLayerConfig extends LayerConfig {
     num_features: number;
     eps?: number;
     momentum?: number;
-    affine?: number;
+    affine?: boolean;
     track_running_status?:boolean;
 }
 
@@ -83,8 +83,8 @@ export interface BatchNorm1dLayerConfig extends LayerConfig {
     num_features: number;
     eps?: number;
     momentum?: number;
-    affine?: number;
-    track_running_status:boolean;
+    affine?: boolean;
+    track_running_status: boolean;
 }
 
 export interface FlattenLayerConfig extends LayerConfig {
@@ -193,7 +193,7 @@ export type BatchNorm2dLayerConfigInput = {
     num_features: number;
     eps?: number;
     momentum?: number;
-    affine?: number;
+    affine?: boolean;
     track_running_status?: boolean;
 }
 
@@ -202,7 +202,7 @@ export type BatchNorm1dLayerConfigInput = {
     num_features: number;
     eps?: number;
     momentum?: number;
-    affine?: number;
+    affine?: boolean;
     track_running_status?: boolean;
 }
 

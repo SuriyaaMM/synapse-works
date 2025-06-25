@@ -11,6 +11,7 @@ export const typeDefs = `#graphql
         name: String    
         in_features: Int!  
         out_features: Int! 
+        bias: Boolean
     }
     type Conv2dLayerConfig implements LayerConfig {
         id: ID!
@@ -81,6 +82,7 @@ export const typeDefs = `#graphql
         stride: [Int]
         padding: [Int]
         count_include_pad: Boolean
+        divisor_override: Int
         ceil_mode: Boolean
     }
     type BatchNorm2dLayerConfig implements LayerConfig {
@@ -215,6 +217,7 @@ export const typeDefs = `#graphql
         stride: [Int]
         padding: [Int]
         count_include_pad: Boolean
+        divisor_override: Int
         ceil_mode: Boolean
     }
     input BatchNorm2dLayerConfigInput {
@@ -223,7 +226,7 @@ export const typeDefs = `#graphql
         eps: Float
         momentum: Float
         affine: Boolean
-        track_running_Status: Boolean
+        track_running_status: Boolean
     }
     input BatchNorm1dLayerConfigInput {
         name: String
@@ -231,7 +234,7 @@ export const typeDefs = `#graphql
         eps: Float
         momentum: Float
         affine: Boolean
-        track_running_Status: Boolean
+        track_running_status: Boolean
     }
     input FlattenLayerConfigInput {  
         name: String    

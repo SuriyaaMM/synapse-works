@@ -29,15 +29,11 @@ class ModelManager(object):
 
     def dumpNetworkForTraining(self):
         if(self.backend == "torch"):
-<<<<<<< HEAD
-            self._train_manager = TorchTrainManager(self._internal_manager.layers,
-=======
             layers: list[nn.Module] = []
             for torch_layer in self._internal_manager.layers:
                 layers.append(torch_layer.layer)
 
             self._train_manager = TorchTrainManager(layers,
->>>>>>> eadd141d39de380594e338dabde6ad5b6ea6a2b0
                                                    self._internal_manager.train_config,
                                                    self._internal_manager.dataset_config)
         else:
@@ -58,13 +54,8 @@ class ModelManager(object):
         Args:
             layer_name: str, graphql object layerName
         """
-<<<<<<< HEAD
-        self._internal_manager.deleteLayer(layer_config=layer_config)
-        logging.info(f"Deleted layer({layer_config['type']} from model(id = {self.id}) with kwargs\n{json.dumps(layer_config["kwargs"], indent=4)})")
-=======
         self._internal_manager.deleteLayer(layer_id=layer_id)
         
->>>>>>> eadd141d39de380594e338dabde6ad5b6ea6a2b0
 
     def setTrainingConfig(self, train_config_td: TrainConfig):
         R"""Sets training configuration for the model

@@ -1,7 +1,6 @@
 <script lang="ts">
   import client from '$lib/apolloClient';
   import { SAVE_MODEL, LOAD_MODEL } from '$lib/mutations';
-
   import type { Model } from '../../../../../../source/types';
 
   // State variables

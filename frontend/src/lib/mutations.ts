@@ -12,8 +12,8 @@ export const CREATE_MODEL = gql`
   }
 `;
 
-export const APPEND_LINEAR_LAYER = gql`
-  mutation AddMyLinearLayer(
+export const APPEND_LAYER = gql`
+  mutation AddLayer(
     $modelId: ID!
     $layerConfig: LayerConfigInput!
   ) {
@@ -28,6 +28,24 @@ export const APPEND_LINEAR_LAYER = gql`
         type
         name
         ... on LinearLayerConfig {
+          in_features
+          out_features
+        }
+      }
+    }
+  }
+`;
+
+export const DELETE_LAYER = gql`
+  mutation DeleteLayer($model_id: ID!, $layer_id: ID!) {
+    deleteLayer(model_id: $model_id, layer_id: $layer_id) {
+      id
+      name
+      layers_config {
+        id
+        type
+        ... on LinearLayerConfig {
+          name
           in_features
           out_features
         }
@@ -159,5 +177,25 @@ export const TRAIN_MODEL = gql`
 export const START_TENSORBOARD = gql`
   mutation StartTensorboard {
     startTensorboard
+  }
+`;
+
+export const SAVE_MODEL = gql`
+  mutation SaveModel {
+    save
+  }
+`;
+
+export const LOAD_MODEL = gql`
+  mutation LoadModel {
+    load {
+      id
+      name
+      layers_config {
+        id
+        type
+        name
+      }
+    }
   }
 `;

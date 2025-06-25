@@ -15,10 +15,7 @@ def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> Laye
     layer_type = layer_config["type"]
     # put together layer config
     parsed_layer_config: LayerConfig = cast(LayerConfig, {
-<<<<<<< HEAD
-=======
         "id" : layer_config["id"],
->>>>>>> eadd141d39de380594e338dabde6ad5b6ea6a2b0
         "type": layer_type
     })
 

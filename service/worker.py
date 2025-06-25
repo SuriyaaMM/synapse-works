@@ -29,15 +29,12 @@ def processMessage(message_data, models: list[ModelManager], redis_client: redis
                 if model.id == id:
                     parsed_layer_config: LayerConfig = parseFromLayerConfig(layer_config)
                     model.appendLayer(layer_config=parsed_layer_config)
-<<<<<<< HEAD
-=======
         elif event_type == "LAYER_DELETED":
             id = message.get("model_id")
             layer_id = message.get("layer_id")
             for model in models:
                 if model.id == id:
                     model.deleteLayer(layer_id=layer_id)
->>>>>>> eadd141d39de380594e338dabde6ad5b6ea6a2b0
         # handle MODEL_CREATED event
         elif event_type == "MODEL_CREATED":
             id = message.get("model_id")
@@ -73,11 +70,7 @@ def processMessage(message_data, models: list[ModelManager], redis_client: redis
         # handle DESERIALIZE_MODEL
         elif event_type == "DESERIALIZE_MODEL":
             models = deserialize_model_manager()
-<<<<<<< HEAD
-            logging.info(f"{models[0].__getstate__()}")
-=======
             logging.info(f"{[model.__getstate__() for model in models]}")
->>>>>>> eadd141d39de380594e338dabde6ad5b6ea6a2b0
         else:
             print(f"[synapse][redis]: Unknown event type: {event_type}")
     # ----- exceptions

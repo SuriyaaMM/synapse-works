@@ -32,6 +32,19 @@ export const GET_MODEL = gql`
   }
 `;
 
+export const VALIDATE_MODEL = gql`
+  query ValidateModel($modelId: ID!, $in_dimension: [Int!]!) {
+    validateModel(id: $modelId, in_dimension: $in_dimension) {
+      status {
+        layer_id
+        message
+      }
+    }
+}
+`;
+
+
+
 export const GET_TRAINING_STATUS = gql`
   query GetTrainingStatus {
     getTrainingStatus {
