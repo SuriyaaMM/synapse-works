@@ -12,7 +12,8 @@
     if ($page.url.pathname.includes('/dataset')) return 'dataset';
     if ($page.url.pathname.includes('/training')) return 'training';
     if ($page.url.pathname.includes('/train')) return 'train';
-    if ($page.url.pathname.includes('/save-load')) return 'save-load';
+    if ($page.url.pathname.includes('/save-model')) return 'save-model';
+    if ($page.url.pathname.includes('/visualisation')) return 'visualisation';
     return '';
   });
 </script>
@@ -61,10 +62,18 @@
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 
                 hover:bg-gray-200 
-                {($currentStep === 'save-load') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/save-load`)}
+                {($currentStep === 'save-model') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/save-model`)}
       >
-         Save and Load Model
+         Save Model
+      </button>
+      <button
+        class="w-full text-left py-2 px-4 rounded-lg transition 
+                hover:bg-gray-200 
+                {($currentStep === 'visualisation') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/visualisation`)}
+      >
+         Visualisation
       </button>
     </div>
 

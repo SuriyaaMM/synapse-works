@@ -195,6 +195,24 @@ export const LOAD_MODEL = gql`
         id
         type
         name
+        ... on LinearLayerConfig {
+          in_features
+          out_features
+        }
+      }
+      train_config { 
+        epochs
+        optimizer
+        optimizer_config {
+          lr
+        }
+        loss_function
+      }
+      dataset_config {
+        name
+        batch_size
+        split_length
+        shuffle
       }
     }
   }

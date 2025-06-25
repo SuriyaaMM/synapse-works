@@ -169,6 +169,9 @@
       if (layerFormRef) {
         layerFormRef.resetForm();
       }
+
+      // Fetch updated model details
+      await fetchModelDetails();
       
       // Validate the model structure after adding the layer
       await validateModelStructure();
@@ -190,7 +193,7 @@
 </script>
 
 <div class="container mx-auto p-1">
-  <h1 class="text-3xl font-bold mb-4">Add Layer</h1>
+  <h1 class="text-3xl font-bold mb-4">Layer Configuration</h1>
 
   {#if !modelId}
     <!-- No Model ID Error -->
@@ -232,21 +235,24 @@
       {#if modelDetails}
         <div class="bg-blue-50 p-3 rounded-md">
           <h3 class="font-semibold text-blue-800 mb-2">Current Model Structure</h3>
-          <p class="text-sm text-blue-700">
-            Total Layers: {modelDetails.layers_config?.length || 0}
-          </p>
           {#if modelDetails.layers_config && modelDetails.layers_config.length > 0}
-            <div class="mt-2">
-              <p class="text-sm text-blue-700 font-medium">Layer Summary:</p>
+          <div class="bg-blue-50 p-4 rounded-md">
+            <div class="space-y-2">
               {#each modelDetails.layers_config as layer, index}
-                <p class="text-xs text-blue-600 ml-2">
-                  {index + 1}. {layer.name || `${layer.type}Layer`} ({layer.type})
-                  {#if layer.type === 'linear'}
-                    - {(layer as LinearLayerConfig).in_features} → {(layer as LinearLayerConfig).out_features}
-                  {/if}
-                </p>
+                <div class="flex items-center justify-between p-2 bg-white rounded border">
+                  <span class="text-sm font-medium">
+                    Layer {index + 1}: {layer.name || layer.type}
+                  </span>
+                  <span class="text-xs text-gray-600">
+                    {layer.type}
+                    {#if layer.type === 'linear' && 'in_features' in layer && 'out_features' in layer}
+                      ({layer.in_features} → {layer.out_features})
+                    {/if}
+                  </span>
+                </div>
               {/each}
             </div>
+          </div>
           {:else}
             <p class="text-sm text-blue-700">
               No layers added yet - this will be your first layer

@@ -274,7 +274,7 @@ export type OptimizerConfig = {
     eps?: number;
     weight_decay?: number;
     betas?: number[];
-    rho?: number[];
+    rho?: number;
     beta2_decay?: number;
     d?: number;
     lambd?: number;
@@ -304,7 +304,7 @@ export type OptimizerConfigInput = {
     eps?: number;
     weight_decay?: number;
     betas?: number[];
-    rho?: number[];
+    rho?: number;
     beta2_decay?: number;
     d?: number;
     lambd?: number;

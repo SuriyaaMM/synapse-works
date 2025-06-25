@@ -70,6 +70,20 @@ export const GET_MODELS = gql`
           out_features
         }
       }
+        train_config { 
+        epochs
+        optimizer
+        optimizer_config {
+          lr
+        }
+        loss_function
+      }
+      dataset_config {
+        name
+        batch_size
+        split_length
+        shuffle
+      }
     }
   }
 `;

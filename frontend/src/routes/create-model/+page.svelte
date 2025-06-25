@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import client from '$lib/apolloClient';
-  import { CREATE_MODEL } from '$lib/mutations';
+  import { CREATE_MODEL, LOAD_MODEL } from '$lib/mutations';
   import { GET_MODELS } from '$lib/queries';
   import { onMount } from 'svelte';
   
@@ -11,7 +11,10 @@
   let modelName: string = '';
   let loading: boolean = false;
   let error: string | null = null;
-  let models: Model[] = [];
+  let savedModels: Model[] = [];
+  let availableModels: Model[] = [];
+  let loadingSavedModels: boolean = false;
+  let loadingAvailableModels: boolean = false;
 
   // Create new model and navigate to layer configuration
   async function createModel(): Promise<void> {
@@ -38,6 +41,9 @@
         throw new Error('Model creation failed - no ID returned');
       }
 
+      // Reload models after creating a new one
+      await loadSavedModels();
+
       // Navigate to layer configuration page
       await goto(`/model/${model.id}/layers`);
     } catch (err: any) {
@@ -48,22 +54,61 @@
     }
   }
 
-  // Load existing models from server
-  async function loadModels(): Promise<void> {
+  // Load saved models using LOAD_MODEL mutation
+  async function loadSavedModels(): Promise<void> {
+    loadingSavedModels = true;
+    try {
+      const res = await client.mutate({
+        mutation: LOAD_MODEL
+      });
+      savedModels = res.data?.load || [];
+      
+      // If saved models don't have full details, fetch them using GET_MODELS
+      if (savedModels.length > 0 && !savedModels[0].layers_config) {
+        console.log('Saved models missing details, fetching from GET_MODELS...');
+        const detailsRes = await client.query({
+          query: GET_MODELS,
+          fetchPolicy: 'network-only'
+        });
+        const modelsWithDetails = detailsRes.data?.getModels || [];
+        
+        // Match saved models with detailed models by ID
+        savedModels = savedModels.map(savedModel => {
+          const detailedModel = modelsWithDetails.find((m: Model) => m.id === savedModel.id);
+          return detailedModel || savedModel;
+        });
+      }
+    } catch (err) {
+      console.error('Error loading saved models:', err);
+    } finally {
+      loadingSavedModels = false;
+    }
+  }
+
+  // Load available models using GET_MODELS query
+  async function loadAvailableModels(): Promise<void> {
+    loadingAvailableModels = true;
     try {
       const res = await client.query({
         query: GET_MODELS,
-        fetchPolicy: 'network-only'
+        fetchPolicy: 'network-only' // Always fetch fresh data
       });
-      models = res.data?.getModels || [];
+      availableModels = res.data?.getModels || [];
     } catch (err) {
-      console.error('Error fetching models:', err);
+      console.error('Error loading available models:', err);
+    } finally {
+      loadingAvailableModels = false;
     }
+  }
+
+  // Load all models
+  async function loadAllModels(): Promise<void> {
+    await Promise.all([loadSavedModels(), loadAvailableModels()]);
   }
 
   // Load models on component mount
   onMount(() => {
-    loadModels();
+    loadAllModels();
   });
 </script>
 
@@ -114,43 +159,153 @@
       </form>
     </div>
 
-    <!-- Right Panel: Existing Models -->
-    <div class="w-1/2 p-6">
-      <h2 class="text-xl font-semibold mb-4">Your Models</h2>
+    <!-- Right Panel: Models -->
+    <div class="w-1/2 p-6 flex flex-col">
+      <!-- Your Models Section -->
+      <div class="mb-8">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Your Models</h2>
+          <button
+            on:click={loadSavedModels}
+            disabled={loadingSavedModels}
+            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loadingSavedModels ? 'Loading...' : 'Refresh'}
+          </button>
+        </div>
 
-      {#if models.length === 0}
-        <p class="text-gray-500">No models found. Create your first model to get started!</p>
-      {:else}
-        <div class="space-y-3">
-          {#each models as model}
-            <div class="p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors">
-              <div class="flex justify-between items-start">
-                <div>
-                  <h3 class="font-semibold text-lg">{model.name}</h3>
-                  <p class="text-sm text-gray-600">ID: {model.id}</p>
-                  <p class="text-sm text-gray-600">
-                    Layers: {model.layers_config?.length || 0}
-                  </p>
-                  {#if model.dataset_config}
-                    <p class="text-sm text-gray-600">
-                      Dataset: {model.dataset_config.name}
-                    </p>
-                  {/if}
-                </div>
-                <div class="flex flex-col gap-2">
-                  <!-- Navigate to layer configuration -->
-                  <button
-                    on:click={() => goto(`/model/${model.id}/layers`)}
-                    class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700"
-                  >
-                    View
-                  </button>
+        {#if loadingSavedModels}
+          <div class="flex justify-center items-center py-8">
+            <div class="text-gray-500">Loading saved models...</div>
+          </div>
+        {:else if savedModels.length === 0}
+          <p class="text-gray-500">No saved models found. Create your first model to get started!</p>
+        {:else}
+          <div class="space-y-3 max-h-64 overflow-y-auto">
+            {#each savedModels as model}
+              <div class="p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-lg">{model.name}</h3>
+                    <p class="text-sm text-gray-600 mb-2">ID: {model.id}</p>
+                    
+                    <!-- Layer Configuration Display -->
+                    {#if model.layers_config && model.layers_config.length > 0}
+                      <div class="mb-2">
+                        <p class="text-sm font-medium text-gray-700 mb-1">
+                          Layers ({model.layers_config.length}):
+                        </p>
+                        <div class="space-y-1">
+                          {#each model.layers_config as layer}
+                            <div class="flex items-center space-x-2 text-xs bg-white px-2 py-1 rounded border">
+                              <span class="font-medium text-blue-600">{layer.type}</span>
+                              <span class="text-gray-500">•</span>
+                              <span class="text-gray-700">{layer.name}</span>
+                              <span class="text-gray-400">(ID: {layer.id})</span>
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    {:else}
+                      <p class="text-sm text-gray-600 mb-2">No layers configured</p>
+                    {/if}
+
+                    <!-- Dataset Configuration (if available) -->
+                    {#if model.dataset_config}
+                      <p class="text-sm text-gray-600">
+                        Dataset: {model.dataset_config.name}
+                      </p>
+                    {/if}
+                  </div>
+                  
+                  <div class="flex flex-col gap-2 ml-4">
+                    <!-- Navigate to layer configuration -->
+                    <button
+                      on:click={() => goto(`/model/${model.id}/layers`)}
+                      class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
+                    >
+                      View/Edit
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          {/each}
+            {/each}
+          </div>
+        {/if}
+      </div>
+
+      <!-- Available Models Section -->
+      <div class="border-t pt-6">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold">Available Models</h2>
+          <button
+            on:click={loadAvailableModels}
+            disabled={loadingAvailableModels}
+            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+          >
+            {loadingAvailableModels ? 'Loading...' : 'Refresh'}
+          </button>
         </div>
-      {/if}
+
+        {#if loadingAvailableModels}
+          <div class="flex justify-center items-center py-8">
+            <div class="text-gray-500">Loading available models...</div>
+          </div>
+        {:else if availableModels.length === 0}
+          <p class="text-gray-500">No available models found.</p>
+        {:else}
+          <div class="space-y-3 max-h-64 overflow-y-auto">
+            {#each availableModels as model}
+              <div class="p-4 bg-blue-50 rounded-lg border hover:bg-blue-100 transition-colors">
+                <div class="flex justify-between items-start">
+                  <div class="flex-1">
+                    <h3 class="font-semibold text-lg">{model.name}</h3>
+                    <p class="text-sm text-gray-600 mb-2">ID: {model.id}</p>
+                    
+                    <!-- Layer Configuration Display -->
+                    {#if model.layers_config && model.layers_config.length > 0}
+                      <div class="mb-2">
+                        <p class="text-sm font-medium text-gray-700 mb-1">
+                          Layers ({model.layers_config.length}):
+                        </p>
+                        <div class="space-y-1">
+                          {#each model.layers_config as layer}
+                            <div class="flex items-center space-x-2 text-xs bg-white px-2 py-1 rounded border">
+                              <span class="font-medium text-green-600">{layer.type}</span>
+                              <span class="text-gray-500">•</span>
+                              <span class="text-gray-700">{layer.name}</span>
+                              <span class="text-gray-400">(ID: {layer.id})</span>
+                            </div>
+                          {/each}
+                        </div>
+                      </div>
+                    {:else}
+                      <p class="text-sm text-gray-600 mb-2">No layers configured</p>
+                    {/if}
+
+                    <!-- Dataset Configuration (if available) -->
+                    {#if model.dataset_config}
+                      <p class="text-sm text-gray-600">
+                        Dataset: {model.dataset_config.name}
+                      </p>
+                    {/if}
+                  </div>
+                  
+                  <div class="flex flex-col gap-2 ml-4">
+                    <!-- Navigate to layer configuration - same as saved models -->
+                    <button
+                      on:click={() => goto(`/model/${model.id}/layers`)}
+                      class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
+                    >
+                      View/Edit
+                    </button>
+                  </div>
+                </div>
+              </div>
+            {/each}
+          </div>
+        {/if}
+      </div>
     </div>
   </div>
 </div>
