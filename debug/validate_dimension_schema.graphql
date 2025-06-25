@@ -1,0 +1,100 @@
+mutation CreateMyCIFAR10Model {
+  createModel(name: "CIFAR10_CNN_Model") {
+    id
+    name
+    layers_config { # This will be empty initially
+      id
+    }
+  }
+}
+
+query ValidateModel($modelId: ID!, $in_dimension: [Int!]!) {
+  validateModel(id: $modelId, in_dimension: $in_dimension) {
+    status {
+      layer_id
+      message
+    }
+  }
+}
+
+mutation InvalidConv2dWrongInChannels($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "ConvWrongInChannels"
+        in_channels: 1    # ❌ should be 3 (for CIFAR-10)
+        out_channels: 32
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) {
+    id
+  }
+}
+
+mutation InvalidMaxPool2dInput2D($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "MaxPool2DWrongInput"
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) {
+    id
+  }
+}
+
+mutation InvalidFlattenStartDim($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "flatten"
+      flatten: {
+        name: "FlattenInvalidStart"
+        start_dim: 5   # ❌ input shape likely has < 5 dims
+      }
+    }
+  ) {
+    id
+  }
+}
+
+mutation InvalidLinearWrongInFeatures($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "linear"
+      linear: {
+        name: "LinearWrongInput"
+        in_features: 1000   # ❌ Should match flattened dim (e.g., 4096)
+        out_features: 256
+      }
+    }
+  ) {
+    id
+  }
+}
+
+mutation InvalidMaxPoolKernelTooBig($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "MaxPoolTooBig"
+        kernel_size: [10, 10]   # ❌ too large for small spatial dims
+        stride: [1, 1]
+      }
+    }
+  ) {
+    id
+  }
+}
+

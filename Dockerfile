@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # --- Install Miniconda ---
-RUN wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
+RUN wget https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh
 
@@ -58,7 +58,7 @@ EXPOSE 5173
 EXPOSE 6379
 
 # Install node modules for frontend & backend
-RUN chmod +x install.sh
+RUN chmod +x scripts/install.sh
 
 # Command to run when the container launches
-CMD ["./start.sh"]
+CMD ["sh", "./scripts/start.sh"]
