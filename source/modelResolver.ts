@@ -83,10 +83,17 @@ export async function validateModelResolver(
 
             in_dimension = out_dimension;
         } else if (layer_config.type === "flatten") {
+            console.log(`[synapse][graphql]: Received for Flatten: ${in_dimension}`)
             const flatten_layer_config = layer_config as FlattenLayerConfig;
             const out_dimension: number[] = [];
-            const end = flatten_layer_config.end_dim ?? in_dimension.length;
-            const begin = flatten_layer_config.start_dim ?? 0;
+            let end = flatten_layer_config.end_dim ?? in_dimension.length;
+            if(end == -1){
+                end = in_dimension.length;
+            }
+            let begin = flatten_layer_config.start_dim ?? 0;
+            if(begin == 1){
+                begin = 0;
+            }
             let flattened_dim = 1;
 
             for (let i = 0; i < end; i++) {
@@ -99,6 +106,7 @@ export async function validateModelResolver(
 
             out_dimension.push(flattened_dim);
             in_dimension = out_dimension;
+            console.log(`[synapse][graphql]: Flattened Output: ${in_dimension}`)
         } else if (layer_config.type === "conv2d") {
             const cfg = layer_config as Conv2dLayerConfig;
 

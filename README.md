@@ -8,6 +8,10 @@ Architect, Train & Evaluate your Neural Networks in seconds
 - Supports multiple backends (although currently only pytorch)(future implementations might have keras, tf and jax)
 - Visualize `gradient_norm`, `loss`, `accuracy`, `hyperparameters`, `flow of gradients`, `weight & biases`, `computation graph`
 
+### Use with Caution
+- Dimension checking is limited, So it might not succeed when dimensions aren't right (Check logs of worker.py)
+- Deleting a layer is not yet implemented, so you'll have to create a new one :(
+
 ### Gallery
 [Visit Gallery](./gallery/README.md)
 

@@ -13,6 +13,9 @@
   let tensorboardRunning = false;
   let tensorboardError: string | null = null;
   let loading = false;
+  let tensorboardUrl = 'http://localhost:6006';
+  let iframeLoaded = false;
+  let connectionCheckInterval: NodeJS.Timeout | null = null;
 
   // Extract modelId from URL path
   $: {
@@ -35,6 +38,15 @@
     if (modelId) {
       fetchModelDetails();
       fetchTrainingStatus();
+    }
+    checkTensorboardConnection();
+    // Check connection every 30 seconds
+    connectionCheckInterval = setInterval(checkTensorboardConnection, 2000);
+  });
+
+  onDestroy(() => {
+    if (connectionCheckInterval) {
+      clearInterval(connectionCheckInterval);
     }
   });
 
@@ -73,6 +85,54 @@
   function refreshTrainingStatus() {
     fetchTrainingStatus();
   }
+
+  async function checkTensorboardConnection() {
+    try {
+      const response = await fetch(tensorboardUrl, { 
+        method: 'HEAD',
+        mode: 'no-cors'
+      });
+      tensorboardRunning = true;
+      tensorboardError = null;
+    } catch (err) {
+      tensorboardRunning = false;
+      tensorboardError = 'TensorBoard is not accessible at localhost:6006';
+    }
+  }
+
+  async function startTensorboard() {
+    if (!modelId) return;
+    
+    loading = true;
+    tensorboardError = null;
+    
+    try {
+      const response = await client.mutate({
+        mutation: START_TENSORBOARD,
+        variables: { modelId }
+      });
+      
+      if (response.data?.startTensorboard) {
+        tensorboardRunning = true;
+        // Wait a moment for TensorBoard to start, then check connection
+        setTimeout(checkTensorboardConnection, 3000);
+      }
+    } catch (err) {
+      console.error('Error starting TensorBoard:', err);
+      tensorboardError = 'Failed to start TensorBoard. Please check server logs.';
+    } finally {
+      loading = false;
+    }
+  }
+
+  function handleIframeLoad() {
+    iframeLoaded = true;
+  }
+
+  function handleIframeError() {
+    tensorboardRunning = false;
+    tensorboardError = 'Failed to load TensorBoard. Please ensure it is running.';
+  }
 </script>
 
 <div class="container mx-auto p-6">
@@ -89,9 +149,6 @@
     </div>
   {:else}
     <div class="space-y-6">
-      <!-- Model Overview Card -->
-      
-
       <!-- Training Status Card -->
       {#if trainingStatus}
         <div class="bg-gray-50 p-6 rounded-lg border border-gray-200">
@@ -152,30 +209,51 @@
 
       <!-- TensorBoard Visualization Section -->
       <div class="bg-purple-50 p-6 rounded-lg border border-purple-200">
-        <h2 class="text-xl font-semibold text-purple-800 mb-4">📊 TensorBoard Visualization</h2>
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-xl font-semibold text-purple-800">📊 TensorBoard Visualization</h2>
+          <div class="flex gap-2">
+            <div class="flex items-center gap-2">
+              <div class="w-3 h-3 rounded-full {tensorboardRunning ? 'bg-green-500' : 'bg-red-500'}"></div>
+              <span class="text-sm {tensorboardRunning ? 'text-green-700' : 'text-red-700'}">
+                {tensorboardRunning ? 'Connected' : 'Disconnected'}
+              </span>
+            </div>
+            <button 
+              on:click={startTensorboard}
+              disabled={loading || tensorboardRunning}
+              class="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {loading ? '⏳ Starting...' : '🚀 Start TensorBoard'}
+            </button>
+            <button 
+              on:click={checkTensorboardConnection}
+              class="px-3 py-1 text-sm bg-gray-600 text-white rounded hover:bg-gray-700 transition-colors"
+            >
+              🔄 Check Connection
+            </button>
+          </div>
+        </div>
         
         <div class="space-y-4">
-          <div class="border border-gray-300 rounded-lg overflow-hidden">
-            <iframe 
-              src="http://localhost:6006" 
-              class="w-full h-96 md:h-[600px] lg:h-[700px]"
-              title="TensorBoard Visualization"
-              frameborder="0"
-            ></iframe>
-          </div>
-
-          {#if tensorboardError}
-            <div class="bg-red-100 border border-red-400 text-red-700 rounded-lg p-4">
-              <p class="font-semibold">❌ TensorBoard Error:</p>
-              <p class="text-sm mt-1">{tensorboardError}</p>
-              <div class="mt-3 p-2 bg-red-50 rounded text-xs">
-                <p class="font-semibold">Troubleshooting:</p>
-                <ul class="list-disc list-inside mt-1 space-y-1">
-                  <li>Make sure TensorBoard is installed: <code class="bg-red-200 px-1 rounded">pip install tensorboard</code></li>
-                  <li>Check if port 6006 is available</li>
-                  <li>Verify that the tbsummary/ directory exists</li>
-                  <li>Try restarting TensorBoard if it's already running</li>
-                </ul>
+          {#if tensorboardRunning}
+            <div class="border border-gray-300 rounded-lg overflow-hidden bg-white">
+              <iframe 
+                src={tensorboardUrl}
+                class="w-full h-96 md:h-[600px] lg:h-[700px]"
+                title="TensorBoard Visualization"
+                frameborder="0"
+                on:load={handleIframeLoad}
+                on:error={handleIframeError}
+              ></iframe>
+            </div>
+          {:else}
+            <div class="border border-gray-300 rounded-lg p-8 bg-gray-100 text-center">
+              <div class="text-gray-500 mb-4">
+                <svg class="w-16 h-16 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                </svg>
+                <p class="text-lg font-medium">TensorBoard Not Available</p>
+                <p class="text-sm">Click "Start TensorBoard" to launch the visualization server</p>
               </div>
             </div>
           {/if}
