@@ -5,6 +5,8 @@
   import { GET_MODEL } from '$lib/queries';
   import type { TrainConfig, OptimizerConfig, Model } from '../../../../../../source/types';
 
+  import './training-config.css';
+
    // State variables
   let modelId: string | null = null;
   let loading = false;
@@ -322,42 +324,39 @@
   }
 </script>
 
-<div class="container mx-auto p-6">
-  <h1 class="text-3xl font-bold mb-6">Training Configuration</h1>
+<div class="container">
+  <h1 class="title">Training Configuration</h1>
 
   {#if !modelId}
-    <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+    <div class="alert alert-error">
       <p>No model ID provided in the URL.</p>
-      <p class="mt-2">
-        <a href="/create-model" class="text-blue-600 underline">
-          Go back to create a model
-        </a>
+      <p class="alert-link">
+        <a href="/create-model">Go back to create a model</a>
       </p>
     </div>
   {:else}
-    <div class="space-y-6">
+    <div class="section">
       {#if modelDetails}
-        <div class="bg-blue-50 p-4 rounded-md">
-          <h3 class="font-semibold text-blue-800 mb-2">Model Overview</h3>
-          <p class="text-sm text-blue-700">
+        <div class="model-overview">
+          <h3 class="model-overview-title">Model Overview</h3>
+          <p class="model-overview-text">
             Model Name: <span class="font-semibold">{modelDetails.name}</span>
           </p>
-          <p class="text-sm text-blue-700">
+          <p class="model-overview-text">
             Total Layers: <span class="font-semibold">{modelDetails.layers_config?.length || 0}</span>
           </p>
         </div>
 
-        <!-- Layer Summary -->
         {#if modelDetails.layers_config && modelDetails.layers_config.length > 0}
-          <div class="bg-gray-50 p-4 rounded-md">
-            <h3 class="font-semibold text-gray-800 mb-3">Layer Architecture</h3>
-            <div class="space-y-2">
+          <div class="layer-summary">
+            <h3 class="layer-summary-title">Layer Architecture</h3>
+            <div class="section">
               {#each modelDetails.layers_config as layer, index}
-                <div class="flex items-center justify-between p-2 bg-white rounded border">
-                  <span class="text-sm font-medium">
+                <div class="layer-item">
+                  <span class="layer-item-left">
                     Layer {index + 1}: {layer.name || layer.type}
                   </span>
-                  <span class="text-xs text-gray-600">
+                  <span class="layer-item-right">
                     {layer.type}
                     {#if layer.type === 'linear' && 'in_features' in layer && 'out_features' in layer}
                       ({layer.in_features} → {layer.out_features})
@@ -369,12 +368,12 @@
           </div>
         {/if}
       {/if}
-      
-      <form on:submit|preventDefault={setTrainingConfig} class="space-y-6 max-w-4xl">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+      <form on:submit|preventDefault={setTrainingConfig} class="form">
+        <div class="input-group">
           <div>
-            <label for="epochs" class="block text-sm font-medium text-gray-700 mb-1">
-              Epochs <span class="text-red-500">*</span>
+            <label for="epochs" class="input-label">
+              Epochs <span class="required">*</span>
             </label>
             <input
               id="epochs"
@@ -384,67 +383,66 @@
               required
               min="1"
               max="10000"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="input"
               disabled={loading}
             />
-            <p class="text-xs text-gray-500 mt-1">Number of training iterations</p>
+            <p class="helper-text">Number of training iterations</p>
           </div>
 
           <div>
-            <label for="lossFunction" class="block text-sm font-medium text-gray-700 mb-1">
-              Loss Function <span class="text-red-500">*</span>
+            <label for="lossFunction" class="input-label">
+              Loss Function <span class="required">*</span>
             </label>
             <select
               id="lossFunction"
               bind:value={lossFunction}
               required
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+              class="input"
               disabled={loading}
             >
               {#each lossFunctionOptions as option}
                 <option value={option.value}>{option.label}</option>
               {/each}
             </select>
-            <p class="text-xs text-gray-500 mt-1">Function to measure prediction error</p>
+            <p class="helper-text">Function to measure prediction error</p>
           </div>
         </div>
 
         <div>
-          <label for="optimizer" class="block text-sm font-medium text-gray-700 mb-1">
-            Optimizer <span class="text-red-500">*</span>
+          <label for="optimizer" class="input-label">
+            Optimizer <span class="required">*</span>
           </label>
           <select
             id="optimizer"
             bind:value={optimizer}
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+            class="input"
             disabled={loading}
           >
             {#each optimizerOptions as option}
               <option value={option.value}>{option.label}</option>
             {/each}
           </select>
-          <p class="text-xs text-gray-500 mt-1">Optimization algorithm for training</p>
+          <p class="helper-text">Optimization algorithm for training</p>
         </div>
 
-        <!-- Dynamic Optimizer Configuration -->
         {#if optimizer && optimizerConfigs[optimizer]}
-          <div class="bg-gray-50 p-4 rounded-md">
-            <h3 class="font-semibold text-gray-800 mb-3">
+          <div class="dynamic-section">
+            <h3 class="dynamic-title">
               {optimizerOptions.find(opt => opt.value === optimizer)?.label} Configuration
             </h3>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="dynamic-input-group">
               {#each Object.entries(optimizerConfigs[optimizer]) as [paramKey, paramConfig]}
                 <div class="{paramConfig.type === 'array' ? 'md:col-span-2' : ''}">
-                  <label for={paramKey} class="block text-sm font-medium text-gray-700 mb-1">
+                  <label for={paramKey} class="input-label">
                     {paramConfig.label}
                     {#if paramConfig.required}
-                      <span class="text-red-500">*</span>
+                      <span class="required">*</span>
                     {:else}
-                      <span class="text-gray-400 text-xs">(optional)</span>
+                      <span class="optional">(optional)</span>
                     {/if}
                   </label>
-                  
+
                   {#if paramConfig.type === 'number'}
                     {#if paramConfig.format === 'scientific'}
                       <input
@@ -453,7 +451,7 @@
                         bind:value={(optimizerConfig as any)[paramKey]}
                         placeholder="(e.g., {formatScientificNumber(paramConfig.default)})"
                         required={paramConfig.required}
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 text-sm font-mono"
+                        class="input"
                         disabled={loading}
                       />
                     {:else}
@@ -466,30 +464,28 @@
                         step={paramConfig.step}
                         min={paramConfig.min}
                         max={paramConfig.max}
-                        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                        class="input"
                         disabled={loading}
                       />
                     {/if}
                   {:else if paramConfig.type === 'boolean'}
-                    <div class="flex items-center py-2">
+                    <div class="checkbox-group">
                       <input
                         id={paramKey}
                         type="checkbox"
                         bind:checked={(optimizerConfig as any)[paramKey]}
-                        class="w-4 h-4 text-purple-600 bg-gray-100 border-gray-300 rounded focus:ring-purple-500 focus:ring-2"
+                        class="checkbox"
                         disabled={loading}
                       />
-                      <label for={paramKey} class="ml-2 text-sm text-gray-600">
+                      <label for={paramKey} class="checkbox-label">
                         Enable {paramConfig.label} (default: {paramConfig.default ? 'enabled' : 'disabled'})
                       </label>
                     </div>
                   {:else if paramConfig.type === 'array'}
-                    <div class="space-y-2">
+                    <div class="section">
                       {#each paramConfig.default as defaultValue, arrayIndex}
-                        <div class="flex items-center space-x-2">
-                          <span class="text-sm text-gray-600 min-w-[60px]">
-                            [{arrayIndex}]:
-                          </span>
+                        <div class="array-input">
+                          <span class="array-label">[{arrayIndex}] :</span>
                           <input
                             type="number"
                             value={(optimizerConfig as any)[paramKey]?.[arrayIndex] ?? ''}
@@ -501,15 +497,15 @@
                             step={paramConfig.step}
                             min={paramConfig.min}
                             max={paramConfig.max}
-                            class="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
+                            class="input"
                             disabled={loading}
                           />
                         </div>
                       {/each}
                     </div>
                   {/if}
-                  
-                  <p class="text-xs text-gray-500 mt-1">
+
+                  <p class="helper-text">
                     {#if paramConfig.type === 'number'}
                       Range: {paramConfig.min} - {paramConfig.max}, Default: {paramConfig.default}
                       {#if paramConfig.format === 'scientific'}
@@ -531,7 +527,7 @@
           <button 
             type="submit"
             disabled={loading}
-            class="flex-1 px-6 py-3 bg-purple-600 text-white rounded-md hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="submit-button"
           >
             {loading ? 'Saving Configuration...' : 'Save Training Config'}
           </button>
@@ -539,14 +535,14 @@
       </form>
 
       {#if error}
-        <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div class="alert alert-error">
           {error}
         </div>
       {/if}
 
       {#if result}
-        <div class="mt-6">
-          <h2 class="text-2xl font-semibold mb-3 text-green-700">
+        <div class="success-section">
+          <h2 class="success-title">
             Training Configuration Saved Successfully
           </h2>
         </div>

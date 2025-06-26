@@ -4,7 +4,11 @@
   import { SET_DATASET_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
 
-  import type { Model, DatasetConfig, MNISTDatasetConfig, DatasetConfigInput, MNISTDatasetConfigInput, CIFAR10DatasetConfigInput, CIFAR10DatasetConfig } from '../../../../../../source/types';
+  import type { Model, DatasetConfig, MNISTDatasetConfig, 
+                DatasetConfigInput, MNISTDatasetConfigInput, 
+                CIFAR10DatasetConfigInput, CIFAR10DatasetConfig } from '../../../../../../source/types';
+
+  import './dataset-config.css';
 
   let modelId: string | null = null;
   let loading = false;
@@ -184,14 +188,14 @@
   }
 </script>
 
-<div class="container mx-auto p-6">
-  <h1 class="text-3xl font-bold mb-6">Dataset Configuration</h1>
+<div class="dataset-config-container">
+  <h1 class="dataset-config-heading">Dataset Configuration</h1>
 
   {#if !modelId}
-    <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+    <div class="dataset-config-error">
       <p>No model ID provided in the URL.</p>
       <p class="mt-2">
-        <a href="/create-model" class="text-blue-600 underline">
+        <a href="/create-model">
           Go back to create a model
         </a>
       </p>
@@ -199,37 +203,37 @@
   {:else}
     <div class="space-y-6">      
       {#if modelDetails}
-        <div class="bg-blue-50 p-4 rounded-md">
-          <h3 class="font-semibold text-blue-800 mb-2">Model Overview</h3>
-          <p class="text-sm text-blue-700">
-            Model Name: <span class="font-semibold">{modelDetails.name}</span>
+        <div class="dataset-config-overview">
+          <h3 class="font-semibold mb-2">Model Overview</h3>
+          <p class="dataset-config-info">
+            Model Name: <span>{modelDetails.name}</span>
           </p>
-          <p class="text-sm text-blue-700">
-            Total Layers: <span class="font-semibold">{modelDetails.layers_config?.length || 0}</span>
+          <p class="dataset-config-info">
+            Total Layers: <span>{modelDetails.layers_config?.length || 0}</span>
           </p>
           {#if modelDetails.train_config}
-            <p class="text-sm text-blue-700">
-              Training: <span class="font-semibold">{modelDetails.train_config.epochs} epochs, {modelDetails.train_config.optimizer} optimizer</span>
+            <p class="dataset-config-info">
+              Training: <span>{modelDetails.train_config.epochs} epochs, {modelDetails.train_config.optimizer} optimizer</span>
             </p>
           {:else}
-            <p class="text-xs text-orange-600 mt-2">
+            <p class="dataset-config-warning mt-2">
               ⚠️ No training configuration found. You may want to configure training first.
             </p>
           {/if}
         </div>
       {/if}
-      
-      <form on:submit|preventDefault={setDatasetConfig} class="space-y-6 max-w-2xl">
+
+      <form on:submit|preventDefault={setDatasetConfig} class="dataset-config-form space-y-6">
         <!-- Dataset Selection -->
         <div>
-          <label for="datasetName" class="block text-sm font-medium text-gray-700 mb-1">
+          <label for="datasetName" class="dataset-config-label">
             Dataset <span class="text-red-500">*</span>
           </label>
           <select
             id="datasetName"
             bind:value={datasetName}
             required
-            class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+            class="dataset-config-select"
             disabled={loading}
           >
             {#each datasetOptions as option}
@@ -238,13 +242,13 @@
               </option>
             {/each}
           </select>
-          <p class="text-xs text-gray-500 mt-1">Choose the dataset for training your model</p>
+          <p class="dataset-config-description">Choose the dataset for training your model</p>
         </div>
 
         <!-- General Dataset Settings -->
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="dataset-config-grid">
           <div>
-            <label for="batchSize" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="batchSize" class="dataset-config-label">
               Batch Size <span class="text-red-500">*</span>
             </label>
             <input
@@ -254,14 +258,14 @@
               required
               min="1"
               max="1024"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="dataset-config-input"
               disabled={loading}
             />
-            <p class="text-xs text-gray-500 mt-1">Samples per training batch</p>
+            <p class="dataset-config-description">Samples per training batch</p>
           </div>
 
           <div>
-            <label for="trainSplit" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="trainSplit" class="dataset-config-label">
               Train Split <span class="text-red-500">*</span>
             </label>
             <input
@@ -272,14 +276,14 @@
               required
               min="0.1"
               max="0.9"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="dataset-config-input"
               disabled={loading}
             />
-            <p class="text-xs text-gray-500 mt-1">Fraction for training</p>
+            <p class="dataset-config-description">Fraction for training</p>
           </div>
 
           <div>
-            <label for="testSplit" class="block text-sm font-medium text-gray-700 mb-1">
+            <label for="testSplit" class="dataset-config-label">
               Test Split <span class="text-red-500">*</span>
             </label>
             <input
@@ -290,36 +294,36 @@
               required
               min="0.1"
               max="0.9"
-              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+              class="dataset-config-input"
               disabled={loading}
               readonly
             />
-            <p class="text-xs text-gray-500 mt-1">Auto-calculated (1 - train split)</p>
+            <p class="dataset-config-description">Auto-calculated (1 - train split)</p>
           </div>
         </div>
 
-        <div class="flex items-center">
+        <div class="dataset-config-checkbox">
           <input
             id="shuffle"
             type="checkbox"
             bind:checked={shuffle}
-            class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+            class="h-4 w-4"
             disabled={loading}
           />
-          <label for="shuffle" class="ml-2 block text-sm text-gray-900">
+          <label for="shuffle" class="ml-2 block text-sm">
             Shuffle dataset
           </label>
-          <p class="ml-2 text-xs text-gray-500">Randomize data order during training</p>
+          <p class="dataset-config-checkbox-description">Randomize data order during training</p>
         </div>
 
         <!-- MNIST Specific Settings -->
         {#if datasetName === 'mnist'}
-          <div class="border-t pt-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">MNIST Dataset Settings</h3>
+          <div class="dataset-config-section">
+            <h3 class="dataset-config-section-title">MNIST Dataset Settings</h3>
             
             <div class="space-y-4">
               <div>
-                <label for="mnistRoot" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="mnistRoot" class="dataset-config-label">
                   Data Root Path <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -328,35 +332,35 @@
                   bind:value={mnistRoot}
                   required
                   placeholder="./data/mnist"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  class="dataset-config-input"
                   disabled={loading}
                 />
-                <p class="text-xs text-gray-500 mt-1">Local path where MNIST data will be stored</p>
+                <p class="dataset-config-description">Local path where MNIST data will be stored</p>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="flex items-center">
+              <div class="dataset-config-grid">
+                <div class="dataset-config-checkbox">
                   <input
                     id="mnistTrain"
                     type="checkbox"
                     bind:checked={mnistTrain}
-                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    class="h-4 w-4"
                     disabled={loading}
                   />
-                  <label for="mnistTrain" class="ml-2 block text-sm text-gray-900">
+                  <label for="mnistTrain" class="ml-2 block text-sm">
                     Use training set
                   </label>
                 </div>
 
-                <div class="flex items-center">
+                <div class="dataset-config-checkbox">
                   <input
                     id="mnistDownload"
                     type="checkbox"
                     bind:checked={mnistDownload}
-                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    class="h-4 w-4"
                     disabled={loading}
                   />
-                  <label for="mnistDownload" class="ml-2 block text-sm text-gray-900">
+                  <label for="mnistDownload" class="ml-2 block text-sm">
                     Auto-download if missing
                   </label>
                 </div>
@@ -367,12 +371,12 @@
 
         <!-- CIFAR-10 Specific Settings -->
         {#if datasetName === 'cifar10'}
-          <div class="border-t pt-6">
-            <h3 class="text-lg font-semibold text-gray-800 mb-4">CIFAR-10 Dataset Settings</h3>
+          <div class="dataset-config-section">
+            <h3 class="dataset-config-section-title">CIFAR-10 Dataset Settings</h3>
             
             <div class="space-y-4">
               <div>
-                <label for="cifar10Root" class="block text-sm font-medium text-gray-700 mb-1">
+                <label for="cifar10Root" class="dataset-config-label">
                   Data Root Path <span class="text-red-500">*</span>
                 </label>
                 <input
@@ -381,35 +385,35 @@
                   bind:value={cifar10Root}
                   required
                   placeholder="./data/cifar10"
-                  class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+                  class="dataset-config-input"
                   disabled={loading}
                 />
-                <p class="text-xs text-gray-500 mt-1">Local path where CIFAR-10 data will be stored</p>
+                <p class="dataset-config-description">Local path where CIFAR-10 data will be stored</p>
               </div>
 
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="flex items-center">
+              <div class="dataset-config-grid">
+                <div class="dataset-config-checkbox">
                   <input
                     id="cifar10Train"
                     type="checkbox"
                     bind:checked={cifar10Train}
-                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    class="h-4 w-4"
                     disabled={loading}
                   />
-                  <label for="cifar10Train" class="ml-2 block text-sm text-gray-900">
+                  <label for="cifar10Train" class="ml-2 block text-sm">
                     Use training set
                   </label>
                 </div>
 
-                <div class="flex items-center">
+                <div class="dataset-config-checkbox">
                   <input
                     id="cifar10Download"
                     type="checkbox"
                     bind:checked={cifar10Download}
-                    class="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                    class="h-4 w-4"
                     disabled={loading}
                   />
-                  <label for="cifar10Download" class="ml-2 block text-sm text-gray-900">
+                  <label for="cifar10Download" class="ml-2 block text-sm">
                     Auto-download if missing
                   </label>
                 </div>
@@ -422,7 +426,7 @@
           <button 
             type="submit"
             disabled={loading}
-            class="flex-1 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            class="dataset-config-button"
           >
             {loading ? 'Saving Dataset Config...' : 'Save Dataset Configuration'}
           </button>
@@ -430,16 +434,14 @@
       </form>
 
       {#if error}
-        <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div class="dataset-config-form-error">
           {error}
         </div>
       {/if}
 
       {#if result}
-        <div class="mt-6">
-          <h2 class="text-2xl font-semibold mb-3 text-green-700">
-            Dataset Configuration Saved Successfully
-          </h2>
+        <div class="dataset-config-success">
+          Dataset Configuration Saved Successfully
         </div>
       {/if}
     </div>

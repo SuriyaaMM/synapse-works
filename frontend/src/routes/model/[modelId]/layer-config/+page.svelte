@@ -4,8 +4,9 @@
   import { APPEND_LAYER, DELETE_LAYER } from '$lib/mutations'; 
   import { GET_MODEL, VALIDATE_MODEL } from '$lib/queries';
   import LayerForm from './LayerForm.svelte';
+  import type { Model,  LayerConfigInput } from '../../../../../../source/types';
   
-  import type { Model, LinearLayerConfig, LayerConfig, LayerConfigInput } from '../../../../../../source/types';
+  import './layer-config.css';
 
   // State variables
   let modelId: string | null = null;
@@ -192,38 +193,33 @@
   }
 </script>
 
-<div class="container mx-auto p-1">
-  <h1 class="text-3xl font-bold mb-4">Layer Configuration</h1>
+<div class="layer-config-container">
+  <h1 class="layer-config-heading">Layer Configuration</h1>
 
   {#if !modelId}
-    <!-- No Model ID Error -->
-    <div class="p-1 bg-red-100 border border-red-400 text-red-700 rounded">
+    <div class="layer-config-error">
       <p>No model ID provided in the URL.</p>
       <p class="mt-2">
-        <a href="/create-model" class="text-blue-600 underline">
+        <a href="/create-model">
           Go back to create a model
         </a>
       </p>
     </div>
   {:else}
-    <!-- Success Message -->
+
     {#if result && !validationError}
-      <div class="mb-6">
-        <h2 class="text-2xl font-semibold mb-3 text-green-700">
-          Layer Added Successfully
-        </h2>
+      <div class="layer-config-success">
+        Layer Added Successfully
       </div>
     {/if}
 
-    <!-- Validation Error Message -->
     {#if validationError}
-      <div class="mb-6 p-4 bg-yellow-100 border border-yellow-400 text-yellow-800 rounded">
-        <h3 class="font-semibold mb-2">Model Validation Warning</h3>
+      <div class="layer-config-warning">
+        <h3>Model Validation Warning</h3>
         <p class="mb-3">{validationError}</p>
         <button 
           on:click={deleteAddedLayer}
           disabled={deletingLayer}
-          class="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {deletingLayer ? 'Deleting Layer...' : 'Delete Added Layer'}
         </button>
@@ -231,19 +227,15 @@
     {/if}
 
     <div class="space-y-2">     
-      <!-- Current Model Structure -->
       {#if modelDetails}
-        <div class="bg-blue-50 p-3 rounded-md">
-          <h3 class="font-semibold text-blue-800 mb-2">Current Model Structure</h3>
+        <div class="layer-config-model">
+          <h3 class="layer-config-model-title">Current Model Structure</h3>
           {#if modelDetails.layers_config && modelDetails.layers_config.length > 0}
-          <div class="bg-blue-50 p-4 rounded-md">
             <div class="space-y-2">
               {#each modelDetails.layers_config as layer, index}
-                <div class="flex items-center justify-between p-2 bg-white rounded border">
-                  <span class="text-sm font-medium">
-                    Layer {index + 1}: {layer.name || layer.type}
-                  </span>
-                  <span class="text-xs text-gray-600">
+                <div class="layer-config-layer">
+                  <span>Layer {index + 1}: {layer.name || layer.type}</span>
+                  <span>
                     {layer.type}
                     {#if layer.type === 'linear' && 'in_features' in layer && 'out_features' in layer}
                       ({layer.in_features} → {layer.out_features})
@@ -252,9 +244,8 @@
                 </div>
               {/each}
             </div>
-          </div>
           {:else}
-            <p class="text-sm text-blue-700">
+            <p class="layer-config-no-layers">
               No layers added yet - this will be your first layer
             </p>
           {/if}
@@ -269,9 +260,8 @@
         on:clear={handleClearMessages}
       />
 
-      <!-- Error Message -->
       {#if error}
-        <div class="p-3 bg-red-100 border border-red-400 text-red-700 rounded">
+        <div class="layer-config-message">
           {error}
         </div>
       {/if}

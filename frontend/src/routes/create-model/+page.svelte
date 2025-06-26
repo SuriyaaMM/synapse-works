@@ -4,8 +4,9 @@
   import { CREATE_MODEL, LOAD_MODEL } from '$lib/mutations';
   import { GET_MODELS } from '$lib/queries';
   import { onMount } from 'svelte';
-  
   import type { Model, CreateModelArgs } from '../../../../source/types';
+
+  import './create-model.css';
 
   // Form state
   let modelName: string = '';
@@ -45,7 +46,7 @@
       await loadSavedModels();
 
       // Navigate to layer configuration page
-      await goto(`/model/${model.id}/layers`);
+      await goto(`/model/${model.id}/layer-config`);
     } catch (err: any) {
       console.error('Apollo Error:', err);
       error = err.message || err.toString() || 'Unknown error occurred';
@@ -112,117 +113,104 @@
   });
 </script>
 
-<div class="h-screen flex flex-col p-6">
+<div class="full-page">
   <!-- Header -->
-  <div class="flex justify-between items-center mb-6">
-    <!-- Left-aligned Icon + Title -->
-    <div class="flex items-center space-x-3">
-      <img src="/brain.png" alt="Brain Icon" class="w-8 h-8" />
-      <h1 class="text-3xl font-bold">Synapse Works</h1>
+  <div class="header">
+    <div class="header-left">
+      <img src="/brain.png" alt="Brain Icon" class="header-icon" />
+      <h1 class="header-title">Synapse Works</h1>
     </div>
 
-    <!-- Right-aligned Profile Icon -->
-    <div class="w-10 h-10 rounded-full border border-gray-600 flex items-center justify-center">
-      👤
-    </div>
+    <div class="profile-icon">👤</div>
   </div>
 
   <!-- Main content -->
-  <div class="flex flex-1 border rounded-lg overflow-hidden shadow-md">
+  <div class="main-content">
     <!-- Left Panel: Create Model -->
-    <div class="w-1/2 p-6 border-r">
-      <h2 class="text-2xl font-semibold mb-4">Create Model</h2>
+    <div class="left-panel">
+      <h2 class="panel-title">Create Model</h2>
 
-      <form on:submit|preventDefault={createModel} class="space-y-4">
+      <form on:submit|preventDefault={createModel} class="form">
         <input
           type="text"
           bind:value={modelName}
           placeholder="Enter the model name"
           required
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          class="form-input"
           disabled={loading}
         />
 
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           disabled={loading || !modelName.trim()}
-          class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+          class="form-button"
         >
           {loading ? 'Creating...' : 'Create Model'}
         </button>
 
         {#if error}
-          <div class="p-2 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
+          <div class="form-error">{error}</div>
         {/if}
       </form>
     </div>
 
     <!-- Right Panel: Models -->
-    <div class="w-1/2 p-6 flex flex-col">
+    <div class="right-panel">
       <!-- Your Models Section -->
-      <div class="mb-8">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold">Your Models</h2>
+      <div class="model-section">
+        <div class="section-header">
+          <h2 class="section-title">Your Models</h2>
           <button
             on:click={loadSavedModels}
             disabled={loadingSavedModels}
-            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 disabled:opacity-50"
+            class="refresh-button"
           >
             {loadingSavedModels ? 'Loading...' : 'Refresh'}
           </button>
         </div>
 
         {#if loadingSavedModels}
-          <div class="flex justify-center items-center py-8">
-            <div class="text-gray-500">Loading saved models...</div>
+          <div class="loading-section">
+            <div class="loading-text">Loading saved models...</div>
           </div>
         {:else if savedModels.length === 0}
-          <p class="text-gray-500">No saved models found. Create your first model to get started!</p>
+          <p class="empty-text">No saved models found. Create your first model to get started!</p>
         {:else}
-          <div class="space-y-3 max-h-64 overflow-y-auto">
+          <div class="model-list">
             {#each savedModels as model}
-              <div class="p-4 bg-gray-50 rounded-lg border hover:bg-gray-100 transition-colors">
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <h3 class="font-semibold text-lg">{model.name}</h3>
-                    <p class="text-sm text-gray-600 mb-2">ID: {model.id}</p>
-                    
-                    <!-- Layer Configuration Display -->
+              <div class="model-card">
+                <div class="model-card-header">
+                  <div class="model-details">
+                    <h3 class="model-name">{model.name}</h3>
+                    <p class="model-id">ID: {model.id}</p>
+
                     {#if model.layers_config && model.layers_config.length > 0}
-                      <div class="mb-2">
-                        <p class="text-sm font-medium text-gray-700 mb-1">
-                          Layers ({model.layers_config.length}):
-                        </p>
-                        <div class="space-y-1">
+                      <div class="model-layers">
+                        <p class="model-layer-title">Layers ({model.layers_config.length}):</p>
+                        <div class="model-layer-list">
                           {#each model.layers_config as layer}
-                            <div class="flex items-center space-x-2 text-xs bg-white px-2 py-1 rounded border">
-                              <span class="font-medium text-blue-600">{layer.type}</span>
-                              <span class="text-gray-500">•</span>
-                              <span class="text-gray-700">{layer.name}</span>
-                              <span class="text-gray-400">(ID: {layer.id})</span>
+                            <div class="layer-item">
+                              <span class="layer-type">{layer.type}</span>
+                              <span class="dot">•</span>
+                              <span class="layer-name">{layer.name}</span>
+                              <span class="layer-id">(ID: {layer.id})</span>
                             </div>
                           {/each}
                         </div>
                       </div>
                     {:else}
-                      <p class="text-sm text-gray-600 mb-2">No layers configured</p>
+                      <p class="model-no-layer">No layers configured</p>
                     {/if}
 
-                    <!-- Dataset Configuration (if available) -->
                     {#if model.dataset_config}
-                      <p class="text-sm text-gray-600">
-                        Dataset: {model.dataset_config.name}
-                      </p>
+                      <p class="model-dataset">Dataset: {model.dataset_config.name}</p>
                     {/if}
                   </div>
-                  
-                  <div class="flex flex-col gap-2 ml-4">
-                    <!-- Navigate to layer configuration -->
+
+                  <div class="model-actions">
                     <button
-                      on:click={() => goto(`/model/${model.id}/layers`)}
-                      class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
+                      on:click={() => goto(`/model/${model.id}/layer-config`)}
+                      class="view-edit-button"
                     >
                       View/Edit
                     </button>
@@ -235,67 +223,60 @@
       </div>
 
       <!-- Available Models Section -->
-      <div class="border-t pt-6">
-        <div class="flex justify-between items-center mb-4">
-          <h2 class="text-xl font-semibold">Available Models</h2>
+      <div class="model-section available-section">
+        <div class="section-header">
+          <h2 class="section-title">Available Models</h2>
           <button
             on:click={loadAvailableModels}
             disabled={loadingAvailableModels}
-            class="px-3 py-1 bg-blue-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+            class="refresh-button"
           >
             {loadingAvailableModels ? 'Loading...' : 'Refresh'}
           </button>
         </div>
 
         {#if loadingAvailableModels}
-          <div class="flex justify-center items-center py-8">
-            <div class="text-gray-500">Loading available models...</div>
+          <div class="loading-section">
+            <div class="loading-text">Loading available models...</div>
           </div>
         {:else if availableModels.length === 0}
-          <p class="text-gray-500">No available models found.</p>
+          <p class="empty-text">No available models found.</p>
         {:else}
-          <div class="space-y-3 max-h-64 overflow-y-auto">
+          <div class="model-list">
             {#each availableModels as model}
-              <div class="p-4 bg-blue-50 rounded-lg border hover:bg-blue-100 transition-colors">
-                <div class="flex justify-between items-start">
-                  <div class="flex-1">
-                    <h3 class="font-semibold text-lg">{model.name}</h3>
-                    <p class="text-sm text-gray-600 mb-2">ID: {model.id}</p>
-                    
-                    <!-- Layer Configuration Display -->
+              <div class="available-card">
+                <div class="model-card-header">
+                  <div class="model-details">
+                    <h3 class="model-name">{model.name}</h3>
+                    <p class="model-id">ID: {model.id}</p>
+
                     {#if model.layers_config && model.layers_config.length > 0}
-                      <div class="mb-2">
-                        <p class="text-sm font-medium text-gray-700 mb-1">
-                          Layers ({model.layers_config.length}):
-                        </p>
-                        <div class="space-y-1">
+                      <div class="model-layers">
+                        <p class="model-layer-title">Layers ({model.layers_config.length}):</p>
+                        <div class="model-layer-list">
                           {#each model.layers_config as layer}
-                            <div class="flex items-center space-x-2 text-xs bg-white px-2 py-1 rounded border">
-                              <span class="font-medium text-green-600">{layer.type}</span>
-                              <span class="text-gray-500">•</span>
-                              <span class="text-gray-700">{layer.name}</span>
-                              <span class="text-gray-400">(ID: {layer.id})</span>
+                            <div class="layer-item">
+                              <span class="layer-type available-layer">{layer.type}</span>
+                              <span class="dot">•</span>
+                              <span class="layer-name">{layer.name}</span>
+                              <span class="layer-id">(ID: {layer.id})</span>
                             </div>
                           {/each}
                         </div>
                       </div>
                     {:else}
-                      <p class="text-sm text-gray-600 mb-2">No layers configured</p>
+                      <p class="model-no-layer">No layers configured</p>
                     {/if}
 
-                    <!-- Dataset Configuration (if available) -->
                     {#if model.dataset_config}
-                      <p class="text-sm text-gray-600">
-                        Dataset: {model.dataset_config.name}
-                      </p>
+                      <p class="model-dataset">Dataset: {model.dataset_config.name}</p>
                     {/if}
                   </div>
-                  
-                  <div class="flex flex-col gap-2 ml-4">
-                    <!-- Navigate to layer configuration - same as saved models -->
+
+                  <div class="model-actions">
                     <button
-                      on:click={() => goto(`/model/${model.id}/layers`)}
-                      class="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 whitespace-nowrap"
+                      on:click={() => goto(`/model/${model.id}/layer-config`)}
+                      class="view-edit-button"
                     >
                       View/Edit
                     </button>

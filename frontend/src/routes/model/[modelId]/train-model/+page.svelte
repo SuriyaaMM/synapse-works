@@ -4,8 +4,9 @@
   import client from '$lib/apolloClient';
   import { TRAIN_MODEL } from '$lib/mutations';
   import { GET_MODEL, GET_TRAINING_STATUS } from '$lib/queries';
-
   import type { Model, TrainStatus } from '../../../../../../source/types';
+
+  import './train-model.css';
   
   let modelId: string | null = null;
   let loading = false;
@@ -233,14 +234,14 @@
   }
 </script>
 
-<div class="container mx-auto p-6">
-  <h1 class="text-3xl font-bold mb-6">Start Training</h1>
+<div class="start-training-container">
+  <h1 class="heading">Start Training</h1>
 
   {#if !modelId}
-    <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
+    <div class="error-box">
       <p>No model ID provided in the URL.</p>
       <p class="mt-2">
-        <a href="/create-model" class="text-blue-600 underline">
+        <a href="/create-model" class="checklist-links">
           Go back to create a model
         </a>
       </p>
@@ -248,40 +249,40 @@
   {:else}
     <div class="space-y-6">
       {#if modelDetails}
-        <div class="bg-blue-50 p-4 rounded-md">
-          <h3 class="font-semibold text-blue-800 mb-2">Model Overview</h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+        <div class="model-overview">
+          <h3 class="font-semibold model-info" style="margin-bottom: 12px; font-weight: 600;">Model Overview</h3>
+          <div class="model-section">
             <div>
-              <p class="text-blue-700">
-                <span class="font-semibold">Model Name:</span> {modelDetails.name}
+              <p class="model-info">
+                <span>Model Name:</span> {modelDetails.name}
               </p>
-              <p class="text-blue-700">
-                <span class="font-semibold">Total Layers:</span> {modelDetails.layers_config?.length || 0}
+              <p class="model-info">
+                <span>Total Layers:</span> {modelDetails.layers_config?.length || 0}
               </p>
             </div>
-            
+
             {#if modelDetails.train_config}
               <div>
-                <p class="text-blue-700">
-                  <span class="font-semibold">Epochs:</span> {modelDetails.train_config.epochs}
+                <p class="model-info">
+                  <span>Epochs:</span> {modelDetails.train_config.epochs}
                 </p>
-                <p class="text-blue-700">
-                  <span class="font-semibold">Optimizer:</span> {modelDetails.train_config.optimizer}
+                <p class="model-info">
+                  <span>Optimizer:</span> {modelDetails.train_config.optimizer}
                 </p>
-                <p class="text-blue-700">
-                  <span class="font-semibold">Learning Rate:</span> {modelDetails.train_config.optimizer_config?.lr}
+                <p class="model-info">
+                  <span>Learning Rate:</span> {modelDetails.train_config.optimizer_config?.lr}
                 </p>
-                <p class="text-blue-700">
-                  <span class="font-semibold">Loss Function:</span> {modelDetails.train_config.loss_function}
+                <p class="model-info">
+                  <span>Loss Function:</span> {modelDetails.train_config.loss_function}
                 </p>
               </div>
             {/if}
           </div>
 
           {#if modelDetails.dataset_config}
-            <div class="mt-3 pt-3 border-t border-blue-200">
-              <p class="text-blue-700 text-sm">
-                <span class="font-semibold">Dataset:</span> {modelDetails.dataset_config.name} 
+            <div class="dataset-info">
+              <p>
+                <span>Dataset:</span> {modelDetails.dataset_config.name} 
                 (Batch Size: {modelDetails.dataset_config.batch_size}, 
                 Split: {(modelDetails.dataset_config.split_length?.[0] != null ? (modelDetails.dataset_config.split_length[0] * 100).toFixed(0) : 'N/A')}% train / 
                 {(modelDetails.dataset_config.split_length?.[1] != null ? (modelDetails.dataset_config.split_length[1] * 100).toFixed(0) : 'N/A')}% test)
@@ -293,49 +294,39 @@
 
       <!-- Configuration Status Check -->
       {#if modelDetails}
-        <div class="bg-gray-50 p-4 rounded-md">
-          <h3 class="font-semibold text-gray-800 mb-3">Pre-Training Checklist</h3>
-          <div class="space-y-2">
-            <div class="flex items-center">
-              <div class="w-4 h-4 rounded-full {modelDetails.layers_config?.length > 0 ? 'bg-green-500' : 'bg-red-500'} mr-2"></div>
-              <span class="text-sm">Model Architecture: {modelDetails.layers_config?.length || 0} layers configured</span>
+        <div class="checklist-section">
+          <h3 class="checklist-title">Pre-Training Checklist</h3>
+          <div>
+            <div class="checklist-item">
+              <div class="check-circle {modelDetails.layers_config?.length > 0 ? 'green' : 'red'}"></div>
+              <span>Model Architecture: {modelDetails.layers_config?.length || 0} layers configured</span>
             </div>
-            <div class="flex items-center">
-              <div class="w-4 h-4 rounded-full {modelDetails.train_config ? 'bg-green-500' : 'bg-red-500'} mr-2"></div>
-              <span class="text-sm">Training Configuration: {modelDetails.train_config ? 'Ready' : 'Missing'}</span>
+            <div class="checklist-item">
+              <div class="check-circle {modelDetails.train_config ? 'green' : 'red'}"></div>
+              <span>Training Configuration: {modelDetails.train_config ? 'Ready' : 'Missing'}</span>
             </div>
-            <div class="flex items-center">
-              <div class="w-4 h-4 rounded-full {modelDetails.dataset_config ? 'bg-green-500' : 'bg-red-500'} mr-2"></div>
-              <span class="text-sm">Dataset Configuration: {modelDetails.dataset_config ? 'Ready' : 'Missing'}</span>
+            <div class="checklist-item">
+              <div class="check-circle {modelDetails.dataset_config ? 'green' : 'red'}"></div>
+              <span>Dataset Configuration: {modelDetails.dataset_config ? 'Ready' : 'Missing'}</span>
             </div>
           </div>
           
           {#if modelDetails.layers_config?.length > 0 && modelDetails.train_config && modelDetails.dataset_config}
-            <div class="mt-3 p-2 bg-green-100 rounded border-l-4 border-green-500">
-              <p class="text-sm text-green-700 font-medium">
-                ✅ All configurations complete. Ready to start training!
-              </p>
+            <div class="checklist-ready">
+              ✅ All configurations complete. Ready to start training!
             </div>
           {:else}
-            <div class="mt-3 p-2 bg-red-100 rounded border-l-4 border-red-500">
-              <p class="text-sm text-red-700 font-medium">
-                ❌ Please complete all configurations before starting training.
-              </p>
-              <div class="mt-2 space-x-2">
+            <div class="checklist-warning">
+              ❌ Please complete all configurations before starting training.
+              <div class="checklist-links" style="margin-top: 8px;">
                 {#if !modelDetails.layers_config?.length}
-                  <a href={`/create-model?modelId=${modelId}`} class="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                    Add Layers
-                  </a>
+                  <a href={`/create-model?modelId=${modelId}`}>Add Layers</a>
                 {/if}
                 {#if !modelDetails.train_config}
-                  <a href={`/train-config?modelId=${modelId}`} class="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                    Configure Training
-                  </a>
+                  <a href={`/train-config?modelId=${modelId}`}>Configure Training</a>
                 {/if}
                 {#if !modelDetails.dataset_config}
-                  <a href={`/dataset-config?modelId=${modelId}`} class="text-xs bg-blue-600 text-white px-2 py-1 rounded">
-                    Configure Dataset
-                  </a>
+                  <a href={`/dataset-config?modelId=${modelId}`}>Configure Dataset</a>
                 {/if}
               </div>
             </div>
@@ -345,22 +336,22 @@
 
       <!-- Training Status -->
       {#if trainingStatus}
-        <div class="bg-yellow-50 p-4 rounded-md border-l-4 border-yellow-500">
-          <h3 class="font-semibold text-yellow-800 mb-3">Training Status</h3>
+        <div class="training-status">
+          <h3 class="status-title">Training Status</h3>
           
           {#if trainingStatus.completed}
-            <div class="text-green-700">
-              <p class="font-medium">✅ Training Completed!</p>
-              <div class="mt-2 text-sm">
+            <div class="training-completed">
+              <p>✅ Training Completed!</p>
+              <div style="margin-top: 8px; font-size: 14px;">
                 <p>Final Epoch: {trainingStatus.epoch}</p>
                 <p>Final Loss: {trainingStatus.loss?.toFixed(4) || 'N/A'}</p>
                 <p>Final Accuracy: {trainingStatus.accuracy ? (trainingStatus.accuracy * 100).toFixed(2) + '%' : 'N/A'}</p>
               </div>
             </div>
           {:else}
-            <div class="text-yellow-700">
-              <p class="font-medium">🔄 Training in Progress...</p>
-              <div class="mt-3 text-sm grid grid-cols-2 gap-4">
+            <div class="training-in-progress">
+              <p>🔄 Training in Progress...</p>
+              <div class="status-grid">
                 <div>
                   <p>Current Epoch: {trainingStatus.epoch || 0} / {modelDetails?.train_config?.epochs || 'N/A'}</p>
                   <p>Status: Running</p>
@@ -376,35 +367,35 @@
       {/if}
       
       <!-- Training Controls -->
-      <div class="flex space-x-3 pt-6">
+      <div class="training-controls">
         {#if !training && !trainingStatus?.completed}
           <button 
             on:click={startTraining}
             disabled={loading || !modelDetails?.layers_config?.length || !modelDetails?.train_config || !modelDetails?.dataset_config}
-            class="px-8 py-4 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg hover:from-green-700 hover:to-green-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
+            class="start-button"
           >
             {loading ? 'Starting Training...' : '🚀 Start Training'}
           </button>
         {:else if training && !trainingStatus?.completed}
           <button 
             on:click={stopTraining}
-            class="px-8 py-4 bg-gradient-to-r from-red-600 to-red-700 text-white rounded-lg hover:from-red-700 hover:to-red-800 transition-all duration-200 shadow-lg hover:shadow-xl"
+            class="stop-button"
           >
             🛑 Stop Training
           </button>
           
           {#if stoppedByUser}
-            <div class="mt-3 p-3 bg-orange-100 border border-orange-400 text-orange-700 rounded">
-              <p class="text-sm">⚠️ Training stopped by user</p>
+            <div class="training-error" style="margin-top: 16px;">
+              <p>⚠️ Training stopped by user</p>
             </div>
           {/if}
         {/if}
       </div>
 
       {#if error}
-        <div class="p-4 bg-red-100 border border-red-400 text-red-700 rounded">
-          <h4 class="font-semibold">Training Error:</h4>
-          <p class="mt-1">{error}</p>
+        <div class="training-error" style="margin-top: 16px;">
+          <h4>Training Error:</h4>
+          <p>{error}</p>
         </div>
       {/if}
     </div>

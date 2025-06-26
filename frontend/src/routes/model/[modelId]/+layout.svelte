@@ -8,10 +8,10 @@
   $: modelId = data.modelId;
 
   const currentStep = derived(page, ($page) => {
-    if ($page.url.pathname.includes('/layers')) return 'layers';
-    if ($page.url.pathname.includes('/dataset')) return 'dataset';
-    if ($page.url.pathname.includes('/training')) return 'training';
-    if ($page.url.pathname.includes('/train')) return 'train';
+    if ($page.url.pathname.includes('/layer-config')) return 'layer-config';
+    if ($page.url.pathname.includes('/dataset-config')) return 'dataset-config';
+    if ($page.url.pathname.includes('/training-config')) return 'training-config';
+    if ($page.url.pathname.includes('/train-model')) return 'train-model';
     if ($page.url.pathname.includes('/save-model')) return 'save-model';
     if ($page.url.pathname.includes('/visualisation')) return 'visualisation';
     return '';
@@ -30,32 +30,32 @@
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 
                 hover:bg-gray-200 
-                {($currentStep === 'layers') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/layers`)}
+                {($currentStep === 'layer-config') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/layer-config`)}
       >
          Configure Layers
       </button>
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 
                 hover:bg-gray-200 
-                {($currentStep === 'training') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/training`)}
+                {($currentStep === 'training-config') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/training-config`)}
       >
          Configure Training
       </button>
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 
                 hover:bg-gray-200 
-                {($currentStep === 'dataset') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/dataset`)}
+                {($currentStep === 'dataset-config') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/dataset-config`)}
       >
          Configure Dataset
       </button>
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 
                 hover:bg-gray-200 
-                {($currentStep === 'train') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/train`)}
+                {($currentStep === 'train-model') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/train-model`)}
       >
          Train the Model
       </button>

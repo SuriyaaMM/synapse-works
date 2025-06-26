@@ -1,0 +1,178 @@
+/* Container */
+.dataset-config-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.dataset-config-heading {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 24px;
+}
+
+/* Error Box */
+.dataset-config-error {
+  padding: 16px;
+  background-color: #fee2e2;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+  border-radius: 6px;
+}
+
+.dataset-config-error a {
+  font-size: 14px;
+  background-color: #2563eb;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+
+.dataset-config-error a:hover {
+  background-color: #1d4ed8;
+}
+
+/* Model Overview */
+.dataset-config-overview {
+  background-color: #eff6ff;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.dataset-config-info {
+  color: #1e40af;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.dataset-config-info span {
+  font-weight: 600;
+}
+
+.dataset-config-warning {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #ffedd5;
+  border: 1px solid #fdba74;
+  color: #92400e;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+/* Form Styling */
+.dataset-config-form {
+  max-width: 720px;
+}
+
+.dataset-config-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+
+.dataset-config-input,
+.dataset-config-select {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.dataset-config-input:focus,
+.dataset-config-select:focus {
+  outline: none;
+  border-color: #16a34a;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.4);
+}
+
+.dataset-config-description {
+  font-size: 12px;
+  color: #6b7280;
+  margin-top: 4px;
+}
+
+/* Form Grid */
+.dataset-config-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .dataset-config-grid {
+    grid-template-columns: 1fr 1fr 1fr;
+  }
+}
+
+/* Checkbox Section */
+.dataset-config-checkbox {
+  display: flex;
+  align-items: center;
+  margin-top: 8px;
+}
+
+.dataset-config-checkbox input {
+  margin-right: 8px;
+}
+
+.dataset-config-checkbox-description {
+  font-size: 12px;
+  color: #6b7280;
+  margin-left: 8px;
+}
+
+/* Dataset Specific Section */
+.dataset-config-section {
+  background-color: #f9fafb;
+  padding: 16px;
+  border-radius: 6px;
+  margin-top: 24px;
+}
+
+.dataset-config-section-title {
+  font-weight: 600;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+/* Control Button */
+.dataset-config-button {
+  flex: 1;
+  padding: 16px 32px;
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  background: linear-gradient(to right, #16a34a, #15803d);
+  transition: all 0.2s;
+}
+
+.dataset-config-button:hover {
+  background: linear-gradient(to right, #15803d, #166534);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.dataset-config-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Success Message */
+.dataset-config-success {
+  font-size: 24px;
+  font-weight: 600;
+  color: #047857;
+  margin-top: 24px;
+}
+
+/* Error Message */
+.dataset-config-form-error {
+  padding: 16px;
+  background-color: #fee2e2;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+  border-radius: 6px;
+  margin-top: 16px;
+}

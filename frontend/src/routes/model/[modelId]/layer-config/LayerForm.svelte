@@ -10,6 +10,8 @@
                 LeakyReLULayerConfigInput, SigmoidLayerConfigInput, 
                 LogSigmoidLayerConfigInput, TanhLayerConfigInput} from '../../../../../../source/types';
 
+  import './layer-form.css';
+
   export let loading = false;
 
   // Typed dispatcher
@@ -668,636 +670,261 @@
   }
 </script>
 
-<form on:submit|preventDefault={handleSubmit} class="space-y-2 max-w-md">
+<form on:submit|preventDefault={handleSubmit} class="form-container">
   <!-- Layer Type -->
   <div>
-    <label for="layerType" class="block text-sm font-medium text-gray-700 mb-1">
-      Layer Type <span class="text-red-500">*</span>
+    <label for="layerType">
+      Layer Type <span class="required">*</span>
     </label>
     <select
       id="layerType"
       bind:value={layerType}
       on:change={handleLayerTypeChange}
       required
-      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
       disabled={loading}
     >
-    <option value="linear">Linear</option>
-    <option value="conv2d">Conv2d</option>
-    <option value="conv1d">Conv1d</option>
-    <option value="maxpool2d">MaxPool2d</option>
-    <option value="maxpool1d">MaxPool1d</option>
-    <option value="avgpool2d">AvgPool2d</option>
-    <option value="avgpool1d">AvgPool1d</option>
-    <option value="batchnorm2d">BatchNorm2d</option>
-    <option value="batchnorm1d">BatchNorm1d</option>
-    <option value="flatten">Flatten</option>
-    <option value="dropout">Dropout</option>
-    <option value="elu">ELU</option>
-    <option value="relu">ReLU</option>
-    <option value="leakyrelu">LeakyReLU</option>
-    <option value="sigmoid">Sigmoid</option>
-    <option value="logsigmoid">LogSigmoid</option>
-    <option value="tanh">Tanh</option>
+      <option value="linear">Linear</option>
+      <option value="conv2d">Conv2d</option>
+      <option value="conv1d">Conv1d</option>
+      <option value="maxpool2d">MaxPool2d</option>
+      <option value="maxpool1d">MaxPool1d</option>
+      <option value="avgpool2d">AvgPool2d</option>
+      <option value="avgpool1d">AvgPool1d</option>
+      <option value="batchnorm2d">BatchNorm2d</option>
+      <option value="batchnorm1d">BatchNorm1d</option>
+      <option value="flatten">Flatten</option>
+      <option value="dropout">Dropout</option>
+      <option value="elu">ELU</option>
+      <option value="relu">ReLU</option>
+      <option value="leakyrelu">LeakyReLU</option>
+      <option value="sigmoid">Sigmoid</option>
+      <option value="logsigmoid">LogSigmoid</option>
+      <option value="tanh">Tanh</option>
     </select>
   </div>
 
   <!-- Layer Name -->
   <div>
-    <label for="layerName" class="block text-sm font-medium text-gray-700 mb-1">
-      Layer Name <span class="text-gray-400">(optional)</span>
-    </label>
-    <input
-      id="layerName"
-      type="text"
-      bind:value={layerName}
-      placeholder="e.g., InputLinear, HiddenLayer1, MaxPoolLayer"
-      class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-      disabled={loading}
-    />
+    <label for="layerName">Layer Name <span class="optional">(optional)</span></label>
+    <input id="layerName" type="text" bind:value={layerName} placeholder="e.g., InputLinear, HiddenLayer1, MaxPoolLayer" disabled={loading} />
   </div>
 
-  <!-- Linear Layer Fields -->
+  <!-- Conditional Sections -->
   {#if layerType === 'linear'}
-    <!-- Input Features -->
     <div>
-      <label for="inFeatures" class="block text-sm font-medium text-gray-700 mb-1">
-        Input Features <span class="text-red-500">*</span>
-      </label>
-      <input
-        id="inFeatures"
-        type="number"
-        bind:value={inFeatures}
-        placeholder="e.g., 784"
-        required
-        min="1"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
+      <label for="inFeatures">Input Features <span class="required">*</span></label>
+      <input id="inFeatures" type="number" bind:value={inFeatures} placeholder="e.g., 784" required min="1" disabled={loading} />
     </div>
-
-    <!-- Output Features -->
     <div>
-      <label for="outFeatures" class="block text-sm font-medium text-gray-700 mb-1">
-        Output Features <span class="text-red-500">*</span>
-      </label>
-      <input
-        id="outFeatures"
-        type="number"
-        bind:value={outFeatures}
-        placeholder="e.g., 64"
-        required
-        min="1"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
+      <label for="outFeatures">Output Features <span class="required">*</span></label>
+      <input id="outFeatures" type="number" bind:value={outFeatures} placeholder="e.g., 64" required min="1" disabled={loading} />
     </div>
-
-    <!-- Bias -->
-    <div class="flex items-center">
-      <input
-        id="bias"
-        type="checkbox"
-        bind:checked={bias}
-        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-        disabled={loading}
-      />
-      <label for="bias" class="ml-2 block text-sm text-gray-700">
-        Use bias
-      </label>
+    <div class="checkbox-container">
+      <input id="bias" type="checkbox" bind:checked={bias} disabled={loading} />
+      <label for="bias">Use bias</label>
     </div>
   {/if}
 
-  <!-- Conv2d and Conv1d Layer Fields -->
   {#if layerType === 'conv2d' || layerType === 'conv1d'}
-    <!-- Input Channels -->
     <div>
-      <label for="inChannels" class="block text-sm font-medium text-gray-700 mb-1">
-        Input Channels <span class="text-red-500">*</span>
-      </label>
-      <input
-        id="inChannels"
-        type="number"
-        bind:value={inChannels}
-        placeholder="e.g., 3"
-        required
-        min="1"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
+      <label for="inChannels">Input Channels <span class="required">*</span></label>
+      <input id="inChannels" type="number" bind:value={inChannels} placeholder="e.g., 3" required min="1" disabled={loading} />
     </div>
-
-    <!-- Output Channels -->
     <div>
-      <label for="outChannels" class="block text-sm font-medium text-gray-700 mb-1">
-        Output Channels <span class="text-red-500">*</span>
-      </label>
-      <input
-        id="outChannels"
-        type="number"
-        bind:value={outChannels}
-        placeholder="e.g., 32"
-        required
-        min="1"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
+      <label for="outChannels">Output Channels <span class="required">*</span></label>
+      <input id="outChannels" type="number" bind:value={outChannels} placeholder="e.g., 32" required min="1" disabled={loading} />
     </div>
-
-    <!-- Kernel Size -->
     <div>
-      <label for="kernelSize" class="block text-sm font-medium text-gray-700 mb-1">
-        Kernel Size <span class="text-red-500">*</span>
-      </label>
-      <input
-        id="kernelSize"
-        type="text"
-        bind:value={kernelSize}
-        placeholder={layerType === 'conv2d' ? "e.g., 3,3" : "e.g., 3"}
-        required
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
-      <p class="text-xs text-gray-500 mt-1">
-        {layerType === 'conv2d' ? 'Format: "width,height" (e.g., "3,3")' : 'Format: single number (e.g., "3")'}
-      </p>
+      <label for="kernelSize">Kernel Size <span class="required">*</span></label>
+      <input id="kernelSize" type="text" bind:value={kernelSize} placeholder={layerType === 'conv2d' ? "e.g., 3,3" : "e.g., 3"} required disabled={loading} />
+      <p class="input-note">{layerType === 'conv2d' ? 'Format: "width,height" (e.g., "3,3")' : 'Format: single number (e.g., "3")'}</p>
     </div>
-
-    <!-- Stride (Optional) -->
     <div>
-      <label for="stride" class="block text-sm font-medium text-gray-700 mb-1">
-        Stride <span class="text-gray-400">(optional)</span>
-      </label>
-      <input
-        id="stride"
-        type="text"
-        bind:value={stride}
-        placeholder={layerType === 'conv2d' ? "e.g., 1,1" : "e.g., 1"}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
-      <p class="text-xs text-gray-500 mt-1">
-        {layerType === 'conv2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}
-      </p>
+      <label for="stride">Stride <span class="optional">(optional)</span></label>
+      <input id="stride" type="text" bind:value={stride} placeholder={layerType === 'conv2d' ? "e.g., 1,1" : "e.g., 1"} disabled={loading} />
+      <p class="input-note">{layerType === 'conv2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}</p>
     </div>
-
-    <!-- Padding (Optional) -->
     <div>
-      <label for="padding" class="block text-sm font-medium text-gray-700 mb-1">
-        Padding <span class="text-gray-400">(optional)</span>
-      </label>
-      <input
-        id="padding"
-        type="text"
-        bind:value={padding}
-        placeholder={layerType === 'conv2d' ? "e.g., 1,1" : "e.g., 1"}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
-      <p class="text-xs text-gray-500 mt-1">
-        {layerType === 'conv2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}
-      </p>
+      <label for="padding">Padding <span class="optional">(optional)</span></label>
+      <input id="padding" type="text" bind:value={padding} placeholder={layerType === 'conv2d' ? "e.g., 1,1" : "e.g., 1"} disabled={loading} />
+      <p class="input-note">{layerType === 'conv2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}</p>
     </div>
-
-    <!-- Dilation (Optional) -->
     <div>
-      <label for="dilation" class="block text-sm font-medium text-gray-700 mb-1">
-        Dilation <span class="text-gray-400">(optional)</span>
-      </label>
-      <input
-        id="dilation"
-        type="text"
-        bind:value={dilation}
-        placeholder={layerType === 'conv2d' ? "e.g., 1,1" : "e.g., 1"}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
-      <p class="text-xs text-gray-500 mt-1">
-        {layerType === 'conv2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}
-      </p>
+      <label for="dilation">Dilation <span class="optional">(optional)</span></label>
+      <input id="dilation" type="text" bind:value={dilation} placeholder={layerType === 'conv2d' ? "e.g., 1,1" : "e.g., 1"} disabled={loading} />
+      <p class="input-note">{layerType === 'conv2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}</p>
     </div>
-
-    <!-- Groups -->
     <div>
-      <label for="groups" class="block text-sm font-medium text-gray-700 mb-1">
-        Groups
-      </label>
-      <input
-        id="groups"
-        type="number"
-        bind:value={groups}
-        placeholder="1"
-        min="1"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
+      <label for="groups">Groups</label>
+      <input id="groups" type="number" bind:value={groups} placeholder="1" min="1" disabled={loading} />
     </div>
-
-    <!-- Padding Mode -->
     <div>
-      <label for="paddingMode" class="block text-sm font-medium text-gray-700 mb-1">
-        Padding Mode
-      </label>
-      <select
-        id="paddingMode"
-        bind:value={paddingMode}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      >
+      <label for="paddingMode">Padding Mode</label>
+      <select id="paddingMode" bind:value={paddingMode} disabled={loading}>
         <option value="zeros">Zeros</option>
         <option value="reflect">Reflect</option>
         <option value="replicate">Replicate</option>
         <option value="circular">Circular</option>
       </select>
     </div>
-
-    <!-- Bias -->
     {#if layerType === 'conv2d'}
-      <div class="flex items-center">
-        <input
-          id="conv2dBias"
-          type="checkbox"
-          bind:checked={conv2dBias}
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={loading}
-        />
-        <label for="conv2dBias" class="ml-2 block text-sm text-gray-700">
-          Use bias
-        </label>
+      <div class="checkbox-container">
+        <input id="conv2dBias" type="checkbox" bind:checked={conv2dBias} disabled={loading} />
+        <label for="conv2dBias">Use bias</label>
       </div>
     {:else if layerType === 'conv1d'}
-      <div class="flex items-center">
-        <input
-          id="conv1dBias"
-          type="checkbox"
-          bind:checked={conv1dBias}
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={loading}
-        />
-        <label for="conv1dBias" class="ml-2 block text-sm text-gray-700">
-          Use bias
-        </label>
+      <div class="checkbox-container">
+        <input id="conv1dBias" type="checkbox" bind:checked={conv1dBias} disabled={loading} />
+        <label for="conv1dBias">Use bias</label>
       </div>
     {/if}
   {/if}
 
-  <!-- MaxPool2d, MaxPool1d, AvgPool2d and AvgPool1d Layer Fields -->
+  <!-- MaxPool2d, MaxPool1d, AvgPool2d, AvgPool1d -->
   {#if layerType === 'maxpool2d' || layerType === 'maxpool1d' || layerType === 'avgpool2d' || layerType === 'avgpool1d'}
     <!-- Kernel Size -->
     <div>
-      <label for="poolKernelSize" class="block text-sm font-medium text-gray-700 mb-1">
-        Kernel Size <span class="text-red-500">*</span>
-      </label>
-      <input
-        id="poolKernelSize"
-        type="text"
-        bind:value={poolKernelSize}
-        placeholder={layerType === 'maxpool2d' || layerType === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"}
-        required
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
-      <p class="text-xs text-gray-500 mt-1">
-        {(layerType === 'maxpool2d' || layerType === 'avgpool2d') ? 'Format: "width,height" (e.g., "2,2")' : 'Format: single number (e.g., "2")'}
-      </p>
+      <label for="poolKernelSize">Kernel Size <span class="required">*</span></label>
+      <input id="poolKernelSize" type="text" bind:value={poolKernelSize} required disabled={loading} placeholder={layerType === 'maxpool2d' || layerType === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"} />
+      <p class="input-note">{(layerType === 'maxpool2d' || layerType === 'avgpool2d') ? 'Format: "width,height" (e.g., "2,2")' : 'Format: single number (e.g., "2")'}</p>
     </div>
 
-    <!-- Stride (Optional) -->
+    <!-- Stride -->
     <div>
-      <label for="poolStride" class="block text-sm font-medium text-gray-700 mb-1">
-        Stride <span class="text-gray-400">(optional)</span>
-      </label>
-      <input
-        id="poolStride"
-        type="text"
-        bind:value={poolStride}
-        placeholder={layerType === 'maxpool2d' || layerType === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
-      <p class="text-xs text-gray-500 mt-1">
-        {(layerType === 'maxpool2d' || layerType === 'avgpool2d') ? 'Format: "width,height" (e.g., "2,2")' : 'Format: single number (e.g., "2")'}
-      </p>
+      <label for="poolStride">Stride <span class="optional">(optional)</span></label>
+      <input id="poolStride" type="text" bind:value={poolStride} disabled={loading} placeholder={layerType === 'maxpool2d' || layerType === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"} />
+      <p class="input-note">{(layerType === 'maxpool2d' || layerType === 'avgpool2d') ? 'Format: "width,height" (e.g., "2,2")' : 'Format: single number (e.g., "2")'}</p>
     </div>
 
-    <!-- Padding (Optional) -->
+    <!-- Padding -->
     <div>
-      <label for="poolPadding" class="block text-sm font-medium text-gray-700 mb-1">
-        Padding <span class="text-gray-400">(optional)</span>
-      </label>
-      <input
-        id="poolPadding"
-        type="text"
-        bind:value={poolPadding}
-        placeholder={layerType === 'maxpool2d' || layerType === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-      />
-      <p class="text-xs text-gray-500 mt-1">
-        {(layerType === 'maxpool2d' || layerType === 'avgpool2d') ? 'Format: "width,height" (e.g., "2,2")' : 'Format: single number (e.g., "2")'}
-      </p>
+      <label for="poolPadding">Padding <span class="optional">(optional)</span></label>
+      <input id="poolPadding" type="text" bind:value={poolPadding} disabled={loading} placeholder={layerType === 'maxpool2d' || layerType === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"} />
+      <p class="input-note">{(layerType === 'maxpool2d' || layerType === 'avgpool2d') ? 'Format: "width,height" (e.g., "2,2")' : 'Format: single number (e.g., "2")'}</p>
     </div>
 
-    <!-- Dilation (Optional - MaxPool only) -->
+    <!-- Dilation -->
     {#if layerType === 'maxpool2d' || layerType === 'maxpool1d'}
-    <div>
-        <label for="poolDilation" class="block text-sm font-medium text-gray-700 mb-1">
-        Dilation <span class="text-gray-400">(optional)</span>
-        </label>
-        <input
-        id="poolDilation"
-        type="text"
-        bind:value={poolDilation}
-        placeholder={layerType === 'maxpool2d' ? "e.g., 1,1" : "e.g., 1"}
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-        />
-        <p class="text-xs text-gray-500 mt-1">
-        {layerType === 'maxpool2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}
-        </p>
-    </div>
+      <div>
+        <label for="poolDilation">Dilation <span class="optional">(optional)</span></label>
+        <input id="poolDilation" type="text" bind:value={poolDilation} disabled={loading} placeholder={layerType === 'maxpool2d' ? "e.g., 1,1" : "e.g., 1"} />
+        <p class="input-note">{layerType === 'maxpool2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}</p>
+      </div>
+
+      <!-- Return Indices -->
+      <div class="checkbox-container">
+        <input id="returnIndices" type="checkbox" bind:checked={returnIndices} disabled={loading} />
+        <label for="returnIndices">Return indices</label>
+      </div>
     {/if}
 
-    <!-- Return Indices (MaxPool only) -->
-    {#if layerType === 'maxpool2d' || layerType === 'maxpool1d'}
-    <div class="flex items-center">
-        <input
-        id="returnIndices"
-        type="checkbox"
-        bind:checked={returnIndices}
-        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-        disabled={loading}
-        />
-        <label for="returnIndices" class="ml-2 block text-sm text-gray-700">
-        Return indices
-        </label>
-    </div>
-    {/if}
-
-    <!-- Count Include Pad (AvgPool only) -->
+    <!-- Count Include Pad -->
     {#if layerType === 'avgpool2d' || layerType === 'avgpool1d'}
-    <div class="flex items-center">
-        <input
-        id="countIncludePad"
-        type="checkbox"
-        bind:checked={countIncludePad}
-        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-        disabled={loading}
-        />
-        <label for="countIncludePad" class="ml-2 block text-sm text-gray-700">
-        Count include pad
-        </label>
-    </div>
-    {/if}
+      <div class="checkbox-container">
+        <input id="countIncludePad" type="checkbox" bind:checked={countIncludePad} disabled={loading} />
+        <label for="countIncludePad">Count include pad</label>
+      </div>
 
-    <!-- Divisor Override (AvgPool only) -->
-    {#if layerType === 'avgpool2d' || layerType === 'avgpool1d'}
-    <div>
-        <label for="divisorOverride" class="block text-sm font-medium text-gray-700 mb-1">
-        Divisor Override <span class="text-gray-400">(optional)</span>
-        </label>
-        <input
-        id="divisorOverride"
-        type="number"
-        bind:value={divisorOverride}
-        placeholder="e.g., 4"
-        min="1"
-        class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        disabled={loading}
-        />
-    </div>
+      <!-- Divisor Override -->
+      <div>
+        <label for="divisorOverride">Divisor Override <span class="optional">(optional)</span></label>
+        <input id="divisorOverride" type="number" bind:value={divisorOverride} min="1" placeholder="e.g., 4" disabled={loading} />
+      </div>
     {/if}
 
     <!-- Ceil Mode -->
-    <div class="flex items-center">
-      <input
-        id="ceilMode"
-        type="checkbox"
-        bind:checked={ceilMode}
-        class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-        disabled={loading}
-      />
-      <label for="ceilMode" class="ml-2 block text-sm text-gray-700">
-        Ceil mode
-      </label>
+    <div class="checkbox-container">
+      <input id="ceilMode" type="checkbox" bind:checked={ceilMode} disabled={loading} />
+      <label for="ceilMode">Ceil mode</label>
     </div>
   {/if}
-   <!-- BatchNorm2d and BatchNorm1d Layer Fields -->
-    {#if layerType === 'batchnorm2d' || layerType === 'batchnorm1d'}
-      <!-- Number of Features -->
-      <div>
-          <label for="numFeatures" class="block text-sm font-medium text-gray-700 mb-1">
-          Number of Features <span class="text-red-500">*</span>
-          </label>
-          <input
-          id="numFeatures"
-          type="number"
-          bind:value={numFeatures}
-          placeholder="e.g., 64"
-          required
-          min="1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-          />
-      </div>
 
-      <!-- Eps -->
-      <div>
-          <label for="eps" class="block text-sm font-medium text-gray-700 mb-1">
-          Eps <span class="text-gray-400">(optional)</span>
-          </label>
-          <input
-          id="eps"
-          type="text"
-          bind:value={eps}
-          placeholder="1e-05"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-          />
-      </div>
+  <!-- BatchNorm Layers -->
+  {#if layerType === 'batchnorm2d' || layerType === 'batchnorm1d'}
+    <div>
+      <label for="numFeatures">Number of Features <span class="required">*</span></label>
+      <input id="numFeatures" type="number" bind:value={numFeatures} required min="1" placeholder="e.g., 64" disabled={loading} />
+    </div>
 
-      <!-- Momentum -->
-      <div>
-          <label for="momentum" class="block text-sm font-medium text-gray-700 mb-1">
-          Momentum <span class="text-gray-400">(optional)</span>
-          </label>
-          <input
-          id="momentum"
-          type="text"
-          bind:value={momentum}
-          placeholder="0.1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-          />
-      </div>
+    <div>
+      <label for="eps">Eps <span class="optional">(optional)</span></label>
+      <input id="eps" type="text" bind:value={eps} placeholder="1e-05" disabled={loading} />
+    </div>
 
-      <!-- Affine -->
-      <div class="flex items-center">
-        <input
-          id="affine"
-          type="checkbox"
-          bind:checked={affine}
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={loading}
-        />
-        <label for="affine" class="ml-2 block text-sm text-gray-700">
-          Affine transformation
-        </label>
-      </div>
+    <div>
+      <label for="momentum">Momentum <span class="optional">(optional)</span></label>
+      <input id="momentum" type="text" bind:value={momentum} placeholder="0.1" disabled={loading} />
+    </div>
 
-      <!-- Track Running Status -->
-      <div class="flex items-center">
-          <input
-          id="trackRunningStatus"
-          type="checkbox"
-          bind:checked={trackRunningStatus}
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={loading}
-          />
-          <label for="trackRunningStatus" class="ml-2 block text-sm text-gray-700">
-          Track running statistics
-          </label>
-      </div>
-    {/if}
-    <!-- Flatten Layer Fields -->
-    {#if layerType === 'flatten'}
-      <!-- Start Dimension -->
-      <div>
-        <label for="startDim" class="block text-sm font-medium text-gray-700 mb-1">
-          Start Dimension <span class="text-gray-400">(optional)</span>
-        </label>
-        <input
-          id="startDim"
-          type="number"
-          bind:value={startDim}
-          placeholder="1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-        />
-      </div>
+    <div class="checkbox-container">
+      <input id="affine" type="checkbox" bind:checked={affine} disabled={loading} />
+      <label for="affine">Affine transformation</label>
+    </div>
 
-      <!-- End Dimension -->
-      <div>
-        <label for="endDim" class="block text-sm font-medium text-gray-700 mb-1">
-          End Dimension <span class="text-gray-400">(optional)</span>
-        </label>
-        <input
-          id="endDim"
-          type="number"
-          bind:value={endDim}
-          placeholder="-1"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-        />
-      </div>
-    {/if}
+    <div class="checkbox-container">
+      <input id="trackRunningStatus" type="checkbox" bind:checked={trackRunningStatus} disabled={loading} />
+      <label for="trackRunningStatus">Track running statistics</label>
+    </div>
+  {/if}
 
-    <!-- Dropout Layer Fields -->
-    {#if layerType === 'dropout'}
-      <!-- Dropout Probability -->
-      <div>
-        <label for="dropoutP" class="block text-sm font-medium text-gray-700 mb-1">
-          Dropout Probability <span class="text-gray-400">(optional)</span>
-        </label>
-        <input
-          id="dropoutP"
-          type="text"
-          bind:value={dropoutP}
-          placeholder="0.5"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-        />
-        <p class="text-xs text-gray-500 mt-1">Value between 0 and 1</p>
-      </div>
-    {/if}
+  <!-- Flatten Layer -->
+  {#if layerType === 'flatten'}
+    <div>
+      <label for="startDim">Start Dimension <span class="optional">(optional)</span></label>
+      <input id="startDim" type="number" bind:value={startDim} placeholder="1" disabled={loading} />
+    </div>
 
-    <!-- ELU Layer Fields -->
-    {#if layerType === 'elu'}
-      <!-- Alpha -->
-      <div>
-        <label for="alpha" class="block text-sm font-medium text-gray-700 mb-1">
-          Alpha <span class="text-gray-400">(optional)</span>
-        </label>
-        <input
-          id="alpha"
-          type="text"
-          bind:value={alpha}
-          placeholder="1.0"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-        />
-      </div>
+    <div>
+      <label for="endDim">End Dimension <span class="optional">(optional)</span></label>
+      <input id="endDim" type="number" bind:value={endDim} placeholder="-1" disabled={loading} />
+    </div>
+  {/if}
 
-      <!-- Inplace -->
-      <div class="flex items-center">
-        <input
-          id="eluInplace"
-          type="checkbox"
-          bind:checked={eluInplace}
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={loading}
-        />
-        <label for="eluInplace" class="ml-2 block text-sm text-gray-700">
-          In-place operation
-        </label>
-      </div>
-    {/if}
+  <!-- Dropout Layer -->
+  {#if layerType === 'dropout'}
+    <div>
+      <label for="dropoutP">Dropout Probability <span class="optional">(optional)</span></label>
+      <input id="dropoutP" type="text" bind:value={dropoutP} placeholder="0.5" disabled={loading} />
+      <p class="input-note">Value between 0 and 1</p>
+    </div>
+  {/if}
 
-    <!-- ReLU Layer Fields -->
-    {#if layerType === 'relu'}
-      <!-- Inplace -->
-      <div class="flex items-center">
-        <input
-          id="reluInplace"
-          type="checkbox"
-          bind:checked={reluInplace}
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={loading}
-        />
-        <label for="reluInplace" class="ml-2 block text-sm text-gray-700">
-          In-place operation
-        </label>
-      </div>
-    {/if}
+  <!-- ELU Layer -->
+  {#if layerType === 'elu'}
+    <div>
+      <label for="alpha">Alpha <span class="optional">(optional)</span></label>
+      <input id="alpha" type="text" bind:value={alpha} placeholder="1.0" disabled={loading} />
+    </div>
 
-    <!-- LeakyReLU Layer Fields -->
-    {#if layerType === 'leakyrelu'}
-      <!-- Negative Slope -->
-      <div>
-        <label for="negativeSlope" class="block text-sm font-medium text-gray-700 mb-1">
-          Negative Slope <span class="text-gray-400">(optional)</span>
-        </label>
-        <input
-          id="negativeSlope"
-          type="text"
-          bind:value={negativeSlope}
-          placeholder="0.01"
-          class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-          disabled={loading}
-        />
-      </div>
+    <div class="checkbox-container">
+      <input id="eluInplace" type="checkbox" bind:checked={eluInplace} disabled={loading} />
+      <label for="eluInplace">In-place operation</label>
+    </div>
+  {/if}
 
-      <!-- Inplace -->
-      <div class="flex items-center">
-        <input
-          id="leakyReluInplace"
-          type="checkbox"
-          bind:checked={leakyReluInplace}
-          class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-          disabled={loading}
-        />
-        <label for="leakyReluInplace" class="ml-2 block text-sm text-gray-700">
-          In-place operation
-        </label>
-      </div>
-    {/if}
+  <!-- ReLU Layer -->
+  {#if layerType === 'relu'}
+    <div class="checkbox-container">
+      <input id="reluInplace" type="checkbox" bind:checked={reluInplace} disabled={loading} />
+      <label for="reluInplace">In-place operation</label>
+    </div>
+  {/if}
+
+  <!-- LeakyReLU Layer -->
+  {#if layerType === 'leakyrelu'}
+    <div>
+      <label for="negativeSlope">Negative Slope <span class="optional">(optional)</span></label>
+      <input id="negativeSlope" type="text" bind:value={negativeSlope} placeholder="0.01" disabled={loading} />
+    </div>
+
+    <div class="checkbox-container">
+      <input id="leakyReluInplace" type="checkbox" bind:checked={leakyReluInplace} disabled={loading} />
+      <label for="leakyReluInplace">In-place operation</label>
+    </div>
+  {/if}
 
   <!-- Submit Button -->
-  <button 
-    type="submit"
-    disabled={loading}
-    class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-  >
+  <button type="submit" disabled={loading} class="submit-button">
     {loading ? 'Adding Layer...' : 'Add Layer'}
   </button>
 </form>

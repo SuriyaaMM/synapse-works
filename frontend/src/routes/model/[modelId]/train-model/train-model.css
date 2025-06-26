@@ -1,0 +1,214 @@
+.start-training-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.heading {
+  font-size: 28px;
+  font-weight: bold;
+  margin-bottom: 24px;
+}
+
+.error-box {
+  padding: 16px;
+  background-color: #fee2e2;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+  border-radius: 6px;
+}
+
+.model-overview {
+  background-color: #eff6ff;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.model-section {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+}
+
+@media (min-width: 768px) {
+  .model-section {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.model-info {
+  color: #1e40af;
+  font-size: 14px;
+}
+
+.model-info span {
+  font-weight: 600;
+}
+
+.dataset-info {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #bfdbfe;
+  font-size: 14px;
+  color: #1e40af;
+}
+
+.checklist-section {
+  background-color: #f9fafb;
+  padding: 16px;
+  border-radius: 6px;
+}
+
+.checklist-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 14px;
+}
+
+.check-circle {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.check-circle.green {
+  background-color: #22c55e;
+}
+
+.check-circle.red {
+  background-color: #ef4444;
+}
+
+.checklist-ready {
+  margin-top: 12px;
+  padding: 8px;
+  background-color: #d1fae5;
+  border-left: 4px solid #22c55e;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #047857;
+  font-weight: 500;
+}
+
+.checklist-warning {
+  margin-top: 12px;
+  padding: 8px;
+  background-color: #fee2e2;
+  border-left: 4px solid #ef4444;
+  border-radius: 4px;
+  font-size: 14px;
+  color: #b91c1c;
+  font-weight: 500;
+}
+
+.checklist-links {
+  margin-top: 8px;
+}
+
+.checklist-links a {
+  font-size: 12px;
+  background-color: #2563eb;
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  margin-right: 8px;
+  text-decoration: none;
+}
+
+.checklist-links a:hover {
+  background-color: #1d4ed8;
+}
+
+.training-status {
+  background-color: #fef3c7;
+  padding: 16px;
+  border-radius: 6px;
+  border-left: 4px solid #f59e0b;
+}
+
+.status-title {
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #92400e;
+}
+
+.training-completed {
+  color: #047857;
+}
+
+.training-in-progress {
+  color: #b45309;
+}
+
+.status-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-top: 12px;
+  font-size: 14px;
+}
+
+.status-warning {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #ffedd5;
+  border: 1px solid #fdba74;
+  color: #92400e;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.training-controls {
+  display: flex;
+  gap: 12px;
+  padding-top: 24px;
+}
+
+.start-button,
+.stop-button {
+  padding: 16px 32px;
+  color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.start-button {
+  background: linear-gradient(to right, #16a34a, #15803d);
+}
+
+.start-button:hover {
+  background: linear-gradient(to right, #15803d, #166534);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.stop-button {
+  background: linear-gradient(to right, #dc2626, #b91c1c);
+}
+
+.stop-button:hover {
+  background: linear-gradient(to right, #b91c1c, #991b1b);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.start-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.training-error {
+  padding: 16px;
+  background-color: #fee2e2;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+  border-radius: 6px;
+  margin-top: 16px;
+}
