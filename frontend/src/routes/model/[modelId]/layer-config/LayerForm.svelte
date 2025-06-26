@@ -746,8 +746,8 @@
     </div>
     <div>
       <label for="padding">Padding <span class="optional">(optional)</span></label>
-      <input id="padding" type="text" bind:value={padding} placeholder={layerType === 'conv2d' ? "e.g., 1,1" : "e.g., 1"} disabled={loading} />
-      <p class="input-note">{layerType === 'conv2d' ? 'Format: "width,height" (e.g., "1,1")' : 'Format: single number (e.g., "1")'}</p>
+      <input id="padding" type="text" bind:value={padding} placeholder={layerType === 'conv2d' ? "e.g., 0,0" : "e.g., 0"} disabled={loading} />
+      <p class="input-note">{layerType === 'conv2d' ? 'Format: "width,height" (e.g., "0,0")' : 'Format: single number (e.g., "0")'}</p>
     </div>
     <div>
       <label for="dilation">Dilation <span class="optional">(optional)</span></label>
