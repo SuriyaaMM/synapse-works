@@ -54,6 +54,24 @@ export const DELETE_LAYER = gql`
   }
 `;
 
+export const MODIFY_LAYER = gql`
+  mutation ModifyLayer($model_id: ID!, $layer_id: ID!, $layer_config: LayerConfigInput!) {
+    modifyLayer(model_id: $model_id, layer_id: $layer_id, layer_config: $layer_config) {
+      id
+      name
+      layers_config {
+        id
+        type
+        ... on LinearLayerConfig {
+          name
+          in_features
+          out_features
+        }
+      }
+    }
+  }
+`;
+
 export const SET_TRAIN_CONFIG = gql`
   mutation SetMyModelTrainConfig(
     $modelId: ID!

@@ -14,20 +14,23 @@
 
   export let loading = false;
 
-  // Typed dispatcher
+  // Type-safe dispatch functions
   const dispatch = createEventDispatcher<{
     submit: { layerConfig: LayerConfigInput };
     clear: undefined;
+    cancel: undefined;
   }>();
 
-  // Type-safe dispatch functions
-  function dispatchSubmit(layerConfig: LayerConfigInput) {
-    dispatch('submit', { layerConfig });
+  function dispatchCancel() {
+    dispatch('cancel');
   }
 
   function dispatchClear() {
     dispatch('clear');
   }
+
+  export let editMode = false;
+  export let existingLayer: any = null;
 
   // Form fields
   let layerType = 'linear';
@@ -86,6 +89,13 @@
   // LeakyReLU layer fields
   let negativeSlope = '0.01';
   let leakyReluInplace = false;
+  
+  $: if (editMode && existingLayer) {
+    // Populate form fields based on existingLayer data
+    layerType = existingLayer.type;
+    layerName = existingLayer.name || '';
+    // Should add logic to pre populate fields 
+  }
 
   /**
    * Validates the form fields based on layer type
@@ -480,7 +490,7 @@
           batchnorm2d: batchnorm2dConfig
         };
         
-      } else if (layerType === 'batchnorm1d') {
+    } else if (layerType === 'batchnorm1d') {
         const batchnorm1dConfig: BatchNorm1dLayerConfigInput = {
           name: layerNameValue,
           num_features: parseInt(numFeatures, 10),
@@ -494,7 +504,7 @@
           type: layerType.trim(),
           batchnorm1d: batchnorm1dConfig
         };
-      } else if (layerType === 'flatten') {
+    } else if (layerType === 'flatten') {
           const flattenConfig: FlattenLayerConfigInput = {
               name: layerNameValue,
               start_dim: parseInt(startDim, 10),
@@ -506,7 +516,7 @@
               flatten: flattenConfig
           };
           
-      } else if (layerType === 'dropout') {
+    } else if (layerType === 'dropout') {
           const dropoutConfig: DropoutLayerConfigInput = {
               name: layerNameValue,
               p: parseFloat(dropoutP)
@@ -517,7 +527,7 @@
               dropout: dropoutConfig
           };
           
-      } else if (layerType === 'elu') {
+    } else if (layerType === 'elu') {
           const eluConfig: ELULayerConfigInput = {
               name: layerNameValue,
               alpha: parseFloat(alpha),
@@ -529,7 +539,7 @@
               elu: eluConfig
           };
           
-      } else if (layerType === 'relu') {
+    } else if (layerType === 'relu') {
           const reluConfig: ReLULayerConfigInput = {
               name: layerNameValue,
               inplace: reluInplace
@@ -540,7 +550,7 @@
               relu: reluConfig
           };
           
-      } else if (layerType === 'leakyrelu') {
+    } else if (layerType === 'leakyrelu') {
           const leakyReluConfig: LeakyReLULayerConfigInput = {
               name: layerNameValue,
               negative_slope: parseFloat(negativeSlope),
@@ -551,7 +561,7 @@
               type: layerType.trim(),
               leakyrelu: leakyReluConfig
           };
-      } else if (layerType === 'sigmoid') {
+    } else if (layerType === 'sigmoid') {
         const sigmoidConfig: SigmoidLayerConfigInput = {
           name: layerNameValue
         };
@@ -561,7 +571,7 @@
           sigmoid: sigmoidConfig
         };
         
-      } else if (layerType === 'logsigmoid') {
+    } else if (layerType === 'logsigmoid') {
         const logsigmoidConfig: LogSigmoidLayerConfigInput = {
           name: layerNameValue
         };
@@ -571,7 +581,7 @@
           logsigmoid: logsigmoidConfig
         };
         
-      } else if (layerType === 'tanh') {
+    } else if (layerType === 'tanh') {
         const tanhConfig: TanhLayerConfigInput = {
           name: layerNameValue
         };
@@ -580,7 +590,7 @@
           type: layerType.trim(),
           tanh: tanhConfig
         };
-      }
+    }
 
     throw new Error(`Unsupported layer type: ${layerType}`);
   }
@@ -593,7 +603,7 @@
     }
     
     const layerConfig = createLayerConfig();
-    dispatchSubmit(layerConfig);
+    dispatch('submit', { layerConfig });
   }
 
   // Resets the form fields to their initial state
@@ -923,8 +933,14 @@
     </div>
   {/if}
 
-  <!-- Submit Button -->
-  <button type="submit" disabled={loading} class="submit-button">
-    {loading ? 'Adding Layer...' : 'Add Layer'}
-  </button>
+  <div class="button-group">
+    <button type="submit" disabled={loading} class="submit-button">
+      {loading ? (editMode ? 'Updating Layer...' : 'Adding Layer...') : (editMode ? 'Update Layer' : 'Add Layer')}
+    </button>
+    {#if editMode}
+      <button type="button" on:click={dispatchCancel} class="cancel-button">
+        Cancel
+      </button>
+    {/if}
+  </div>
 </form>

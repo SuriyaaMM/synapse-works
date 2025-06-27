@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from '$app/stores';
   import client from '$lib/apolloClient';
-  import { APPEND_LAYER, DELETE_LAYER } from '$lib/mutations';
+  import { APPEND_LAYER, DELETE_LAYER, MODIFY_LAYER } from '$lib/mutations';
   import { GET_MODEL, VALIDATE_MODEL } from '$lib/queries';
   import LayerForm from './LayerForm.svelte';
   import type { Model, LayerConfigInput } from '../../../../../../source/types';
@@ -19,6 +19,12 @@
   let modifyingLayerId: string | null = null;
   let validationTrigger = 0;
 
+  let lastOperation: 'add' | 'delete' | 'modify'| null = null;
+  let operationSuccess = false;
+
+  let editingLayer: any = null;
+  let showEditForm = false;
+
   let layerFormRef: LayerForm;
 
   // Extract modelId from URL
@@ -27,13 +33,6 @@
     const modelIndex = pathParts.indexOf('model');
     modelId = (modelIndex !== -1 && modelIndex + 1 < pathParts.length) ? pathParts[modelIndex + 1] : null;
   }
-
-  $: {
-  // Clear error message when validation state improves
-  if (validationResult && !hasValidationErrors() && error && error.includes('Cannot add layer:')) {
-    error = null;
-  }
-}
 
   // Fetch model when modelId changes
   $: if (modelId) fetchModelDetails();
@@ -50,7 +49,6 @@
       
       // Always validate after fetching model details
       if (modelDetails) {
-        // Use tick to ensure the DOM is updated before validation
         await tick();
         await validateModelStructure();
       }
@@ -99,23 +97,9 @@
     }
   }
 
-  // Also trigger validation when modelDetails changes (reactive statement)
+  // Trigger validation when modelDetails changes (reactive statement)
   $: if (modelDetails && validationTrigger === 0) {
     validateModelStructure();
-  }
-
-  //Check if model has validation errors
-  function hasValidationErrors(): boolean {
-    if (!validationResult?.status) return false;
-    return validationResult.status.some((status: any) => status.message);
-  }
-
-  //Get the last layer's validation message
-  function getLastLayerValidationMessage(): string | null {
-    if (!validationResult?.status || validationResult.status.length === 0) return null;
-    
-    const lastLayerStatus = validationResult.status[validationResult.status.length - 1];
-    return lastLayerStatus?.message || null;
   }
 
   async function handleLayerSubmit(event: CustomEvent<{ layerConfig: LayerConfigInput }>) {
@@ -124,12 +108,9 @@
       return;
     }
 
-    // Check for validation errors before allowing layer addition
-    if (hasValidationErrors()) {
-      const lastLayerMessage = getLastLayerValidationMessage();
-      error = lastLayerMessage 
-        ? `Cannot add layer: ${lastLayerMessage}` 
-        : 'Cannot add layer: Model has validation errors. Please fix existing layers first.';
+    // Add this validation check
+    if (!isLastLayerValid()) {
+      error = 'Cannot add layer: last layer dimensions are wrong. Please fix or delete the invalid layer first.';
       return;
     }
 
@@ -151,8 +132,13 @@
       }
 
       result = res.data.appendLayer;
+      lastOperation = 'add';
+      operationSuccess = true;
       modelDetails = result;
 
+      await fetchModelDetails();
+
+      // Immediately validate using the updated model
       await validateModelStructure();
 
       if (layerFormRef) {
@@ -175,7 +161,6 @@
     if (!modelId || !layerId) return;
 
     deletingLayerId = layerId;
-    error = null;
 
     try {
       const response = await client.mutate({
@@ -186,14 +171,13 @@
       if (response.data?.deleteLayer) {
         result = response.data.deleteLayer;
         modelDetails = result;
-        
-        await tick();
         await validateModelStructure();
-        
+        lastOperation = 'delete';
+        operationSuccess = true;
+
         error = null;
       }
     } catch (err) {
-      console.error('Error deleting layer:', err);
       if (err instanceof Error) {
         error = err.message;
       } else {
@@ -204,13 +188,80 @@
     }
   }
 
+  async function handleLayerUpdate(event: CustomEvent<{ layerConfig: LayerConfigInput }>) {
+    if (!modelId || !editingLayer) {
+      error = 'Model ID or layer data is missing';
+      return;
+    }
+
+    const { layerConfig } = event.detail;
+    loading = true;
+    error = null;
+
+    try {
+      const res = await client.mutate({
+        mutation: MODIFY_LAYER,
+        variables: { 
+          model_id: modelId, 
+          layer_id: editingLayer.id, 
+          layer_config: layerConfig 
+        },
+        fetchPolicy: 'no-cache'
+      });
+
+      if (!res.data?.modifyLayer) {
+        throw new Error('Failed to modify layer - no data returned');
+      }
+
+      result = res.data.modifyLayer;
+      modelDetails = result;
+      lastOperation = 'modify';
+      operationSuccess = true;
+
+      // Close edit mode
+      showEditForm = false;
+      editingLayer = null;
+      modifyingLayerId = null;
+
+      await fetchModelDetails();
+      await validateModelStructure();
+
+    } catch (err) {
+      console.error('Error modifying layer:', err);
+      if (err instanceof Error) {
+        error = err.message;
+      } else {
+        error = 'Unknown error occurred';
+      }
+    } finally {
+      loading = false;
+    }
+  }
+
   function modifyLayer(layerId: string) {
-    modifyingLayerId = layerId;
-    console.log('Modify layer:', layerId);
+    const layer = modelDetails?.layers_config?.find(l => l.id === layerId);
+    if (layer) {
+      editingLayer = layer;
+      showEditForm = true;
+      modifyingLayerId = layerId;
+    }
+  }
+
+  function cancelEdit() {
+  showEditForm = false;
+  editingLayer = null;
+  modifyingLayerId = null;
+}
+
+  function isLastLayerValid(): boolean {
+    if (!validationResult?.status || validationResult.status.length === 0) return true;
+    
+    const lastLayerStatus = validationResult.status[validationResult.status.length - 1];
+    return !lastLayerStatus.message;
   }
 
   function getLayerValidationInfo(layerId: string) {
-    fetchModelDetails();
+     fetchModelDetails();
     if (!validationResult?.status) return null;
 
     const layerStatus = validationResult.status.find((status: any) => status.layer_id === layerId);
@@ -250,6 +301,8 @@
   function handleClearMessages() {
     result = null;
     error = null;
+    lastOperation = null;
+    operationSuccess = false;
   }
 
   function formatDimension(dim: number[] | null): string {
@@ -277,37 +330,55 @@
           <h1 class="layer-config-heading">Layer Configuration</h1>
         </div>
 
-        {#if result && getOverallValidationStatus().isValid}
+       {#if operationSuccess && getOverallValidationStatus().isValid}
           <div class="layer-config-success">
-            Layer Added Successfully
+            {#if lastOperation === 'add'}
+              Layer Added Successfully
+            {:else if lastOperation === 'delete'}
+              Layer Deleted Successfully
+            {:else if lastOperation === 'modify'}
+              Layer Modified Successfully
+            {/if}
+          </div>
+        {/if}
+
+        {#if !isLastLayerValid()}
+          <div class="layer-config-error">
+            <h3>Cannot Add New Layer</h3>
+            <p>The last layer has dimension issues. Please fix or delete the invalid layer before adding a new one.</p>
           </div>
         {/if}
 
         {#if getOverallValidationStatus().hasErrors}
           <div class="layer-config-warning">
             <h3>Model Validation Issues ({getOverallValidationStatus().errorCount} errors)</h3>
-            <p class="mb-3">Some layers have validation issues. Please fix the layer issues before adding new layers.</p>
+            <p class="mb-3">Some layers have validation issues. Please check the layer details in the sidebar.</p>
           </div>
         {/if}
 
-        <!-- Show blocking message if there are validation errors -->
-        {#if hasValidationErrors()}
-          <div class="layer-config-error">
-            <h3>⚠️ Cannot Add New Layers</h3>
-            <p>Please resolve the validation errors in existing layers before adding new ones.</p>
-            {#if getLastLayerValidationMessage()}
-              <p><strong>Last layer error:</strong> {getLastLayerValidationMessage()}</p>
-            {/if}
+        <!-- Conditional Form Display -->
+        {#if showEditForm && editingLayer}
+          <!-- Edit Layer Form -->
+          <div class="layer-config-edit-section">
+            <h3>Edit Layer: {editingLayer.name || editingLayer.type}</h3>
+            <LayerForm 
+              {loading}
+              editMode={true}
+              existingLayer={editingLayer}
+              on:submit={handleLayerUpdate}
+              on:clear={handleClearMessages}
+              on:cancel={cancelEdit}
+            />
           </div>
+        {:else}
+          <!-- Layer Configuration Form (main form) -->
+          <LayerForm 
+            bind:this={layerFormRef}
+            {loading}
+            on:submit={handleLayerSubmit}
+            on:clear={handleClearMessages}
+          />
         {/if}
-
-        <!-- Layer Configuration Form - Disable if there are validation errors -->
-        <LayerForm 
-          bind:this={layerFormRef}
-          loading={loading || hasValidationErrors()}
-          on:submit={handleLayerSubmit}
-          on:clear={handleClearMessages}
-        />
 
         {#if error}
           <div class="layer-config-message">
