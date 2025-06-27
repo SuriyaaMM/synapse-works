@@ -428,7 +428,10 @@ export const typeDefs = `#graphql
     }
     type ModelDimensionResolveStatusStruct {
         layer_id: ID!
-        message: String!
+        message: String
+        in_dimension: [Int!]!
+        out_dimension: [Int!]!
+        required_in_dimension: [Int!]
     }
     type ModelDimensionResolveStatus {
         status: [ModelDimensionResolveStatusStruct]
@@ -457,6 +460,11 @@ export const typeDefs = `#graphql
         deleteLayer(
             model_id: ID!, 
             layer_id: ID!): Model!
+        # modify layer
+        modifyLayer(
+            model_id: ID!,
+            layer_id: ID!,
+            layer_config: LayerConfigInput!): Model!
         # set's training configuration
         setTrainConfig(
             model_id: ID!

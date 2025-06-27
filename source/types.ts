@@ -394,7 +394,10 @@ export type Model  = {
 
 export type ModelDimensionResolveStatusStruct = {
     layer_id: string;
-    message: string;
+    message?: string;
+    in_dimension: number[];
+    out_dimension: number[];
+    required_in_dimension?: number[];
 }
 
 export type ModelDimensionResolveStatus = {

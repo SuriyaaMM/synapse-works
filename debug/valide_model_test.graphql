@@ -1,0 +1,176 @@
+mutation CreateModelForValidateDimension {
+  createModel(name: "ValidateDimensionTest") {
+    id
+    name
+    layers_config { # This will be empty initially
+      id
+    }
+  }
+}
+
+mutation AddFlattenLayer($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "flatten"
+      flatten: {
+        name: "Flatten1"
+        start_dim: 1
+        end_dim: -1
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on FlattenLayerConfig {
+        start_dim
+        end_dim
+      }
+    }
+  }
+}
+
+mutation AddLinearLayer($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "linear"
+      linear: {
+        name: "FC1"
+        in_features: 32
+        out_features: 10
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on LinearLayerConfig {
+        in_features
+        out_features
+      }
+    }
+  }
+}
+
+mutation AddMaxPool2d($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "MaxPool1"
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      ... on MaxPool2dLayerConfig {
+        kernel_size
+        stride
+        padding
+      }
+    }
+  }
+}
+
+
+
+query ValidateModel($modelId: ID!, $in_dimension: [Int!]!) {
+  validateModel(id: $modelId, in_dimension: $in_dimension) {
+    status {
+      layer_id
+      message
+      in_dimension
+      out_dimension
+      required_in_dimension
+    }
+  }
+}
+
+query GetModel($modelId: ID!) {
+  getModel(id: $modelId) {
+    id
+    name
+    layers_config {
+      id
+      type
+      name
+      
+      ... on Conv2dLayerConfig {
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+
+      ... on Conv1dLayerConfig {
+        in_channels
+        out_channels
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+
+      ... on LinearLayerConfig {
+        in_features
+        out_features
+      }
+
+      ... on FlattenLayerConfig {
+        start_dim
+        end_dim
+      }
+
+      ... on MaxPool2dLayerConfig {
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+
+      ... on AvgPool2dLayerConfig {
+        kernel_size
+        stride
+        padding
+      }
+
+      ... on MaxPool1dLayerConfig {
+        kernel_size
+        stride
+        padding
+        dilation
+      }
+
+      ... on AvgPool1dLayerConfig {
+        kernel_size
+        stride
+        padding
+      }
+
+      ... on BatchNorm2dLayerConfig {
+        num_features
+      }
+
+      ... on BatchNorm1dLayerConfig {
+        num_features
+      }
+    }
+  }
+}
