@@ -18,7 +18,7 @@ Architect, Train & Evaluate your Neural Networks in seconds
 ### Instructions for Building DockerImage
 #### If you wish not to build the image, there's a pre-built version
 ```bash
-sudo docker pull suriyaamm2705/synapse-works:latest
+sudo docker pull suriyaamm2705/synapse-works:v1.1.0
 ```
 ```bash
 sudo docker run -it --rm   -p 5173:5173 -p 4000:4000 -p 6379:6379 -p 6000:6000  synapse-works
