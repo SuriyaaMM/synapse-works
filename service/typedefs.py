@@ -1,4 +1,4 @@
-from typing import TypedDict, Union, Optional, NotRequired, Tuple
+from typing import TypedDict, Union, NotRequired, NotRequired, Tuple
 import torchvision
 
 """ ------------------------------------ Layer Config ----------------------------------- """
@@ -398,21 +398,36 @@ class TSTrainConfigInput(TypedDict):
 # refer: https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.MNIST.html
 class MNISTDatasetConfig(TypedDict):
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
     transform: torchvision.transforms.Compose
 
 class CIFAR10DatasetConfig(TypedDict):
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
     transform: torchvision.transforms.Compose
 
-DatasetKwargs_T = Union[MNISTDatasetConfig, CIFAR10DatasetConfig]
+class CustomCSVDatasetConfig(TypedDict):
+    root: str
+    feature_columns: list[str]
+    label_columns: list[str]
+    is_regression_task: bool
+
+class ImageFolderDatasetConfig(TypedDict):
+    root: str
+    transform: torchvision.transforms.Compose
+    allow_empty: NotRequired[bool]
+
+
+DatasetKwargs_T = Union[MNISTDatasetConfig, 
+                        CIFAR10DatasetConfig,
+                        CustomCSVDatasetConfig,
+                        ImageFolderDatasetConfig]
 
 class DataLoaderConfig(TypedDict):
-    batch_size: Optional[int]
-    shuffle: Optional[bool]
+    batch_size: NotRequired[int]
+    shuffle: NotRequired[bool]
     num_workers: int
     pin_memory: bool
 
@@ -424,25 +439,48 @@ class DatasetConfig(TypedDict):
 
 class TSMNISTDatasetInput(TypedDict):
     name: str
-    batch_size: Optional[int]
-    split_length: Optional[list[float]]
-    shuffle: Optional[bool]
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
     transforms: list[str]
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
 
 class TSCIFAR10DatasetInput(TypedDict):
     name: str
-    batch_size: Optional[int]
-    split_length: Optional[list[float]]
-    shuffle: Optional[bool]
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
     transforms: list[str]
     root: str
-    train: Optional[bool]
-    download: Optional[bool]
+    train: NotRequired[bool]
+    download: NotRequired[bool]
 
-TSDatasetInput = Union[TSMNISTDatasetInput, TSCIFAR10DatasetInput]
+class TSCustomCSVDatasetInput(TypedDict):
+    name: str
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
+    root: str
+    feature_columns: list[str]
+    label_columns: list[str]
+    is_regression_task: bool
+
+class TSImageFolderDatasetInput(TypedDict):
+    name: str
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
+    root: str
+    transform: list[str]
+    allow_empty: NotRequired[bool]
+    
+
+TSDatasetInput = Union[TSMNISTDatasetInput, 
+                       TSCIFAR10DatasetInput,
+                       TSCustomCSVDatasetInput,
+                       TSImageFolderDatasetInput]
 
 
 def custom_json_encoder(obj):

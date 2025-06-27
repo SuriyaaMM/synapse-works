@@ -360,6 +360,19 @@ export interface CIFAR10DatasetConfig extends DatasetConfig {
     transform?: string[];
 };
 
+export interface CustomCSVDatasetConfig extends DatasetConfig {
+    root: string;
+    feature_columns: string[];
+    label_columns: string[];
+    is_regression_task: boolean;
+}
+
+export interface ImageFolderDatasetConfig extends DatasetConfig {
+    root: string;
+    transform?: string[];
+    allow_empty?: boolean;
+}
+
 export type MNISTDatasetConfigInput = {
     root: string;
     train?: boolean;
@@ -374,6 +387,19 @@ export type CIFAR10DatasetConfigInput = {
     transform?: string[];
 };
 
+export type CustomCSVDatasetConfigInput = {
+    root: string;
+    feature_columns: string[];
+    label_columns: string[];
+    is_regression_task?: boolean;
+}
+
+export type ImageFolderDatasetConfigInput = {
+    root: string;
+    transform?: string[];
+    allow_empty?: boolean;
+}
+
 export type DatasetConfigInput  = {
     name: string;
     batch_size?: number;
@@ -381,6 +407,8 @@ export type DatasetConfigInput  = {
     shuffle?: boolean;
     mnist?: MNISTDatasetConfigInput
     cifar10?: CIFAR10DatasetConfigInput
+    image_folder?: ImageFolderDatasetConfigInput
+    custom_csv?: CustomCSVDatasetConfigInput
 };
 
 // ------------------------------- Model ----------------------------------

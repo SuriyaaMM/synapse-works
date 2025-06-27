@@ -397,6 +397,25 @@ export const typeDefs = `#graphql
         train: Boolean
         download: Boolean
     }
+    type CustomCSVDatasetConfig implements DatasetConfig {
+        name: String!
+        batch_size: Int
+        split_length: [Float]
+        shuffle: Boolean
+        root: String!
+        feature_columns: [String!]!
+        label_columns: [String!]!
+        is_regression_task: Boolean
+    }
+    type ImageFolderDatasetConfig implements DatasetConfig {
+        name: String!
+        batch_size: Int
+        split_length: [Float]
+        shuffle: Boolean
+        root: String!
+        transform: [String]
+        allow_empty: Boolean
+    }
     input MNISTDatasetConfigInput {
         root: String!
         train: Boolean
@@ -409,6 +428,17 @@ export const typeDefs = `#graphql
         download: Boolean
         transform: [String]
     }
+    input CustomCSVDatasetConfigInput {
+        root: String!
+        feature_columns: [String!]!
+        label_columns: [String!]!
+        is_regression_task: Boolean
+    }
+    input ImageFolderDatasetConfigInput {
+        root: String!
+        transform: [String]
+        allow_empty: Boolean
+    }
     input DatasetConfigInput {
         name: String!
         batch_size: Int
@@ -416,6 +446,8 @@ export const typeDefs = `#graphql
         shuffle: Boolean
         mnist: MNISTDatasetConfigInput
         cifar10: CIFAR10DatasetConfigInput
+        image_folder: ImageFolderDatasetConfigInput
+        custom_csv: CustomCSVDatasetConfigInput
     }
     # ---------- Model ----------
     # Model type
