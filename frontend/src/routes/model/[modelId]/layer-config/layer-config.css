@@ -1,105 +1,216 @@
-/* Container Setup */
-.layer-config-container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 24px;
-}
 
-.layer-config-heading {
-  font-size: 28px;
-  font-weight: bold;
-  margin-bottom: 16px;
-}
+  .layer-config-layout {
+    display: flex;
+    min-height: 100vh;
+    gap: 2rem;
+  }
 
-/* Error Box */
-.layer-config-error {
-  padding: 16px;
-  background-color: #fee2e2;
-  border: 1px solid #f87171;
-  color: #b91c1c;
-  border-radius: 6px;
-}
+  .layer-config-sidebar {
+    width: 50%;
+    background: #f8f9fa;
+    padding: 1.5rem;
+    border-right: 1px solid #e9ecef;
+    overflow-y: auto;
+  }
 
-/* Success Box */
-.layer-config-success {
-  margin-bottom: 24px;
-  font-size: 20px;
-  font-weight: 600;
-  color: #047857;
-}
+  .layer-config-dimension-box {
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+    font-family: monospace;
+  }
 
-/* Validation Warning Box */
-.layer-config-warning {
-  margin-bottom: 24px;
-  padding: 16px;
-  background-color: #fef3c7;
-  border: 1px solid #facc15;
-  color: #92400e;
-  border-radius: 6px;
-}
+  .layer-config-dimension-box.input-dim {
+    background: #e3f2fd;
+    border: 2px solid #2196f3;
+  }
 
-.layer-config-warning h3 {
-  font-weight: 600;
-  margin-bottom: 12px;
-}
+  .layer-config-dimension-box.output-dim {
+    background: #f3e5f5;
+    border: 2px solid #9c27b0;
+  }
 
-.layer-config-warning button {
-  padding: 10px 16px;
-  background-color: #dc2626;
-  color: white;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
+  .dimension-label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+  }
 
-.layer-config-warning button:hover {
-  background-color: #b91c1c;
-}
+  .dimension-value {
+    font-size: 1rem;
+    font-weight: 500;
+  }
 
-.layer-config-warning button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+  .layer-config-layers-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin: 1rem 0;
+  }
 
-/* Current Model Structure */
-.layer-config-model {
-  background-color: #eff6ff;
-  padding: 16px;
-  border-radius: 6px;
-}
+  .layer-config-layer-item {
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+    border-radius: 8px;
+    background: white;
+    transition: all 0.2s;
+  }
 
-.layer-config-model-title {
-  font-weight: 600;
-  color: #1e3a8a;
-  margin-bottom: 12px;
-}
+  .layer-config-layer-item.invalid {
+    border-color: #dc3545;
+    background: #ffeaa7;
+  }
 
-.layer-config-layer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px;
-  background-color: white;
-  border: 1px solid #d1d5db;
-  border-radius: 6px;
-  font-size: 14px;
-}
+  .layer-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+  }
 
-.layer-config-layer span:last-child {
-  font-size: 12px;
-  color: #4b5563;
-}
+  .layer-type {
+    font-weight: 500;
+    color: #2c3e50;
+  }
 
-.layer-config-no-layers {
-  font-size: 14px;
-  color: #1e40af;
-}
+  .layer-actions {
+    display: flex;
+    gap: 0.5rem;
+  }
 
-/* General Message Box */
-.layer-config-message {
-  padding: 12px;
-  background-color: #fee2e2;
-  border: 1px solid #f87171;
-  color: #b91c1c;
-  border-radius: 6px;
-}
+  .layer-action-btn {
+    padding: 0.25rem 0.75rem;
+    border: 1px solid;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .layer-action-btn.modify {
+    background: #fff3cd;
+    border-color: #ffc107;
+    color: #856404;
+  }
+
+  .layer-action-btn.modify:hover:not(:disabled) {
+    background: #ffc107;
+    color: white;
+  }
+
+  .layer-action-btn.delete {
+    background: #f8d7da;
+    border-color: #dc3545;
+    color: #721c24;
+  }
+
+  .layer-action-btn.delete:hover:not(:disabled) {
+    background: #dc3545;
+    color: white;
+  }
+
+  .layer-action-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .layer-dimension {
+    font-size: 0.875rem;
+    font-family: monospace;
+    margin-bottom: 0.25rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+  }
+
+  .layer-dimension.input {
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .layer-dimension.output {
+    background: #f3e5f5;
+    color: #7b1fa2;
+  }
+
+  .layer-error {
+    font-size: 0.875rem;
+    color: #dc3545;
+    background: #f8d7da;
+    padding: 0.5rem;
+    border-radius: 4px;
+    margin-top: 0.5rem;
+  }
+
+  .layer-required-dim {
+    font-size: 0.875rem;
+    color: #856404;
+    background: #fff3cd;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+
+  .layer-config-main {
+    flex: 1;
+    padding: 2rem;
+  }
+
+  .layer-config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+  }
+
+  .layer-config-heading {
+    font-size: 2rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin: 0;
+  }
+
+
+  .layer-config-no-layers {
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+    border: 2px dashed #dee2e6;
+    border-radius: 8px;
+    margin: 1rem 0;
+  }
+
+  .layer-config-success {
+    background: #d4edda;
+    color: #155724;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border: 1px solid #c3e6cb;
+  }
+
+  .layer-config-warning {
+    background: #fff3cd;
+    color: #856404;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-bottom: 1rem;
+    border: 1px solid #ffeaa7;
+  }
+
+  .layer-config-message {
+    background: #f8d7da;
+    color: #721c24;
+    padding: 1rem;
+    border-radius: 6px;
+    margin-top: 1rem;
+    border: 1px solid #f5c6cb;
+  }
+
+  .layer-config-error {
+    padding: 2rem;
+    text-align: center;
+    color: #721c24;
+    background: #f8d7da;
+    border-radius: 8px;
+    border: 1px solid #f5c6cb;
+  }

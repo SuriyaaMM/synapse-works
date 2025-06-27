@@ -38,12 +38,13 @@ export const VALIDATE_MODEL = gql`
       status {
         layer_id
         message
+        in_dimension
+        out_dimension
+        required_in_dimension
       }
     }
-}
+  }
 `;
-
-
 
 export const GET_TRAINING_STATUS = gql`
   query GetTrainingStatus {
