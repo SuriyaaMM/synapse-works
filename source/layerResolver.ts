@@ -23,7 +23,8 @@ import {
     SigmoidLayerConfig,
     LogSigmoidLayerConfig,
     TanhLayerConfig,
-    DeleteLayerArgs
+    DeleteLayerArgs,
+    ModifyLayerArgs
 } from "./types.js"
 
 type LayerHandlerMap = {
@@ -428,7 +429,7 @@ export async function appendLayerResolver(models: Model[], args: AppendLayerArgs
     const message = {
         event_type: "LAYER_ADDED",
         model_id: model.id,
-        layer_config: model.layers_config.at(-1),
+        layer_config: new_layer,
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);
@@ -454,6 +455,44 @@ export async function deleteLayerResolver(models: Model[], args: DeleteLayerArgs
         event_type: "LAYER_DELETED",
         model_id: args.model_id,
         layer_id: args.layer_id,
+        timestamp: new Date().toISOString()
+    };
+    await enqueueMessage(message);
+
+    // return model
+    return model;
+}
+
+export async function modifyLayerResolver(models: Model[], args: ModifyLayerArgs) {
+    // find the model 
+    const model = models.find(m => m.id === args.model_id);
+
+    // handle model doesn't exist 
+    if(!model){
+        throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`);
+    }
+    
+    // get the right layer object
+    const handler = layerHandler[args.layer_config.type];
+    // handle invalid layer
+    if(!handler) throw new Error(`[synapse][graphql]: layer ${args.layer_config.type} is invalid`);
+    // get the parsed layer 
+    const new_layer = handler(args.layer_config);
+    new_layer.id = args.layer_id;
+
+    const index_of_layer_to_change = model.layers_config.findIndex(layer => layer.id === args.layer_id);
+
+    if(index_of_layer_to_change === -1) throw new Error(`[synapse][graphql]: Layer with ID ${args.layer_id} not found`);
+    
+    model.layers_config[index_of_layer_to_change] = new_layer;
+
+    // push message to redis
+    console.log(`[synapse][graphql]: Appending to LAYER_MODIFIED redis message Queue`);
+    const message = {
+        event_type: "LAYER_MODIFIED",
+        model_id: args.model_id,
+        layer_id: args.layer_id,
+        layer_config: new_layer,
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);

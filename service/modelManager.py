@@ -55,6 +55,15 @@ class ModelManager(object):
             layer_name: str, graphql object layerName
         """
         self._internal_manager.deleteLayer(layer_id=layer_id)
+    
+    def modifyLayer(self, layer_config: LayerConfig):
+        R"""Modifies the layer in model
+
+        Args:
+            layer_name: str, graphql object layerName
+        """
+        self._internal_manager.modifyLayer(layer_config)
+        logging.info(f"Modified layer({layer_config['type']})(id = {layer_config['id']}) to model(id = {self.id}) with kwargs\n{json.dumps(layer_config["kwargs"], indent=4)})")
         
 
     def setTrainingConfig(self, train_config_td: TrainConfig):

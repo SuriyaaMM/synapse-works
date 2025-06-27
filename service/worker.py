@@ -29,12 +29,22 @@ def processMessage(message_data, models: list[ModelManager], redis_client: redis
                 if model.id == id:
                     parsed_layer_config: LayerConfig = parseFromLayerConfig(layer_config)
                     model.appendLayer(layer_config=parsed_layer_config)
+        # handle LAYER_DELETED event
         elif event_type == "LAYER_DELETED":
             id = message.get("model_id")
             layer_id = message.get("layer_id")
             for model in models:
                 if model.id == id:
                     model.deleteLayer(layer_id=layer_id)
+        # handle LAYER_MODIFIED_EVENT
+        elif event_type == "LAYER_MODIFIED":
+            id = message.get("model_id")
+            layer_id = message.get("layer_id")
+            layer_config = message.get("layer_config")
+            for model in models:
+                if model.id == id:
+                    parsed_layer_config: LayerConfig = parseFromLayerConfig(layer_config)
+                    model.modifyLayer(parsed_layer_config)
         # handle MODEL_CREATED event
         elif event_type == "MODEL_CREATED":
             id = message.get("model_id")

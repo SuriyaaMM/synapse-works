@@ -7,10 +7,11 @@ import {
     CreateModelArgs,
     DatasetConfig,
     TrainArgs,
-    DeleteLayerArgs
+    DeleteLayerArgs,
+    ModifyLayerArgs
 } from "./types.js"
 
-import { appendLayerResolver, deleteLayerResolver } from "./layerResolver.js";
+import { appendLayerResolver, deleteLayerResolver, modifyLayerResolver } from "./layerResolver.js";
 import { createModelResolver, validateModelResolver } from './modelResolver.js';
 import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
@@ -127,6 +128,10 @@ export const resolvers = {
         // deleteLayer mutation
         deleteLayer: async(_:unknown, args: DeleteLayerArgs) => {
             return await deleteLayerResolver(models, args)
+        },
+        // modifyLayer mutation
+        modifyLayer: async(_:unknown, args: ModifyLayerArgs) => {
+            return await modifyLayerResolver(models, args);
         },
         // setTrainConfig mutation
         setTrainConfig: async (_:unknown, args: SetTrainConfigArgs) => {

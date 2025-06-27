@@ -421,6 +421,13 @@ export type DeleteLayerArgs = {
     layer_id: string;
 };
 
+// modifyLayer function args
+export type ModifyLayerArgs = {
+    model_id: string;
+    layer_id: string;
+    layer_config: LayerConfigInput;
+};
+
 // setTrainConfig function args
 export type SetTrainConfigArgs = {
     model_id: string;

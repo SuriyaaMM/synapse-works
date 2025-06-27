@@ -206,6 +206,7 @@ export async function validateModelResolver(
             if (in_dimension.length !== 3) {
                 message.message = `${layer_config.type} requires 3d tensor, but received ${in_dimension}`
                 message.required_in_dimension = [0, 0, 0]
+                return_object.status.push(message);
                 return return_object;
             }
 
@@ -234,6 +235,7 @@ export async function validateModelResolver(
             if (in_dimension.length !== 2) {
                 message.message = `${layer_config.type} requires 2d tensor, but received ${in_dimension}`
                 message.required_in_dimension = [0, 0]
+                return_object.status.push(message);
                 return return_object;
             }
 
@@ -260,6 +262,7 @@ export async function validateModelResolver(
             if (in_dimension.length !== 3) {
                 message.message = `batchnorm2d requires 3d tensor, but received ${in_dimension}`
                 message.required_in_dimension = [0, 0, 0]
+                return_object.status.push(message);
                 return return_object;
             }
 
@@ -276,6 +279,7 @@ export async function validateModelResolver(
             if (in_dimension.length !== 2) {
                 message.message = `batchnorm1d requires 2d tensor, but received ${in_dimension}`
                 message.required_in_dimension = [0, 0]
+                return_object.status.push(message);
                 return return_object;
             }
 

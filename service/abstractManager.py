@@ -18,6 +18,10 @@ class AbstractModelManager(ABC):
         pass
 
     @abstractmethod
+    def modifyLayer(self, layer_config: LayerConfig, debug: bool = True):
+        pass
+
+    @abstractmethod
     def setDatasetConfig(self, dataset_config: DatasetConfig, debug: bool = True):
         pass
     

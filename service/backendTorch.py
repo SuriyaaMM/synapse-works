@@ -51,6 +51,20 @@ class TorchModelManager(AbstractModelManager):
                 self.layers.remove(layer)
                 logging.info(f"Deleted layer {layer.__class__.__name__} with id({layer_id})")
 
+    def modifyLayer(self, layer_config: LayerConfig, debug: bool = True):
+        if(debug):
+            try:
+                layer = torch_layer_name_map(layer_config["type"])(**layer_config["kwargs"])
+            # ----- exceptions
+            except TypeError as e:
+                logging.error(f"type error {e}")
+        else:
+            layer = torch_layer_name_map(layer_config["type"])(**layer_config["kwargs"])
+
+        for i in range(len(self.layers)):
+            if self.layers[i].id == layer_config["id"]:
+                self.layers[i].layer = layer
+
     def setDatasetConfig(self, dataset_config: DatasetConfig, debug: bool = True):
         self.dataset_config = dataset_config
         logging.info(f"Set DatasetConfig {json.dumps(dataset_config, indent=4, default=custom_json_encoder)}")
