@@ -1,5 +1,10 @@
 import { enqueueMessage } from "./redisClient.js";
-import { DatasetConfigInput, MNISTDatasetConfig, Model, SetDatasetArgs } from "./types";
+import { DatasetConfigInput, 
+    MNISTDatasetConfig, 
+    CIFAR10DatasetConfig,
+    CustomCSVDatasetConfig,
+    ImageFolderDatasetConfig,
+    Model, SetDatasetArgs } from "./types";
 import { DatasetConfig  } from "./types";
 
 type DatasetHandlerMap = {
@@ -29,10 +34,10 @@ export const datasetHandlers: DatasetHandlerMap = {
     "cifar10": (dataset: DatasetConfigInput) => {
         // destructure the dataset
         const {split_length, shuffle, batch_size, cifar10} = dataset;
-        // if mnistConfig is not found, report error
+        // if cifar10Config is not found, report error
         if(!cifar10) throw new Error("[synapse][graphql]: cifar10 config is missing");
-        // create MNISTDataset object & return it
-        const newDataset: MNISTDatasetConfig = {
+        // create CIFAR10Dataset object & return it
+        const newDataset: CIFAR10DatasetConfig = {
             name: "cifar10",
             split_length: split_length,
             shuffle: shuffle,
@@ -41,6 +46,41 @@ export const datasetHandlers: DatasetHandlerMap = {
             train: cifar10.train,
             download: cifar10.download,
             transform: cifar10.transform
+        };
+        return newDataset;
+    },
+    "custom_csv": (dataset: DatasetConfigInput) => {
+        // destructure the dataset
+        const {split_length, shuffle, batch_size, custom_csv} = dataset;
+        // if customCSVDatasetConfig is not found, report error
+        if(!custom_csv) throw new Error("[synapse][graphql]: custom_csv config is missing");
+        // create CustomCSVDataset object & return it
+        const newDataset: CustomCSVDatasetConfig = {
+            name: "custom_csv",
+            split_length: split_length,
+            shuffle: shuffle,
+            batch_size: batch_size,
+            root: custom_csv.root,
+            feature_columns: custom_csv.feature_columns,
+            label_columns: custom_csv.label_columns,
+            is_regression_task: custom_csv.is_regression_task
+        };
+        return newDataset;
+    },
+    "image_folder": (dataset: DatasetConfigInput) => {
+        // destructure the dataset
+        const {split_length, shuffle, batch_size, image_folder} = dataset;
+        // if image_folder Config is not found, report error
+        if(!image_folder) throw new Error("[synapse][graphql]: custom_csv config is missing");
+        // create ImageFolderDataset object & return it
+        const newDataset: ImageFolderDatasetConfig = {
+            name: "image_folder",
+            split_length: split_length,
+            shuffle: shuffle,
+            batch_size: batch_size,
+            root: image_folder.root,
+            transform: image_folder.transform,
+            allow_empty: image_folder.allow_empty
         };
         return newDataset;
     }

@@ -94,6 +94,12 @@ export const resolvers = {
             else if(dataset_config.name === "cifar10"){
                 return 'CIFAR10DatasetConfig';
             }
+            else if(dataset_config.name == "image_folder"){
+                return 'ImageFolderDatasetConfig';
+            }
+            else if(dataset_config.name == "custom_csv"){
+                return 'CustomCSVDatasetConfig';
+            }
             return null;
         }
     },
