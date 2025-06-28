@@ -107,7 +107,9 @@ def torch_loss_function_name_map(loss_function_name: str, debug: bool = True) ->
     # map for iterating
     loss_function_map = {
         "ce" : nn.CrossEntropyLoss,
-        "bce" : nn.BCEWithLogitsLoss
+        "bce" : nn.BCEWithLogitsLoss,
+        "mse" : nn.MSELoss,
+        "l1" : nn.L1Loss
     }
     # convert to lowercase
     loss_function_name = loss_function_name.lower()
