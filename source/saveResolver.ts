@@ -4,37 +4,34 @@ import path  from "path";
 import { enqueueMessage } from "./redisClient.js";
 import { setModel } from "./resolvers.js";
 
-export async function serialize(models: Model[], dirname: string = "./savefile") {
+export async function serialize(model: Model, dirname: string = "./savefile") {
 
-    if(!models) throw new Error(`[synapse][serialization]: Models was empty! nothing to serialize`);
+    if(!model) throw new Error(`[synapse][serialization]: Model was empty! nothing to serialize`);
 
-    const jsonified_model = JSON.stringify(models, null, 4);
-    const file_path = path.join(dirname, "savefile.json");
+    const jsonified_model = JSON.stringify(model, null, 4);
+    const file_path = path.join(dirname, `${model.id}.json`);
 
     await mkdir(dirname, { recursive: true });
 
     await writeFile(file_path, jsonified_model, 'utf-8');
-    console.log(`[synapse][serialization]: Serialized to ${file_path}`);
+    console.log(`[synapse][serialization]: Serialized Model(id = ${model.id} to ${file_path}`);
 
     return true;
 }
 
-export async function deserialize(dirname: string = "./savefile"){
+export async function deserialize(model_id: string, dirname: string = "./savefile"){
 
-    const file_path = path.join(dirname, "savefile.json");
+    const file_path = path.join(dirname, `${model_id}.json`);
 
     const models_buffer = await readFile(file_path, 'utf-8');
-    const parsed = JSON.parse(models_buffer);
-    // Ensures model is always an array
-    const loaded_models = Array.isArray(parsed) ? parsed : [parsed];
+    const model = JSON.parse(models_buffer);
+
     console.log(`[synapse][serialization]: De-Serialized from ${file_path}`);
-    setModel(loaded_models);
-    return loaded_models;
+    setModel(model);
+    return model;
 }
 
-export async function saveResolver(models: Model[], dirname: string = "./savefile"){
-
-    serialize(models);
+export async function saveResolver(model: Model, dirname: string = "./savefile"){
     // push message to redis
     console.log(`[synapse][graphql]: Appending to redis message Queue`)
     const message = {
@@ -42,15 +39,17 @@ export async function saveResolver(models: Model[], dirname: string = "./savefil
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);
+    return serialize(model);
 }
 
-export async function loadResolver(dirname: string = "./savefile"){
+export async function loadModelResolver(model_id: string){
     // push message to redis
     console.log(`[synapse][graphql]: Appending to redis message Queue`)
     const message = {
         event_type: "DESERIALIZE_MODEL",
+        model_id: model_id,
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);
-    return deserialize(dirname);
+    return deserialize(model_id);
 }

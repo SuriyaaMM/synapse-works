@@ -33,7 +33,8 @@ class ModelManager(object):
             for torch_layer in self._internal_manager.layers:
                 layers.append(torch_layer.layer)
 
-            self._train_manager = TorchTrainManager(layers,
+            self._train_manager = TorchTrainManager(self.id,
+                                                   layers,
                                                    self._internal_manager.train_config,
                                                    self._internal_manager.dataset_config)
         else:

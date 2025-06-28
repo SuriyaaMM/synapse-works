@@ -480,8 +480,6 @@ export const typeDefs = `#graphql
     type Query {
         # get the model by id
         getModel(id: ID!): Model!
-        # get all models
-        getModels: [Model!]!
         # get training status
         getTrainingStatus: TrainStatus!
         # validate model
@@ -521,11 +519,11 @@ export const typeDefs = `#graphql
             args: TrainArgs
         ): Model!
         # save model
-        save: Boolean
+        saveModel: Boolean!
         # load model
-        load: [Model]!
+        loadModel(model_id: String!): Model!
         # start tensorboard
-        startTensorboard : String!
+        startTensorboard: String!
     }
 `
 

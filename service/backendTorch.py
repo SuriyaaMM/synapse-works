@@ -76,13 +76,15 @@ class TorchModelManager(AbstractModelManager):
 
 class TorchTrainManager(nn.Module):
     
-    def __init__(self, 
+    def __init__(self,
+                 id: str, 
                  layers: list[nn.Module],
                  train_config: TrainConfig,
                  dataset_config: DatasetConfig,
                  debug: bool = True):
         # initialize nn.Module
         super().__init__()
+        self.id = id
         self.layers = layers
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         self.neuralNet = nn.Sequential(*layers).to(self.device)
@@ -257,10 +259,10 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
 
     if "export_to" in args.keys():
         if args["export_to"] == "TorchTensor": # type:ignore
-            model_path = os.path.join(model_dir, f"model_{datetime.datetime.now()}.pt")
+            model_path = os.path.join(model_dir, f"{train_manager}.pt")
             torch.save(train_manager.neuralNet.state_dict(), model_path)
         elif args["export_to"] == "ONNX": #type:ignore
-            model_path = os.path.join(model_dir, f"model_{datetime.datetime.now()}.onnx")
+            model_path = os.path.join(model_dir, f"{train_manager.id}.onnx")
             torch.onnx.export(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph,
                               model_path, input_names=["input"], output_names=["output"])
         logging.info(f"saved model to {model_path}")

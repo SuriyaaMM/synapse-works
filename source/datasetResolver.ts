@@ -86,12 +86,10 @@ export const datasetHandlers: DatasetHandlerMap = {
     }
 }
 
-export async function setDatasetResolver(models: Model[], args: SetDatasetArgs){
-    // find the model 
-    const model = models.find(m => m.id === args.model_id);
+export async function setDatasetResolver(model: Model, args: SetDatasetArgs){
     // handle model doesn't exist 
     if(!model){
-        throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`)
+        throw new Error(`[synapse][graphql]: Model doesn't exist yet, create it first`)
     }
     // get the corresponding dataset
     const handler = datasetHandlers[args.dataset_config.name];

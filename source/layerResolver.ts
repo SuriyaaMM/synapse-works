@@ -405,13 +405,11 @@ const layerHandler: LayerHandlerMap = {
     }
 }
 
-export async function appendLayerResolver(models: Model[], args: AppendLayerArgs) {
-    // find the model 
-    const model = models.find(m => m.id === args.model_id);
+export async function appendLayerResolver(model: Model, args: AppendLayerArgs) {
 
     // handle model doesn't exist 
     if(!model){
-        throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`)
+        throw new Error(`[synapse][graphql]: Model doesn't exist yet, create it first`)
     }
             
     // get the right layer object
@@ -438,13 +436,11 @@ export async function appendLayerResolver(models: Model[], args: AppendLayerArgs
     return model;
 }
 
-export async function deleteLayerResolver(models: Model[], args: DeleteLayerArgs) {
-    // find the model 
-    const model = models.find(m => m.id === args.model_id);
+export async function deleteLayerResolver(model: Model, args: DeleteLayerArgs) {
 
     // handle model doesn't exist 
     if(!model){
-        throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`);
+        throw new Error(`[synapse][graphql]: Model doesn't exist yet, create it first`);
     }
 
     model.layers_config = model.layers_config.filter(layer_config => layer_config.id !== args.layer_id);
@@ -463,13 +459,11 @@ export async function deleteLayerResolver(models: Model[], args: DeleteLayerArgs
     return model;
 }
 
-export async function modifyLayerResolver(models: Model[], args: ModifyLayerArgs) {
-    // find the model 
-    const model = models.find(m => m.id === args.model_id);
+export async function modifyLayerResolver(model: Model, args: ModifyLayerArgs) {
 
     // handle model doesn't exist 
     if(!model){
-        throw new Error(`[synapse][graphql]: Model with ID ${args.model_id} not found`);
+        throw new Error(`[synapse][graphql]: Model doesn't exist yet, create it first`);
     }
     
     // get the right layer object

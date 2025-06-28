@@ -17,13 +17,13 @@ import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
 import { setDatasetResolver } from './datasetResolver.js';
 import { dequeueMessage } from "./redisClient.js";
 import { spawn, ChildProcess } from "child_process";
-import { loadResolver, saveResolver } from "./save.js";
+import { loadModelResolver, saveResolver } from "./saveResolver.js";
 
-let models: Model[] = [];
+let model: Model;
 export let tensorboardProcess: ChildProcess = null;
 
-export function setModel(updated_models: Model[]){
-    models = updated_models;
+export function setModel(updated_model: Model){
+    model = updated_model;
 }
 
 export const resolvers = {
@@ -111,57 +111,54 @@ export const resolvers = {
     Query: {
         // getModel query
         // return the model based on id
-        getModel: (_: unknown, {id}: {id:string}) =>{
-            return models.find(m => m.id === id);
+        getModel: () =>{
+            return model;
         },
-        // getModels query
-        // return the models list
-        getModels: () => models,
         // getTrainStatus query
         // return the status (pop from redis queue)
         getTrainingStatus: () => dequeueMessage(),
         // validateModel query
-        validateModel: async (_: unknown, {id, in_dimension} : {id: string, in_dimension:number[]}) => {
-            return validateModelResolver(models.find(m => m.id === id), in_dimension);
+        validateModel: async (_: unknown, {in_dimension} : {in_dimension:number[]}) => {
+            return validateModelResolver(model, in_dimension);
         }
     },
     // graphql mutations
     Mutation: {
         // createModel mutation
         createModel: async (_: unknown, args: CreateModelArgs) => {
-            return await createModelResolver(models, args);
+            return await createModelResolver(args);
         },
         // appendLayer mutation
         appendLayer: async (_: unknown, args : AppendLayerArgs) => {
-            return await appendLayerResolver(models, args);
+            return await appendLayerResolver(model, args);
         },
         // deleteLayer mutation
         deleteLayer: async(_:unknown, args: DeleteLayerArgs) => {
-            return await deleteLayerResolver(models, args)
+            return await deleteLayerResolver(model, args)
         },
         // modifyLayer mutation
         modifyLayer: async(_:unknown, args: ModifyLayerArgs) => {
-            return await modifyLayerResolver(models, args);
+            return await modifyLayerResolver(model, args);
         },
         // setTrainConfig mutation
         setTrainConfig: async (_:unknown, args: SetTrainConfigArgs) => {
-            return await setTrainConfigResolver(models, args);
+            return await setTrainConfigResolver(model, args);
         },
         // setDataset mutation
         setDataset: async (_:unknown, args: SetDatasetArgs) => {
-            return await setDatasetResolver(models, args);
+            return await setDatasetResolver(model, args);
         },
         // train mutation
         train: async (_:unknown, args: TrainArgs) => {
-            return await trainResolver(models, args);
+            return await trainResolver(model, args);
         },
         // save mutation
-        save: async(_:unknown) => {
-            return await saveResolver(models);
+        saveModel: async(_:unknown) => {
+            return await saveResolver(model);
         },
         // load mutation
-        load: async(_:unknown) => {
-            return await loadResolver();
+        loadModel: async(_:unknown, {model_id} : {model_id:string}) => {
+            return await loadModelResolver(model_id);
         },
         // startTensorboard mutation
         startTensorboard: async(_:unknown) => {

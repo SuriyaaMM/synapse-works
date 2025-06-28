@@ -1,16 +1,20 @@
+from config import logging
+
 import os
 import pickle
 
 from modelManager import ModelManager
 
-def serialize_model_manager(model_managers: list[ModelManager]):
+def serialize_model_manager(model_manager: ModelManager):
     os.makedirs("./savefile", exist_ok=True)
-    
-    with open("./savefile/model_manager.bin", "wb") as file:
-        pickle.dump(model_managers, file)
+    if(model_manager.id == ""):
+        logging.error("model_manager.id is empty, create model first!")
+    else:
+        with open(f"./savefile/{model_manager.id}.bin", "wb") as file:
+            pickle.dump(model_manager, file)
 
-def deserialize_model_manager() -> list[ModelManager] :
+def deserialize_model_manager(model_id: str) -> ModelManager :
     
-    with open("./savefile/model_manager.bin", "rb") as file:
+    with open(f"./savefile/{model_id}.bin", "rb") as file:
         model_managers = pickle.load(file)
         return model_managers

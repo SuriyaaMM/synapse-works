@@ -14,10 +14,11 @@ import {
     FlattenLayerConfig,
     ModelDimensionResolveStatusStruct
 } from "./types";
+import { setModel } from "./resolvers.js";
 
-export async function createModelResolver(models: Model[], args: CreateModelArgs){
+export async function createModelResolver(args: CreateModelArgs){
     // create a new model
-    const newModel: Model = {
+    const new_model: Model = {
         id: uuidv4(), // generate unique uuid
         name: args.name, 
         layers_config: [], // initialize model with no layers to begin with
@@ -35,19 +36,19 @@ export async function createModelResolver(models: Model[], args: CreateModelArgs
             }
     }
 
-    models.push(newModel);
-    console.log(`[synapse][graphql]: Created model: ${newModel.name} (ID: ${newModel.id})`);
+    setModel(new_model);
+    console.log(`[synapse][graphql]: Created model: ${new_model.name} (ID: ${new_model.id})`);
     console.log(`[synapse][graphql]: Appending to redis message Queue`)
     // push message to redis
     const message = {
         event_type: "MODEL_CREATED",
-        model_id: newModel.id,
-        name: newModel.name,
+        model_id: new_model.id,
+        name: new_model.name,
         timestamp: new Date().toISOString()
     };
     
     await enqueueMessage(message);
-    return newModel;
+    return new_model;
 }
 
 function convOutputDim(
@@ -61,7 +62,7 @@ function convOutputDim(
 }
 
 export async function validateModelResolver(
-    model: Model,
+    model: Model, 
     in_dimension: number[]): Promise<ModelDimensionResolveStatus> {
 
     let return_object: ModelDimensionResolveStatus = { status: [] };
