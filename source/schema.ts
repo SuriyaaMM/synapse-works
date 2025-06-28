@@ -468,6 +468,14 @@ export const typeDefs = `#graphql
     type ModelDimensionResolveStatus {
         status: [ModelDimensionResolveStatusStruct]
     }
+    # ---------- Args ------------
+    enum ExportType {
+        TorchTensor
+        ONNX
+    }
+    input TrainArgs {
+        export_to: ExportType
+    }
     # ---------- Queries ----------
     type Query {
         # get the model by id
@@ -510,6 +518,7 @@ export const typeDefs = `#graphql
         # train model
         train(
             model_id: ID!
+            args: TrainArgs
         ): Model!
         # save model
         save: Boolean

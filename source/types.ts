@@ -468,8 +468,18 @@ export type SetDatasetArgs = {
     dataset_config: DatasetConfigInput;
 };
 
+enum ExportType {
+    TorchTensor,
+    ONNX
+}
+
+export type GraphQLTrainArgs = {
+    export_to: ExportType
+}
+
 // train function args
 export type TrainArgs = {
     model_id: string;
+    args: GraphQLTrainArgs;
 };
 

@@ -1,4 +1,4 @@
-from typing import TypedDict, Union, NotRequired, NotRequired, Tuple
+from typing import TypedDict, Union, NotRequired, NotRequired, Tuple, Literal
 import torchvision
 
 """ ------------------------------------ Layer Config ----------------------------------- """
@@ -482,6 +482,9 @@ TSDatasetInput = Union[TSMNISTDatasetInput,
                        TSCustomCSVDatasetInput,
                        TSImageFolderDatasetInput]
 
+
+class TSTrainArgsInput(TypedDict):
+    export_to: Literal["TorchTensor", "ONNX"]
 
 def custom_json_encoder(obj):
     if isinstance(obj, (torchvision.transforms.Compose)):

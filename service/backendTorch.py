@@ -7,6 +7,7 @@ from typedefs import *
 import json
 import redis
 import datetime
+import os
 import torch
 
 from torch import nn
@@ -139,13 +140,15 @@ def _TrainEpoch(train_manager: TorchTrainManager,
         writer.add_scalar("Learning Rate", train_manager.optimizer.param_groups[0]['lr'], current_global_step)
 
         # gradient norm visualization
-        total_gradient_norm = 0.0
-        for p in train_manager.neuralNet.parameters():
-            if p.grad is not None:
-                total_gradient_norm += p.grad.data.norm(2).item() ** 2
-        
-        total_gradient_norm = total_gradient_norm ** 0.5
-        writer.add_scalar("Gradient Norm", total_gradient_norm, current_global_step)
+        # TODO(mms) hardcoded 5 here
+        if (current_epoch + 1) % 25 == 0:
+            total_gradient_norm = 0.0
+            for p in train_manager.neuralNet.parameters():
+                if p.grad is not None:
+                    total_gradient_norm += p.grad.data.norm(2).item() ** 2
+            
+            total_gradient_norm = total_gradient_norm ** 0.5
+            writer.add_scalar("Gradient Norm", total_gradient_norm, current_global_step)
 
         train_manager.optimizer.step()
         running_loss += loss.item() * features.size(0)
@@ -177,53 +180,68 @@ def _ValidateEpoch(train_manager: TorchTrainManager) -> tuple[float, float, int]
 
     return running_loss, correct_predictions, total_samples
 
-def train(train_manager: TorchTrainManager, redis_client: redis.Redis):
-    writer = torch.utils.tensorboard.SummaryWriter("./tbsummary")
+def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TSTrainArgsInput):
+    writer_filename = (
+    f"./tbsummary/{train_manager.dataset_config['name']}/"
+    f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
+
+    writer = torch.utils.tensorboard.SummaryWriter(writer_filename)
     logging.info(f"initialized writer {writer}")
     logging.info(f"using device {train_manager.device}")
     logging.info(f"using torch: {torch.__version__}")
 
     writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
 
-    for epoch in range(train_manager.epochs):
-        running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager, epoch, writer)
-        accuracy = correct_predictions/total_samples
-        # write to tensorboard
-        writer.add_scalar("Loss/train", running_loss, epoch)
-        writer.add_scalar("Accuracy/train", accuracy, epoch)
+    with torch.profiler.profile(
+    activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+    schedule=torch.profiler.schedule(wait=1, warmup=1, active=3),
+    on_trace_ready=torch.profiler.tensorboard_trace_handler(writer_filename)
+    ) as prof:
 
-        # weights & biases distribution
-        for name, param in train_manager.neuralNet.named_parameters():
-            # log weights
-            writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
-            # log params if they exist
-            if param.dim() == 1:
-                writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
-        
-        logging.info(f"epoch: {epoch + 1}, loss: {running_loss}, accuracy: {accuracy}")
-        
-        # TODO(mms) hardcoded validation period here to 5
-        if epoch % 5 == 0:
-            running_val_loss, correct_val_predictions, total_val_samples = _ValidateEpoch(train_manager)
-            accuracy_val = correct_val_predictions/total_val_samples
-            writer.add_scalar("Loss/validation", running_val_loss, epoch)
-            writer.add_scalar("Accuracy/validation", accuracy_val, epoch)
+        for epoch in range(train_manager.epochs):
+            running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager, epoch, writer)
+            accuracy = correct_predictions/total_samples
+            # write to tensorboard
+            writer.add_scalar("Loss/train", running_loss, epoch)
+            writer.add_scalar("Accuracy/train", accuracy, epoch)
 
-        update_message = {
-            "epoch" : epoch + 1,
-            "loss" : running_loss,
-            "accuracy" : (correct_predictions/total_samples),
-            "completed" : epoch == train_manager.epochs - 1,
-            "timestamp" : datetime.datetime.now().isoformat()
-        }
-        redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
-        logging.info(f"pushed {json.dumps(update_message)} to redis queue")
+            # add histogram only per 5 epochs TODO(mms) hardcoded 5 here
+            if(epoch % 25 == 0):
+                # weights & biases distribution
+                for name, param in train_manager.neuralNet.named_parameters():
+                    # log weights
+                    writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
+                    # log params if they exist
+                    if param.dim() == 1:
+                        writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
+            
+            prof.step()
+            logging.info(f"GPU Memory Allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+            logging.info(f"GPU Memory Cached: {torch.cuda.memory_reserved() / 1024**2:.2f} MB")
+            logging.info(f"epoch: {epoch + 1}, loss: {running_loss}, accuracy: {accuracy}")
+            
+            # TODO(mms) hardcoded validation period here to 5
+            if epoch % 25 == 0:
+                running_val_loss, correct_val_predictions, total_val_samples = _ValidateEpoch(train_manager)
+                accuracy_val = correct_val_predictions/total_val_samples
+                writer.add_scalar("Loss/validation", running_val_loss, epoch)
+                writer.add_scalar("Accuracy/validation", accuracy_val, epoch)
+
+            update_message = {
+                "epoch" : epoch + 1,
+                "loss" : running_loss,
+                "accuracy" : (correct_predictions/total_samples),
+                "completed" : epoch == train_manager.epochs - 1,
+                "timestamp" : datetime.datetime.now().isoformat()
+            }
+            redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
+            logging.info(f"pushed {json.dumps(update_message)} to redis queue")
 
     hparam_dict = {
         "learning_rate": train_manager.train_config["optimizer_kwargs"]["lr"],
         "optimizer": train_manager.train_config["optimizer"],
         "epochs": train_manager.epochs,
-        "batch_size": train_manager.dataset_config["dataloader_config"]["batch_size"],
+        "batch_size": train_manager.dataset_config["dataloader_config"]["batch_size"], #type:ignore
         "loss_fn": train_manager.train_config["loss_function"],
     }
    
@@ -233,3 +251,16 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis):
     }
     writer.add_hparams(hparam_dict, metric_dict)    
     writer.close()
+
+    model_dir = f"savefile/model"
+    os.makedirs(model_dir, exist_ok=True)
+
+    if "export_to" in args.keys():
+        if args["export_to"] == "TorchTensor": # type:ignore
+            model_path = os.path.join(model_dir, f"model_{datetime.datetime.now()}.pt")
+            torch.save(train_manager.neuralNet.state_dict(), model_path)
+        elif args["export_to"] == "ONNX": #type:ignore
+            model_path = os.path.join(model_dir, f"model_{datetime.datetime.now()}.onnx")
+            torch.onnx.export(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph,
+                              model_path, input_names=["input"], output_names=["output"])
+        logging.info(f"saved model to {model_path}")

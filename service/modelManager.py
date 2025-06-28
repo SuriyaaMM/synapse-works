@@ -83,8 +83,8 @@ class ModelManager(object):
         self._internal_manager.setDatasetConfig(dataset_config=dataset_config_td, debug=self.debug)
         logging.info(f"Set DatasetConfig to Model({self.id}) with config: {json.dumps(dataset_config_td['kwargs'], indent=4, default=custom_json_encoder)}")
     
-    def train(self, redis_client: redis.Redis):
+    def train(self, redis_client: redis.Redis, args: TSTrainArgsInput):
         logging.info("training model started!")
         self.dumpNetworkForTraining()
         logging.info("sucessfully dumped neural network")
-        train(self._train_manager, redis_client=redis_client)
+        train(self._train_manager, redis_client=redis_client, args=args)

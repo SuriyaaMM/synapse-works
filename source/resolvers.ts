@@ -19,8 +19,12 @@ import { dequeueMessage } from "./redisClient.js";
 import { spawn, ChildProcess } from "child_process";
 import { loadResolver, saveResolver } from "./save.js";
 
-const models: Model[] = [];
+let models: Model[] = [];
 export let tensorboardProcess: ChildProcess = null;
+
+export function setModel(updated_models: Model[]){
+    models = updated_models;
+}
 
 export const resolvers = {
     // graphql interface inferring for Layer

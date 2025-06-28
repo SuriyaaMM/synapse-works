@@ -11,6 +11,7 @@ from backendUtils import parseFromLayerConfig, \
 from serializationUtils import serialize_model_manager, deserialize_model_manager
 
 from typedefs import *
+from typing import cast
 
 
 def processMessage(message_data, models: list[ModelManager], redis_client: redis.Redis):
@@ -70,9 +71,11 @@ def processMessage(message_data, models: list[ModelManager], redis_client: redis
         # handle TRAIN_MODEL
         elif event_type == "TRAIN_MODEL":
             id = message.get("model_id")
+            args = cast(TSTrainArgsInput, message.get("args"))
+            logging.info(f"Received Train Args: {json.dumps(args, indent=4)}")
             for model in models:
                 if model.id == id:
-                    model.train(redis_client=redis_client)
+                    model.train(redis_client=redis_client, args=args)
         # handle SERIALIZE_MODEL
         elif event_type == "SERIALIZE_MODEL":
             serialize_model_manager(models)

@@ -2,6 +2,7 @@ import { Model } from "./types";
 import { writeFile, readFile, mkdir } from "fs/promises";
 import path  from "path";
 import { enqueueMessage } from "./redisClient.js";
+import { setModel } from "./resolvers.js";
 
 export async function serialize(models: Model[], dirname: string = "./savefile") {
 
@@ -25,9 +26,10 @@ export async function deserialize(dirname: string = "./savefile"){
     const models_buffer = await readFile(file_path, 'utf-8');
     const parsed = JSON.parse(models_buffer);
     // Ensures model is always an array
-    const models = Array.isArray(parsed) ? parsed : [parsed];
+    const loaded_models = Array.isArray(parsed) ? parsed : [parsed];
     console.log(`[synapse][serialization]: De-Serialized from ${file_path}`);
-    return models;
+    setModel(loaded_models);
+    return loaded_models;
 }
 
 export async function saveResolver(models: Model[], dirname: string = "./savefile"){

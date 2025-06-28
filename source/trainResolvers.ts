@@ -37,6 +37,7 @@ export async function trainResolver(models: Model[], args: TrainArgs){
     const message = {
         event_type: "TRAIN_MODEL",
         model_id: model.id,
+        args: args.args,
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);
