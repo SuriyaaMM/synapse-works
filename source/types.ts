@@ -135,6 +135,10 @@ export interface SigmoidLayerConfig extends LayerConfig {}
 export interface LogSigmoidLayerConfig extends LayerConfig {}
 export interface TanhLayerConfig extends LayerConfig {}
 
+export interface CatLayerConfig extends LayerConfig {
+    dimension?: number;
+}
+
 export type LinearLayerConfigInput = {
     name?: string;
     in_features: number;
@@ -284,6 +288,11 @@ export type TanhLayerConfigInput = {
     name?: string;
 }
 
+export type CatLayerConfigInput = {
+    name?: string;
+    dimension?: number;
+}
+
 export type LayerConfigInput = {
     type: string; 
     linear?: LinearLayerConfigInput;
@@ -305,6 +314,7 @@ export type LayerConfigInput = {
     sigmoid?: SigmoidLayerConfigInput;
     logsigmoid?: LogSigmoidLayerConfigInput;
     tanh?: TanhLayerConfigInput;
+    cat?: CatLayerConfigInput;
 };
 
 // ------------------------------- Training Configuration ----------------------------------

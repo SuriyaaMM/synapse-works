@@ -9,9 +9,6 @@ from backendModules import *
 
 def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]:
     R"""maps layer_name to respective torch.nn.Module
-
-        NOTE: converts the layer_name to lowercase string
-
     Args:
         layer_name:str, layer name like linear, dropout, conv2d
     """
@@ -36,6 +33,7 @@ def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]
         "sigmoid": nn.Sigmoid,
         "logsigmoid": nn.LogSigmoid,
         "tanh" : nn.Tanh,
+        "cat": Cat
     }
     # convert to lowercase
     layer_name = layer_name.lower()

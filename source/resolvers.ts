@@ -107,14 +107,8 @@ export const resolvers = {
             else if(layer_config.type == "tanh"){
                 return 'TanhLayerConfig';
             }
-            else if(layer_config.type == "skipsource"){
-                return 'SkipConnectioSourceLayer'
-            }
-            else if(layer_config.type == "skipmerge"){
-                return 'SkipConnectionMergeLayer'
-            }
-            else if(layer_config.type == "uner"){
-                return 'UnetArchitecture'
+            else if(layer_config.type == "cat"){
+                return 'CatLayerConfig';
             }
             return null;
         }

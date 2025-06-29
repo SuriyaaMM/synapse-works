@@ -118,6 +118,8 @@ class LogSigmoidLayerKwargs(TypedDict):
 class TanhLayerKwargs(TypedDict):
     pass
 
+class CatLayerKwargs(TypedDict):
+    dimension: NotRequired[int]
 
 LayerKwargs_T = Union[LinearLayerKwargs, 
                       Conv2dLayerKwargs,
@@ -137,7 +139,8 @@ LayerKwargs_T = Union[LinearLayerKwargs,
                       LeakyReLULayerKwargs,
                       SigmoidLayerKwargs,
                       LogSigmoidLayerKwargs,
-                      TanhLayerKwargs]
+                      TanhLayerKwargs,
+                      CatLayerKwargs]
 class LayerConfig(TypedDict):
     id: str
     type: str
@@ -311,6 +314,12 @@ class TSTanhLayerInput(TypedDict):
     type: str
     name: NotRequired[str]
 
+class TSCatLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    dimension: NotRequired[int]
+
 TSLayerInput = Union[TSLinearLayerInput, 
                      TSConv2dLayerInput,
                      TSConvTranspose2dLayerInput,
@@ -329,7 +338,8 @@ TSLayerInput = Union[TSLinearLayerInput,
                      TSLeakyReLULayerInput,
                      TSSigmoidLayerInput,
                      TSLogSigmoidLayerInput,
-                     TSTanhLayerInput]
+                     TSTanhLayerInput,
+                     TSCatLayerInput]
 
 """ ------------------------------------ Train Configurations ---------------------------- """
 class AdadeltaOptimizerKwargs_T(TypedDict):

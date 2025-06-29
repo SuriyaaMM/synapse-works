@@ -25,6 +25,7 @@ import {
     SigmoidLayerConfig,
     LogSigmoidLayerConfig,
     TanhLayerConfig,
+    CatLayerConfig,
     DeleteLayerArgs,
     ModifyLayerArgs,
 } from "./types.js"
@@ -448,6 +449,25 @@ export const layerHandler: LayerHandlerMap = {
             id: layer_id,
             type: "tanh",
             name: tanh.name || `tanh_${layer_id.substring(0, 4)}`,
+        };
+
+        return new_layer_config;
+    },
+    // ---------- cat ----------
+    "cat": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { cat } = layer_config;
+
+        if(!cat) throw new Error('[synapse]: Cat layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: CatLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "cat",
+            name: cat.name || `cat_${layer_id.substring(0, 4)}`,
+            dimension: cat.dimension
         };
 
         return new_layer_config;

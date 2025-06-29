@@ -173,6 +173,12 @@ export const typeDefs = `#graphql
         type: String!   
         name: String
     }
+    type CatLayerConfig implements LayerConfig {
+        id: ID!
+        type: String!
+        name: String
+        dimension: Int
+    }
     # ---------- Layer Config Input ----------
     input LinearLayerConfigInput {
         name: String
@@ -304,6 +310,10 @@ export const typeDefs = `#graphql
     input TanhLayerConfigInput {
         name: String
     }
+    input CatLayerConfigInput {
+        name: String
+        dimension: Int
+    }
     # LayerConfig input for collective layers
     input LayerConfigInput {
         type: String! 
@@ -326,6 +336,7 @@ export const typeDefs = `#graphql
         sigmoid: SigmoidLayerConfigInput
         logsigmoid: LogSigmoidLayerConfigInput
         tanh: TanhLayerConfigInput
+        cat: CatLayerConfigInput
     }
     # ---------- Train Config ----------
     type OptimizerConfig {

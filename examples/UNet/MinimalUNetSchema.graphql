@@ -1,0 +1,294 @@
+mutation CreateNewModel {
+  createModel(name: "MNIST_MinimalUNet") {
+    id
+    name
+  }
+}
+
+mutation AppendConvEncoder {
+  appendToModuleGraph(
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "ConvEncoder"
+        in_channels: 1 
+        out_channels: 32
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) {
+    layers { id, name, type, ... on Conv2dLayerConfig { in_channels, out_channels, kernel_size, padding } }
+    edges { source_id, target_ids }
+  }
+}
+
+mutation AppendMaxPoolEncoder {
+  appendToModuleGraph(
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "MaxPoolEncoder"
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) {
+    layers { id, name, type, ... on MaxPool2dLayerConfig { kernel_size, stride } }
+    edges { source_id, target_ids }
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of MaxPoolEncoder (e.g., "fcc27c0f-81cd-495e-80bf-d29b4f7e8c5e")
+
+mutation AppendConvDeepEncoder {
+  appendToModuleGraph(
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "ConvDeepEncoder"
+        in_channels: 32 # From previous Conv
+        out_channels: 64
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) {
+    layers { id, name, type, ... on Conv2dLayerConfig { in_channels, out_channels, kernel_size, padding } }
+    edges { source_id, target_ids }
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of ConvDeepEncoder (e.g., "c583eca4-03fa-43c4-af9a-f9e41e53be58")
+
+mutation AppendConvTransposeDecoder {
+  appendToModuleGraph(
+    layer_config: {
+      type: "convtranspose2d"
+      convtranspose2d: {
+        name: "ConvTransposeDecoder"
+        in_channels: 64 # From deeper encoder path
+        out_channels: 32
+        kernel_size: [2, 2]
+        stride: [2, 2] # Upsample by 2
+      }
+    }
+  ) {
+    layers { id, name, type, ... on ConvTranspose2dLayerConfig { in_channels, out_channels, kernel_size, stride, output_padding } }
+    edges { source_id, target_ids }
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of ConvTransposeDecoder (e.g., "7a6a0924-c0aa-448c-a00b-06c647dbe2fd")
+
+
+mutation AppendCatLayer {
+  appendToModuleGraph(
+    layer_config: {
+      type: "cat"
+      cat: {
+        name: "SkipConnectionCat"
+        dimension: 1 # Concatenate along the channel dimension (index 1 for NCHW)
+      }
+    }
+  ) {
+    layers { id, name, type, ... on CatLayerConfig { dimension } }
+    edges { source_id, target_ids }
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of SkipConnectionCat (e.g., "bba9aa10-3ea3-4cdb-b2ac-65d747970305")
+
+mutation AppendConvDecoderFinal {
+  appendToModuleGraph(
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "ConvDecoderFinal"
+        in_channels: 64 # 32 (from ConvEncoder skip) + 32 (from ConvTransposeDecoder)
+        out_channels: 16
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) {
+    layers { id, name, type, ... on Conv2dLayerConfig { in_channels, out_channels, kernel_size, padding } }
+    edges { source_id, target_ids }
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of ConvDecoderFinal (e.g., "b92ed356-9cdb-438f-b6a3-eeee54fc66af")
+
+mutation AppendFlattenLayer {
+  appendToModuleGraph(
+    layer_config: {
+      type: "flatten"
+      flatten: {
+        name: "FlattenOutput"
+        start_dim: 1
+      }
+    }
+  ) {
+    layers { id, name, type, ... on FlattenLayerConfig { start_dim, end_dim } }
+    edges { source_id, target_ids }
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of FlattenOutput (e.g., "373d3e77-e349-4b93-b7e2-de64527f1f44")
+
+
+mutation AppendLinearFinal {
+  appendToModuleGraph(
+    layer_config: {
+      type: "linear"
+      linear: {
+        name: "LinearClassifier"
+        in_features: 12544 # Calculated assuming MNIST (28x28) and the chain
+        out_features: 10 # For MNIST classes
+      }
+    }
+  ) {
+    layers { id, name, type, ... on LinearLayerConfig { in_features, out_features } }
+    edges { source_id, target_ids }
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of LinearClassifier (e.g., "e7c15c7e-e1d0-4460-9703-3fef1ba06505")
+
+
+# 3. Connect Layers for MNIST Cat Test Graph (CORRECTED CONNECTIONS)
+# Use the actual IDs you copied from the Append mutations.
+
+mutation ConnectConvEncToPoolEnc {
+  connectInModuleGraph(
+    source_layer_id: "10cb5b30-101d-4828-9c34-9236ce243c2a" # ConvEncoder
+    target_layer_id: "61afc7e0-6634-4d8c-b0d0-ea9a926cf74d" # MaxPoolEncoder
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+mutation ConnectPoolEncToConvDeep {
+  connectInModuleGraph(
+    source_layer_id: "61afc7e0-6634-4d8c-b0d0-ea9a926cf74d" # MaxPoolEncoder
+    target_layer_id: "825fe86c-3e96-45fa-b470-c1d5e7ddea88" # ConvDeepEncoder (CORRECTED TARGET)
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+mutation ConnectConvDeepToConvTrans {
+  connectInModuleGraph(
+    source_layer_id: "825fe86c-3e96-45fa-b470-c1d5e7ddea88" # ConvDeepEncoder
+    target_layer_id: "491c16f3-73c2-4ba7-b02c-890656581e94" # ConvTransposeDecoder
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+# --- Connect to the Cat Layer (Multiple Inputs) ---
+mutation ConnectConvEncToCat {
+  connectInModuleGraph(
+    source_layer_id: "10cb5b30-101d-4828-9c34-9236ce243c2a" # ConvEncoder (Skip connection)
+    target_layer_id: "66021302-6bde-4f65-aa2c-930f3cb0d3d0" # SkipConnectionCat
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+mutation ConnectConvTransToCat {
+  connectInModuleGraph(
+    source_layer_id: "491c16f3-73c2-4ba7-b02c-890656581e94" # ConvTransposeDecoder
+    target_layer_id: "66021302-6bde-4f65-aa2c-930f3cb0d3d0" # SkipConnectionCat
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+# --- End Cat Connections ---
+
+mutation ConnectCatToConvDecoder {
+  connectInModuleGraph(
+    source_layer_id: "66021302-6bde-4f65-aa2c-930f3cb0d3d0" # SkipConnectionCat
+    target_layer_id: "abfc4236-fdea-494b-a81e-cf596892d09c" # ConvDecoderFinal
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+mutation ConnectConvDecoderToFlatten {
+  connectInModuleGraph(
+    source_layer_id: "abfc4236-fdea-494b-a81e-cf596892d09c" # ConvDecoderFinal
+    target_layer_id: "6df05571-a3be-40f9-abc5-45b56f306a41" # FlattenOutput
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+mutation ConnectFlattenToLinearFinal {
+  connectInModuleGraph(
+    source_layer_id: "6df05571-a3be-40f9-abc5-45b56f306a41" # FlattenOutput
+    target_layer_id: "f1a4f370-2bc3-4d9c-bfe1-5bac25f4040f" # LinearClassifier
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+
+
+# --- ACTION REQUIRED: PASTE THE 'layers' AND 'edges' JSON FROM THE ABOVE QUERY'S RESPONSE HERE ---
+
+# 4. Build/Construct the Module Graph (for MNIST Cat Test)
+# This mutation requires the full graph state as input to perform topological sort.
+mutation ConstructAndVerifyCatGraph {
+  buildModuleGraph{
+    id
+    name
+    module_graph {
+      layers { id, type, name }
+      edges { source_id, target_ids }
+      sorted # Verify topological sort
+    }
+  }
+}
+
+
+
+# --- 5. Set Training Configuration for MNIST ---
+mutation SetSGDTrainConfig {
+  setTrainConfig(
+    model_id: "REPLACE_WITH_YOUR_MODEL_ID" # ACTION REQUIRED
+    train_config: {
+      epochs: 10
+      optimizer: "sgd"
+      optimizer_config: {
+        lr: 0.01
+        momentum: 0.9
+        dampening: 0.0
+        weight_decay: 0.0001
+        nesterov: true
+      }
+      loss_function: "ce" # Cross-Entropy Loss for classification
+    }
+  ) {
+    id
+    name
+    train_config { epochs, optimizer, optimizer_config { lr }, loss_function }
+  }
+}
+
+# --- 6. Set Dataset Configuration for MNIST ---
+mutation SetMNISTDatasetConfig {
+  setDataset(
+    model_id: "REPLACE_WITH_YOUR_MODEL_ID" # ACTION REQUIRED
+    dataset_config: {
+      name: "mnist" # Specify MNIST dataset
+      shuffle: true
+      split_length: [0.8, 0.2] # 80% train, 20% validation
+      batch_size: 128
+      mnist: { # Use mnist specific input
+        root: "./data/mnist" # Directory to store MNIST data
+        train: true
+        download: true
+        transform: ["ToTensor", "Normalize"] # Common transforms for MNIST
+      }
+    }
+  ) {
+    id
+    name
+    dataset_config { name, batch_size, split_length, shuffle, ... on MNISTDatasetConfig { root, train, download, transform } }
+  }
+}
+
+# --- 7. Save the Model ---
+# This mutation will save the current state of the model.
+mutation SaveModel {
+  saveModel 
+}
+
+# --- 8. Train the Model ---
+# This initiates the training process.
+mutation TrainModel {
+  train(model_id: "REPLACE_WITH_YOUR_MODEL_ID") { # ACTION REQUIRED
+    id
+    name
+    train_config { epochs }
+    dataset_config { name }
+  }
+}

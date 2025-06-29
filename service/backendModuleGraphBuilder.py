@@ -79,10 +79,7 @@ def buildModuleGraph(module_graph: ModuleGraph) -> nn.Module:
         # if input is only one meaninig standard torch module
         if len(current_layer_inputs) == 1:
             input_for_call = current_layer_inputs[0]
-        # TODO(mms) Yet to implement and handle for concat like layers that require
-        # multiple inputs
         elif len(current_layer_inputs) > 1:
-            logging.info(f"Layer {sorted_id} has multiple inputs. Needs specific handling (e.g., concatenation).")
             input_for_call = tuple(current_layer_inputs)
 
         if isinstance(input_for_call, tuple):

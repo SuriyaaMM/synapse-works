@@ -274,6 +274,19 @@ def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> Laye
                 kwargs[optional_key] = layer_config[optional_key]
             else:
                 logging.info(f"{optional_key} not found in {layer_config.__class__.__name__}")
+
+    # handle for cat layer
+    elif layer_type == "cat":
+        layer_config = cast(TSCatLayerInput, layer_config)
+        # leakyrelu layer specific kwargs object
+        kwargs = cast(CatLayerKwargs, {})
+        # optional configurations
+        optional_keys = ["dimension"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.info(f"{optional_key} not found in {layer_config.__class__.__name__}")
     else:
         raise NotImplementedError(f"layer({layer_type}) is not implemented yet")
     
