@@ -50,6 +50,22 @@ def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> Laye
                 kwargs[optional_key] = layer_config[optional_key]
             else:
                 logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for convtranspose2d
+    elif layer_type == "convtranspose2d":
+        layer_config = cast(TSConvTranspose2dLayerInput, layer_config)
+        # conv2d layer specific kwargs object
+        kwargs = cast(Conv2dLayerKwargs, {
+            "in_channels": layer_config["in_channels"],
+            "out_channels": layer_config["out_channels"],
+            "kernel_size": layer_config["kernel_size"]
+        })
+        # optional configurations
+        optional_keys = ["stride", "padding", "dilation", "groups", "bias", "output_padding"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
     # handle for conv1d layer
     elif layer_type == "conv1d":
         layer_config = cast(TSConv1dLayerInput, layer_config)
@@ -167,6 +183,18 @@ def parseFromLayerConfig(layer_config: TSLayerInput, debug: bool = True) -> Laye
         layer_config = cast(TSDropoutLayerInput, layer_config)
         # batchnorm2d layer specific kwargs object
         kwargs = cast(DropoutLayerKwargs, {})
+        # optional configurations
+        optional_keys = ["p"]
+        for optional_key in optional_keys:
+            if optional_key in layer_config.keys():
+                kwargs[optional_key] = layer_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} not found in {layer_config.__class__.__name__}")
+    # handle for dropout layer
+    elif layer_type == "dropout2d":
+        layer_config = cast(TSDropout2dLayerInput, layer_config)
+        # batchnorm2d layer specific kwargs object
+        kwargs = cast(Dropout2dLayerKwargs, {})
         # optional configurations
         optional_keys = ["p"]
         for optional_key in optional_keys:

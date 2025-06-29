@@ -36,7 +36,8 @@ class ModelManager(object):
             self._train_manager = TorchTrainManager(self.id,
                                                    layers,
                                                    self._internal_manager.train_config,
-                                                   self._internal_manager.dataset_config)
+                                                   self._internal_manager.dataset_config,
+                                                   self._internal_manager.module)
         else:
             raise NotImplementedError(f"training using {self.backend} is not implemented yet")
 
@@ -84,6 +85,9 @@ class ModelManager(object):
         self._internal_manager.setDatasetConfig(dataset_config=dataset_config_td, debug=self.debug)
         logging.info(f"Set DatasetConfig to Model({self.id}) with config: {json.dumps(dataset_config_td['kwargs'], indent=4, default=custom_json_encoder)}")
     
+    def setModule(self, module: nn.Module):
+        self._internal_manager.setModule(module)
+
     def train(self, redis_client: redis.Redis, args: TSTrainArgsInput):
         logging.info("training model started!")
         self.dumpNetworkForTraining()

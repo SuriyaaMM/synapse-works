@@ -1,0 +1,737 @@
+# --- U-Net Symmetric Architecture for CIFAR-10 Test ---
+
+# Variable to hold the modelId obtained from the CreateUNetModel mutation.
+# Example: "some-generated-unet-model-id"
+# const unetModelId = "YOUR_GENERATED_UNET_MODEL_ID";
+
+# --- 1. Create a new Model for U-Net Test ---
+mutation CreateUNetModel {
+  createModel(name: "UNet_Symmetric_CIFAR10") {
+    id
+    name
+    layers_config {
+      id
+    }
+  }
+}
+
+# --- ENCODER PATH (Downsampling) ---
+# Input: (batch_size, 3, 32, 32)
+
+# Block 1 (Initial Convolution Block)
+# Output: (batch_size, 64, 32, 32)
+mutation AddUNetEncoderBlock1Conv1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Enc_Conv1_1"
+        in_channels: 3
+        out_channels: 64
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock1ReLU1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Enc_ReLU1_1"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock1Conv2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Enc_Conv1_2"
+        in_channels: 64
+        out_channels: 64
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock1ReLU2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Enc_ReLU1_2"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+# Output after MaxPool: (batch_size, 64, 16, 16)
+mutation AddUNetEncoderBlock1MaxPool($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "Enc_MaxPool1"
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock1Dropout2d($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "dropout2d"
+      dropout2d: {
+        name: "Enc_Dropout1"
+        p: 0.1 # Small dropout for early layers
+      }
+    }
+  ) { id }
+}
+
+
+# Block 2
+# Input: (batch_size, 64, 16, 16)
+# Output: (batch_size, 128, 16, 16)
+mutation AddUNetEncoderBlock2Conv1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Enc_Conv2_1"
+        in_channels: 64
+        out_channels: 128
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock2ReLU1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Enc_ReLU2_1"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock2Conv2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Enc_Conv2_2"
+        in_channels: 128
+        out_channels: 128
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock2ReLU2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Enc_ReLU2_2"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+# Output after MaxPool: (batch_size, 128, 8, 8)
+mutation AddUNetEncoderBlock2MaxPool($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "Enc_MaxPool2"
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock2Dropout2d($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "dropout2d"
+      dropout2d: {
+        name: "Enc_Dropout2"
+        p: 0.2 # Increased dropout
+      }
+    }
+  ) { id }
+}
+
+
+# Block 3
+# Input: (batch_size, 128, 8, 8)
+# Output: (batch_size, 256, 8, 8)
+mutation AddUNetEncoderBlock3Conv1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Enc_Conv3_1"
+        in_channels: 128
+        out_channels: 256
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock3ReLU1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Enc_ReLU3_1"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock3Conv2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Enc_Conv3_2"
+        in_channels: 256
+        out_channels: 256
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock3ReLU2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Enc_ReLU3_2"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+# Output after MaxPool: (batch_size, 256, 4, 4)
+mutation AddUNetEncoderBlock3MaxPool($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "Enc_MaxPool3"
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetEncoderBlock3Dropout2d($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "dropout2d"
+      dropout2d: {
+        name: "Enc_Dropout3"
+        p: 0.3 # Increased dropout
+      }
+    }
+  ) { id }
+}
+
+
+# Bottleneck Block
+# Input: (batch_size, 256, 4, 4)
+# Output: (batch_size, 512, 4, 4)
+mutation AddUNetBottleneckConv1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Bottleneck_Conv1"
+        in_channels: 256
+        out_channels: 512
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetBottleneckReLU1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Bottleneck_ReLU1"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetBottleneckConv2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Bottleneck_Conv2"
+        in_channels: 512
+        out_channels: 512
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetBottleneckReLU2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Bottleneck_ReLU2"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetBottleneckDropout2d($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "dropout2d"
+      dropout2d: {
+        name: "Bottleneck_Dropout"
+        p: 0.5 # Higher dropout for bottleneck
+      }
+    }
+  ) { id }
+}
+
+
+# --- DECODER PATH (Upsampling with conceptual Skip Connections) ---
+# Inputs from encoder will be concatenated implicitly in the backend logic.
+# The 'in_channels' here reflect the sum of upsampled channels and skip connection channels.
+
+# Decoder Block 1
+# Upsample (batch_size, 512, 4, 4) -> (batch_size, 256, 8, 8)
+mutation AddUNetDecoderBlock1ConvTranspose($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "convTranspose2d"
+      convTranspose2d: {
+        name: "Dec_UpConv1"
+        in_channels: 512
+        out_channels: 256 # Channels after upsampling
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) { id }
+}
+# After upsampling and conceptual concatenation with Encoder Block 3's output (256 channels),
+# the input to the next conv will be 256 (upsampled) + 256 (skip) = 512 channels.
+mutation AddUNetDecoderBlock1Conv1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Dec_Conv1_1"
+        in_channels: 512 # Assumes concatenation with skip from Enc Block 3 (256 + 256)
+        out_channels: 256
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock1ReLU1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Dec_ReLU1_1"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock1Conv2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Dec_Conv1_2"
+        in_channels: 256
+        out_channels: 256
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock1ReLU2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Dec_ReLU1_2"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock1Dropout2d($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "dropout2d"
+      dropout2d: {
+        name: "Dec_Dropout1"
+        p: 0.3 # Dropout
+      }
+    }
+  ) { id }
+}
+
+
+# Decoder Block 2
+# Upsample (batch_size, 256, 8, 8) -> (batch_size, 128, 16, 16)
+mutation AddUNetDecoderBlock2ConvTranspose($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "convTranspose2d"
+      convTranspose2d: {
+        name: "Dec_UpConv2"
+        in_channels: 256
+        out_channels: 128 # Channels after upsampling
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) { id }
+}
+# After upsampling and conceptual concatenation with Encoder Block 2's output (128 channels),
+# the input to the next conv will be 128 (upsampled) + 128 (skip) = 256 channels.
+mutation AddUNetDecoderBlock2Conv1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Dec_Conv2_1"
+        in_channels: 256 # Assumes concatenation with skip from Enc Block 2 (128 + 128)
+        out_channels: 128
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock2ReLU1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Dec_ReLU2_1"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock2Conv2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Dec_Conv2_2"
+        in_channels: 128
+        out_channels: 128
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock2ReLU2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Dec_ReLU2_2"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock2Dropout2d($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "dropout2d"
+      dropout2d: {
+        name: "Dec_Dropout2"
+        p: 0.2 # Dropout
+      }
+    }
+  ) { id }
+}
+
+
+# Decoder Block 3 (Final Upsampling)
+# Upsample (batch_size, 128, 16, 16) -> (batch_size, 64, 32, 32)
+mutation AddUNetDecoderBlock3ConvTranspose($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "convTranspose2d"
+      convTranspose2d: {
+        name: "Dec_UpConv3"
+        in_channels: 128
+        out_channels: 64 # Channels after upsampling
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) { id }
+}
+# After upsampling and conceptual concatenation with Encoder Block 1's output (64 channels),
+# the input to the next conv will be 64 (upsampled) + 64 (skip) = 128 channels.
+mutation AddUNetDecoderBlock3Conv1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Dec_Conv3_1"
+        in_channels: 128 # Assumes concatenation with skip from Enc Block 1 (64 + 64)
+        out_channels: 64
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock3ReLU1($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Dec_ReLU3_1"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock3Conv2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "Dec_Conv3_2"
+        in_channels: 64
+        out_channels: 64
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) { id }
+}
+mutation AddUNetDecoderBlock3ReLU2($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "relu"
+      relu: {
+        name: "Dec_ReLU3_2"
+        inplace: true
+      }
+    }
+  ) { id }
+}
+
+
+# --- CLASSIFICATION HEAD for CIFAR-10 ---
+# Input: (batch_size, 64, 32, 32)
+# Output: (batch_size, 10)
+mutation AddUNetOutputFlatten($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "flatten"
+      flatten: {
+        name: "Output_Flatten"
+        start_dim: 1
+      }
+    }
+  ) { id }
+}
+# Input features for Linear layer: 64 channels * 32 * 32 = 65536
+mutation AddUNetOutputLinear($modelId: ID!) {
+  appendLayer(
+    model_id: $modelId
+    layer_config: {
+      type: "linear"
+      linear: {
+        name: "Output_Linear"
+        in_features: 65536 # 64 * 32 * 32
+        out_features: 10 # 10 classes for CIFAR-10
+      }
+    }
+  ) { id }
+}
+
+
+# --- Set Training Configuration for U-Net CIFAR-10 Classification ---
+mutation SetUNetTrainConfig($modelId: ID!) {
+  setTrainConfig(
+    model_id: $modelId
+    train_config: {
+      epochs: 50 # Adjust epochs as needed
+      optimizer: "adam"
+      optimizer_config: {
+        lr: 0.001
+      }
+      loss_function: "ce" # Cross-Entropy Loss for classification
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config {
+        lr
+      }
+      loss_function
+    }
+  }
+}
+
+# --- Set Dataset Configuration for CIFAR-10 ---
+mutation SetUNetCIFAR10DatasetConfig($modelId: ID!) {
+  setDataset(
+    model_id: $modelId
+    dataset_config: {
+      name: "cifar10"
+      shuffle: true
+      split_length: [0.8, 0.2]
+      batch_size: 64 # Adjust batch size if needed
+      cifar10: {
+        root: "./data/cifar10"
+        train: true
+        download: true
+        transform: ["ToTensor", "Normalize"]
+      }
+    }
+  ) {
+    id
+    name
+    dataset_config {
+      name
+      batch_size
+      split_length
+      shuffle
+      ... on CIFAR10DatasetConfig {
+        root
+        train
+        download
+        transform
+      }
+    }
+  }
+}
+
+# --- Train the U-Net Model on CIFAR-10 ---
+mutation TrainUNetModel($modelId: ID!) {
+  train(model_id: $modelId) {
+    id
+    name
+  }
+}
+
+# --- Query Training Status (Use this to monitor progress) ---
+query GetUNetTrainingStatus {
+  getTrainingStatus {
+    epoch
+    loss
+    accuracy
+    completed
+  }
+}
+
+# --- Optional: Validate the model structure with a sample input dimension ---
+# This can help confirm layer compatibility before training.
+# mutation ValidateUNetModel($modelId: ID!) {
+#   validateModel(id: $modelId, in_dimension: [3, 32, 32]) { # Batch size is not part of this dimension
+#     status {
+#       layer_id
+#       message
+#       in_dimension
+#       out_dimension
+#       required_in_dimension
+#     }
+#   }
+# }
+
+# --- Optional: Save and Load Model Mutations ---
+# mutation SaveUNetModel {
+#   saveModel
+# }
+
+# mutation LoadUNetModel($modelId: String!) {
+#   loadModel(model_id: $modelId) {
+#     id
+#     name
+#     layers_config {
+#       id
+#       type
+#       name
+#     }
+#   }
+# }

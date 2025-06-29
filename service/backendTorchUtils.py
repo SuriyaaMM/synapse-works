@@ -4,7 +4,8 @@ import torch
 from torch import nn
 from torch.utils import data as tdu
 from torchvision.datasets import MNIST, CIFAR10, CIFAR100, ImageFolder
-from backendDatasets import CustomCSVDataset
+from backendDatasets import *
+from backendModules import *
 
 def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]:
     R"""maps layer_name to respective torch.nn.Module
@@ -18,6 +19,7 @@ def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]
     layer_name_map = {
         "linear" : nn.Linear,
         "conv2d": nn.Conv2d,
+        "convtranspose2d" : nn.ConvTranspose2d,
         "conv1d": nn.Conv1d,
         "maxpool2d": nn.MaxPool2d,
         "maxpool1d": nn.MaxPool1d,
@@ -27,12 +29,13 @@ def torch_layer_name_map(layer_name: str, debug: bool = True) -> type[nn.Module]
         "batchnorm1d": nn.BatchNorm1d,
         "flatten" : nn.Flatten,
         "dropout" : nn.Dropout,
+        "dropout2d": nn.Dropout2d,
         "elu" : nn.ELU,
         "relu" : nn.ReLU,
         "leakyrelu" : nn.LeakyReLU,
         "sigmoid": nn.Sigmoid,
         "logsigmoid": nn.LogSigmoid,
-        "tanh" : nn.Tanh
+        "tanh" : nn.Tanh,
     }
     # convert to lowercase
     layer_name = layer_name.lower()

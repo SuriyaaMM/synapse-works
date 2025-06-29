@@ -27,6 +27,20 @@ export const typeDefs = `#graphql
         bias: Boolean
         padding_mode: String
     }
+    type ConvTranspose2dLayerConfig implements LayerConfig {
+        id: ID!
+        type: String!
+        name: String
+        in_channels: Int!
+        out_channels: Int!
+        kernel_size: [Int!]!
+        stride: [Int]
+        padding: [Int]
+        dilation: [Int]
+        groups: [Int]
+        bias: Boolean
+        output_padding: [Int]
+    }
     type Conv1dLayerConfig implements LayerConfig {
         id: ID!
         type: String!
@@ -118,6 +132,12 @@ export const typeDefs = `#graphql
         name: String    
         p: Float
     }
+    type Dropout2dLayerConfig implements LayerConfig {
+        id: ID! 
+        type: String!   
+        name: String    
+        p: Float
+    }
     type ELULayerConfig implements LayerConfig {
         id: ID! 
         type: String!   
@@ -171,6 +191,18 @@ export const typeDefs = `#graphql
         groups: [Int]
         bias: Boolean
         padding_mode: String
+    }
+    input ConvTranspose2dLayerConfigInput {
+        name: String
+        in_channels: Int!
+        out_channels: Int!
+        kernel_size: [Int!]!
+        stride: [Int]
+        padding: [Int]
+        dilation: [Int]
+        groups: [Int]
+        bias: Boolean
+        output_padding: [Int]
     }
     input Conv1dLayerConfigInput {
         name: String
@@ -245,6 +277,10 @@ export const typeDefs = `#graphql
         name: String    
         p: Float
     }
+    input Dropout2dLayerConfigInput {  
+        name: String    
+        p: Float
+    }
     input ELULayerConfigInput {
         name: String
         alpha: Float
@@ -273,6 +309,7 @@ export const typeDefs = `#graphql
         type: String! 
         linear: LinearLayerConfigInput
         conv2d: Conv2dLayerConfigInput
+        convtranspose2d: ConvTranspose2dLayerConfigInput
         conv1d: Conv1dLayerConfigInput
         maxpool2d: MaxPool2dLayerConfigInput
         maxpool1d: MaxPool1dLayerConfigInput
@@ -282,6 +319,7 @@ export const typeDefs = `#graphql
         batchnorm1d: BatchNorm1dLayerConfigInput
         flatten: FlattenLayerConfigInput
         dropout: DropoutLayerConfigInput
+        dropout2d: Dropout2dLayerConfigInput
         elu: ELULayerConfigInput
         relu: ReLULayerConfigInput
         leakyrelu: LeakyReLULayerConfigInput
@@ -450,10 +488,29 @@ export const typeDefs = `#graphql
         custom_csv: CustomCSVDatasetConfigInput
     }
     # ---------- Model ----------
+    type ModuleAdjacencyList {
+        source_id: ID!
+        target_ids: [ID!]!
+    }
+    type ModuleGraph {
+        layers: [LayerConfig!]!
+        edges: [ModuleAdjacencyList!]!
+        sorted: [String!]!
+    }
+    input ModuleAdjacencyListInput {
+        source_id: ID!
+        target_ids: [ID!]!
+    }
+    input ModuleGraphInput {
+        layers: [LayerConfigInput!]!
+        edges: [ModuleAdjacencyListInput!]!
+    }
     # Model type
     type Model {
         id: ID!
-        name: String!       
+        name: String!
+        # this is optional for now, but in future we should make layers_config optional       
+        module_graph: ModuleGraph
         layers_config: [LayerConfig!]! 
         train_config: TrainConfig!
         dataset_config: DatasetConfig!
@@ -503,21 +560,34 @@ export const typeDefs = `#graphql
             model_id: ID!,
             layer_id: ID!,
             layer_config: LayerConfigInput!): Model!
+        # appends layerconfig to module graph
+        appendToModuleGraph(
+            layer_config: LayerConfigInput!): ModuleGraph!
+        # deletes layer_id in the graph
+        deleteInModuleGraph(
+            layer_id: ID!) : ModuleGraph!
+        # adds an edge
+        connectInModuleGraph(
+            source_layer_id: ID!
+            target_layer_id: ID!) : ModuleGraph!
+        # removes an edge
+        disconnectInModuleGraph(
+            source_layer_id: ID!
+            target_layer_id: ID!) : ModuleGraph!
+        # build's the graph and sorts it topologically & sets it to the model
+        buildModuleGraph: Model!
         # set's training configuration
         setTrainConfig(
             model_id: ID!
-            train_config: TrainConfigInput!
-        ): Model!
+            train_config: TrainConfigInput!): Model!
         # set's dataset configuration
         setDataset(
             model_id: ID!
-            dataset_config: DatasetConfigInput!
-        ): Model!
+            dataset_config: DatasetConfigInput!): Model!
         # train model
         train(
             model_id: ID!
-            args: TrainArgs
-        ): Model!
+            args: TrainArgs): Model!
         # save model
         saveModel: Boolean!
         # load model

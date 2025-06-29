@@ -1,3 +1,9 @@
+import { createModelResolver, validateModelResolver } from './modelResolver.js';
+import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
+import { setDatasetResolver } from './datasetResolver.js';
+import { dequeueMessage } from "./redisClient.js";
+import { spawn, ChildProcess } from "child_process";
+import { loadModelResolver, saveResolver } from "./saveResolver.js";
 import {
     LayerConfig,
     Model,
@@ -8,22 +14,34 @@ import {
     DatasetConfig,
     TrainArgs,
     DeleteLayerArgs,
-    ModifyLayerArgs
+    ModifyLayerArgs,
+    ModuleGraph,
+    AppendToModuleGraphArgs,
+    DeleteInModuleGraphArgs,
+    ConnectInModuleGraphArgs,
+    DisconnectInModuleGraphArgs,
+    BuildModuleGraphArgs
 } from "./types.js"
-
-import { appendLayerResolver, deleteLayerResolver, modifyLayerResolver } from "./layerResolver.js";
-import { createModelResolver, validateModelResolver } from './modelResolver.js';
-import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
-import { setDatasetResolver } from './datasetResolver.js';
-import { dequeueMessage } from "./redisClient.js";
-import { spawn, ChildProcess } from "child_process";
-import { loadModelResolver, saveResolver } from "./saveResolver.js";
+import { 
+    appendLayerResolver, 
+    deleteLayerResolver, 
+    modifyLayerResolver } from "./layerResolver.js";
+import { 
+    appendToModuleGraphResolver, 
+    buildModuleGraphResolver, 
+    connectInModuleGraphResolver, 
+    deleteInModuleGraphResolver, 
+    disconnectInModuleGraphResolver } from "./graphResolver.js";
 
 let model: Model;
 export let tensorboardProcess: ChildProcess = null;
 
 export function setModel(updated_model: Model){
     model = updated_model;
+}
+
+export function setModuleGraph(module_graph: ModuleGraph){
+    model.module_graph = module_graph;
 }
 
 export const resolvers = {
@@ -37,6 +55,9 @@ export const resolvers = {
             }
             else if(layer_config.type == "conv2d"){
                 return 'Conv2dLayerConfig';
+            }
+            else if(layer_config.type == "convtranspose2d"){
+                return 'ConvTranspose2dLayerConfig';
             }
             else if(layer_config.type == "conv1d"){
                 return 'Conv1dLayerConfig';
@@ -65,6 +86,9 @@ export const resolvers = {
             else if(layer_config.type == "dropout"){
                 return 'DropoutLayerConfig';
             }
+            else if(layer_config.type == "dropout2d"){
+                return 'Dropout2dLayerConfig';
+            }
             else if(layer_config.type == "elu"){
                 return 'ELULayerConfig';
             }
@@ -82,6 +106,15 @@ export const resolvers = {
             }
             else if(layer_config.type == "tanh"){
                 return 'TanhLayerConfig';
+            }
+            else if(layer_config.type == "skipsource"){
+                return 'SkipConnectioSourceLayer'
+            }
+            else if(layer_config.type == "skipmerge"){
+                return 'SkipConnectionMergeLayer'
+            }
+            else if(layer_config.type == "uner"){
+                return 'UnetArchitecture'
             }
             return null;
         }
@@ -139,6 +172,25 @@ export const resolvers = {
         // modifyLayer mutation
         modifyLayer: async(_:unknown, args: ModifyLayerArgs) => {
             return await modifyLayerResolver(model, args);
+        },
+        // appendToModuleGraph mutation
+        appendToModuleGraph: async (_:unknown, args: AppendToModuleGraphArgs) => {
+            return await appendToModuleGraphResolver(args);
+        },
+        // deleteInModuleGraph mutation
+        deleteInModuleGraph: async(_:unknown, args: DeleteInModuleGraphArgs) => {
+            return await deleteInModuleGraphResolver(args);
+        },
+        // connectInModuleGraph mutation
+        connectInModuleGraph: async(_:unknown, args: ConnectInModuleGraphArgs) => {
+            return await connectInModuleGraphResolver(args);
+        },
+        // diconnectInModuleGraph mutation
+        disconnectInModuleGraph: async(_:unknown, args: DisconnectInModuleGraphArgs) => {
+            return await disconnectInModuleGraphResolver(args);
+        },
+        buildModuleGraph: async(_:unknown) => {
+            return await buildModuleGraphResolver(model);
         },
         // setTrainConfig mutation
         setTrainConfig: async (_:unknown, args: SetTrainConfigArgs) => {

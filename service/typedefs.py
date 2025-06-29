@@ -1,4 +1,6 @@
-from typing import TypedDict, Union, NotRequired, NotRequired, Tuple, Literal
+from typing import TypedDict, Union, NotRequired, NotRequired, Tuple, Literal, Dict
+from dataclasses import dataclass
+import torch
 import torchvision
 
 """ ------------------------------------ Layer Config ----------------------------------- """
@@ -17,6 +19,17 @@ class Conv2dLayerKwargs(TypedDict):
     groups: NotRequired[Tuple[int, ...]]
     bias: NotRequired[bool]
     padding_mode: NotRequired[str]
+
+class ConvTranspose2dLayerKwargs(TypedDict):
+    in_channels: int
+    out_channels: int
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    groups: NotRequired[Tuple[int, ...]]
+    bias: NotRequired[bool]
+    output_padding: NotRequired[Tuple[int, ...]]
 
 class Conv1dLayerKwargs(TypedDict):
     in_channels: int
@@ -82,6 +95,9 @@ class FlattenLayerKwargs(TypedDict):
 class DropoutLayerKwargs(TypedDict):
     p: NotRequired[float]
 
+class Dropout2dLayerKwargs(TypedDict):
+    p: NotRequired[float]
+
 class ELULayerKwargs(TypedDict):
     alpha: NotRequired[float]
     inplace: NotRequired[bool]
@@ -102,8 +118,10 @@ class LogSigmoidLayerKwargs(TypedDict):
 class TanhLayerKwargs(TypedDict):
     pass
 
+
 LayerKwargs_T = Union[LinearLayerKwargs, 
                       Conv2dLayerKwargs,
+                      ConvTranspose2dLayerKwargs,
                       Conv2dLayerKwargs,
                       MaxPool2dLayerKwargs,
                       MaxPool1dLayerKwargs,
@@ -113,6 +131,7 @@ LayerKwargs_T = Union[LinearLayerKwargs,
                       BatchNorm1dLayerKwargs,
                       FlattenLayerKwargs,
                       DropoutLayerKwargs,
+                      Dropout2dLayerKwargs,
                       ELULayerKwargs,
                       ReLULayerKwargs,
                       LeakyReLULayerKwargs,
@@ -145,6 +164,20 @@ class TSConv2dLayerInput(TypedDict):
     groups: NotRequired[Tuple[int, ...]]
     bias: NotRequired[bool]
     padding_mode: NotRequired[str]
+
+class TSConvTranspose2dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    in_channels: int
+    out_channels: int
+    kernel_size: Tuple[int, ...]
+    stride: NotRequired[Tuple[int, ...]]
+    padding: NotRequired[Tuple[int, ...]]
+    dilation: NotRequired[Tuple[int, ...]]
+    groups: NotRequired[Tuple[int, ...]]
+    bias: NotRequired[bool]
+    output_padding: NotRequired[Tuple[int, ...]]
 
 class TSConv1dLayerInput(TypedDict):
     id: str
@@ -237,6 +270,12 @@ class TSDropoutLayerInput(TypedDict):
     name: NotRequired[str]
     p: NotRequired[float]
 
+class TSDropout2dLayerInput(TypedDict):
+    id: str
+    type: str
+    name: NotRequired[str]
+    p: NotRequired[float]
+
 class TSELULayerInput(TypedDict):
     id: str
     type: str
@@ -274,6 +313,7 @@ class TSTanhLayerInput(TypedDict):
 
 TSLayerInput = Union[TSLinearLayerInput, 
                      TSConv2dLayerInput,
+                     TSConvTranspose2dLayerInput,
                      TSConv1dLayerInput,
                      TSMaxPool2dLayerInput,
                      TSMaxPool1dLayerInput,
@@ -281,7 +321,8 @@ TSLayerInput = Union[TSLinearLayerInput,
                      TSAvgPool1dLayerInput,
                      TSBatchNorm2dLayerInput,
                      TSBatchNorm1dLayerInput,
-                     TSFlattenLayerInput, 
+                     TSFlattenLayerInput,
+                     TSDropout2dLayerInput, 
                      TSDropoutLayerInput,
                      TSELULayerInput,
                      TSReLULayerInput,
@@ -485,6 +526,24 @@ TSDatasetInput = Union[TSMNISTDatasetInput,
 
 class TSTrainArgsInput(TypedDict):
     export_to: Literal["TorchTensor", "ONNX"]
+
+
+# ----------------------------------- Module Graph --------------------------------
+@dataclass
+class ModuleAdjacencyList:
+    source_id: str
+    target_ids: list[str]
+@dataclass
+class ModuleGraph:
+    layers: list[LayerConfig]
+    edges: list[ModuleAdjacencyList]
+    sorted_ids: list[str]
+
+@dataclass
+class ModuleGraphInput:
+    layers: list[TSLayerInput]
+    edges: list[ModuleAdjacencyList]
+    sorted_ids: list[str]
 
 def custom_json_encoder(obj):
     if isinstance(obj, (torchvision.transforms.Compose)):

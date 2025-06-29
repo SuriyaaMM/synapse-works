@@ -26,5 +26,9 @@ class AbstractModelManager(ABC):
         pass
     
     @abstractmethod
-    def setTrainConfig(self, train_confiug: TrainConfig, debug: bool = True):
+    def setTrainConfig(self, train_config: TrainConfig, debug: bool = True):
+        pass
+    
+    @abstractmethod
+    def setModule(self, module: torch.nn.Module):
         pass

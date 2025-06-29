@@ -8,6 +8,7 @@ import {
     Model,
     AppendLayerArgs,
     Conv2dLayerConfig,
+    ConvTranspose2dLayerConfig,
     Conv1dLayerConfig,
     MaxPool2dLayerConfig,
     MaxPool1dLayerConfig,
@@ -16,6 +17,7 @@ import {
     BatchNorm2dLayerConfig,
     BatchNorm1dLayerConfig,
     FlattenLayerConfig,
+    Dropout2dLayerConfig,
     DropoutLayerConfig,
     ELULayerConfig,
     ReLULayerConfig,
@@ -24,7 +26,7 @@ import {
     LogSigmoidLayerConfig,
     TanhLayerConfig,
     DeleteLayerArgs,
-    ModifyLayerArgs
+    ModifyLayerArgs,
 } from "./types.js"
 
 type LayerHandlerMap = {
@@ -32,7 +34,7 @@ type LayerHandlerMap = {
 };
 
 // handles runtime validation of layer types
-const layerHandler: LayerHandlerMap = {
+export const layerHandler: LayerHandlerMap = {
     // ---------- linear ----------
     "linear": (layer_config: LayerConfigInput) => {
         // destructure layer input
@@ -50,7 +52,7 @@ const layerHandler: LayerHandlerMap = {
             name: linear.name || `linear_${layer_id.substring(0, 4)}`,
             in_features: linear.in_features,
             out_features: linear.out_features,
-            bias: linear.bias
+            bias: linear.bias,
         };
 
         return new_layer_config;
@@ -78,6 +80,34 @@ const layerHandler: LayerHandlerMap = {
             groups: conv2d.groups,
             bias: conv2d.bias,
             padding_mode: conv2d.padding_mode
+        };
+
+        return new_layer_config;
+    },
+    // ---------- convtranspose2d ----------
+    "convtranspose2d" : (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { convtranspose2d } = layer_config;
+
+        if(!convtranspose2d) throw new Error('[synapse][layerHandler]: ConvTranspose2d layer config is missing');
+        else console.log(`[synapse][graphql]: parsing ${JSON.stringify(layer_config)}`)
+        // initialize new layer & its uuid
+        let new_layer_config: ConvTranspose2dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "convtranspose2d",
+            name: convtranspose2d.name || `convtranspose2d_${layer_id.substring(0, 4)}`,
+            in_channels: convtranspose2d.in_channels,
+            out_channels: convtranspose2d.out_channels,
+            kernel_size: convtranspose2d.kernel_size,
+            stride: convtranspose2d.stride,
+            padding: convtranspose2d.padding,
+            dilation: convtranspose2d.dilation,
+            groups: convtranspose2d.groups,
+            bias: convtranspose2d.bias,
+            output_padding: convtranspose2d.output_padding
         };
 
         return new_layer_config;
@@ -290,6 +320,25 @@ const layerHandler: LayerHandlerMap = {
 
         return new_layer_config;
     },
+    // ---------- dropout ----------
+    "dropout2d": (layer_config: LayerConfigInput) => {
+        // destructure layer input
+        const { dropout2d } = layer_config;
+
+        if(!dropout2d) throw new Error('[synapse][layerHandler]: Dropout2d layer config is missing');
+        // initialize new layer & its uuid
+        let new_layer_config: Dropout2dLayerConfig;
+        const layer_id = uuidv4();
+
+        new_layer_config = {
+            id: layer_id,
+            type: "dropout2d",
+            name: dropout2d.name || `dropout_${layer_id.substring(0, 4)}`,
+            p: dropout2d.p
+        };
+
+        return new_layer_config;
+    },
     // ---------- elu ----------
     "elu": (layer_config: LayerConfigInput) => {
         // destructure layer input
@@ -402,7 +451,7 @@ const layerHandler: LayerHandlerMap = {
         };
 
         return new_layer_config;
-    }
+    },
 }
 
 export async function appendLayerResolver(model: Model, args: AppendLayerArgs) {
@@ -494,3 +543,4 @@ export async function modifyLayerResolver(model: Model, args: ModifyLayerArgs) {
     // return model
     return model;
 }
+

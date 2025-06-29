@@ -10,6 +10,8 @@ import datetime
 import os
 import torch
 
+from typing import Optional
+
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import ToTensor
@@ -74,6 +76,9 @@ class TorchModelManager(AbstractModelManager):
         self.train_config: TrainConfig = train_config
         logging.info(f"Set TrainConfig {json.dumps(train_config, indent=4)}")
 
+    def setModule(self, module: nn.Module):
+        self.module = module
+
 class TorchTrainManager(nn.Module):
     
     def __init__(self,
@@ -81,13 +86,18 @@ class TorchTrainManager(nn.Module):
                  layers: list[nn.Module],
                  train_config: TrainConfig,
                  dataset_config: DatasetConfig,
+                 module: Optional[nn.Module],
                  debug: bool = True):
         # initialize nn.Module
         super().__init__()
         self.id = id
         self.layers = layers
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-        self.neuralNet = nn.Sequential(*layers).to(self.device)
+
+        if(isinstance(module, nn.Module)):
+            self.neuralNet = module.to(self.device)
+        else:
+            self.neuralNet = nn.Sequential(*layers).to(self.device)
 
         self.train_config = train_config
         self.dataset_config = dataset_config
@@ -109,8 +119,6 @@ class TorchTrainManager(nn.Module):
         self.dummy_tensor_for_computation_graph = self.dummy_tensor_for_computation_graph.to(self.device)
 
     def forward(self, x: torch.Tensor):
-        # TODO(mms) hardcoded flattening here
-        #x = x.view(x.shape[0], -1)
         return self.neuralNet(x)
 
 # refer: https://github.com/SuriyaaMM/dl-analysis/blob/main/analysis/regularization/train.py
@@ -192,7 +200,7 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
     logging.info(f"using device {train_manager.device}")
     logging.info(f"using torch: {torch.__version__}")
 
-    writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
+    # writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
 
     with torch.profiler.profile(
     activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],

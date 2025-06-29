@@ -1,0 +1,158 @@
+# 1. Create a New Model
+# Run this first to get a model_id. Copy the 'id' from the response.
+mutation CreateNewModel {
+  createModel(name: "MyDynamicGraphModel") {
+    id
+    name
+  }
+}
+
+# --- ACTION REQUIRED: Copy the 'id' from the response of CreateNewModel. ---
+# Example ID: "model_123_abc"
+# Use this ID for all subsequent 'model_id' arguments.
+
+# 2. Append Layers Individually and GET THEIR IDs Directly
+# Run these one by one. The 'id' will be in the 'layers' array within the 'module_graph' response.
+
+mutation AppendConvLayer1 {
+  appendToModuleGraph( # No model_id here, matching your schema
+    layer_config: {
+      type: "conv2d"
+      conv2d: {
+        name: "ConvLayerA"
+        in_channels: 3
+        out_channels: 16
+        kernel_size: [3, 3]
+        padding: [1, 1]
+      }
+    }
+  ) {
+    layers { # Request layers from the returned ModuleGraph
+      id # <--- Get the generated ID here
+      name
+      type
+      ... on Conv2dLayerConfig { in_channels, out_channels, kernel_size, padding }
+    }
+    edges { source_id, target_ids } # Also see current edges state
+    sorted # See if sorted state updates (likely not for simple append)
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of ConvLayerA from the 'layers' array in the response. (e.g., "convA_uuid")
+
+mutation AppendMaxPoolLayer1 {
+  appendToModuleGraph( # No model_id here, matching your schema
+    layer_config: {
+      type: "maxpool2d"
+      maxpool2d: {
+        name: "MaxPoolA"
+        kernel_size: [2, 2]
+        stride: [2, 2]
+      }
+    }
+  ) {
+    layers { # Request layers from the returned ModuleGraph
+      id # <--- Get the generated ID here
+      name
+      type
+      ... on MaxPool2dLayerConfig { kernel_size, stride }
+    }
+    edges { source_id, target_ids }
+    sorted
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of MaxPoolA from the 'layers' array in the response. (e.g., "poolA_uuid")
+
+mutation AppendLinearLayer1 {
+  appendToModuleGraph( # No model_id here, matching your schema
+    layer_config: {
+      type: "linear"
+      linear: {
+        name: "LinearA"
+        in_features: 256
+        out_features: 10
+      }
+    }
+  ) {
+    layers { # Request layers from the returned ModuleGraph
+      id # <--- Get the generated ID here
+      name
+      type
+      ... on LinearLayerConfig { in_features, out_features }
+    }
+    edges { source_id, target_ids }
+    sorted
+  }
+}
+# ACTION REQUIRED: Copy the 'id' of LinearA from the 'layers' array in the response. (e.g., "linearA_uuid")
+
+
+# 3. Connect Layers and Verify Updated Graph State
+# Use the actual IDs you copied from the Append mutations.
+
+mutation ConnectConvToMaxPool {
+  connectInModuleGraph(
+    source_layer_id: "6bcb8664-30eb-412d-8ec9-bc5c07a8b8a5" # ACTION REQUIRED: e.g., "convA_uuid"
+    target_layer_id: "d9ae1d74-3b86-4c69-8ede-6bbfadcb3bf9" # ACTION REQUIRED: e.g., "poolA_uuid"
+  ) {
+    layers { id, name, type } # Verify layers are still there
+    edges { source_id, target_ids } # <--- Verify the new edge here
+    sorted # If your connect updates sorted, you'd see it here
+  }
+}
+
+mutation ConnectMaxPoolToLinear {
+  connectInModuleGraph(
+    source_layer_id: "d9ae1d74-3b86-4c69-8ede-6bbfadcb3bf9" # ACTION REQUIRED: e.g., "poolA_uuid"
+    target_layer_id: "fef5bd7a-2243-4670-a943-641b917fa631" # ACTION REQUIRED: e.g., "linearA_uuid"
+  ) {
+    layers { id, name, type }
+    edges { source_id, target_ids } # <--- Verify the new edge here
+    sorted
+  }
+}
+
+# --- For the 'buildModuleGraph' mutation, you still need to:
+# 1. Run the `GetFullModelGraphState` query below to fetch the current 'layers' and 'edges' JSON.
+# 2. Copy that JSON.
+# 3. Paste it into the `module_graph` input of the `ConstructAndVerifyGraph` mutation.
+
+
+# --- ACTION REQUIRED: PASTE THE 'layers' AND 'edges' JSON FROM THE ABOVE QUERY'S RESPONSE HERE ---
+
+# 4. Build/Construct the Module Graph (using the full graph state from the query)
+mutation ConstructAndVerifyGraph {
+  buildModuleGraph {
+    id
+    name
+    module_graph {
+      layers { id, type, name }
+      edges { source_id, target_ids }
+      sorted # Crucial: Verify topological sort here
+    }
+  }
+}
+
+# 5. Disconnect an Edge and Verify Updated Graph State
+mutation DisconnectEdge {
+  disconnectInModuleGraph(
+    model_id: "REPLACE_WITH_YOUR_MODEL_ID" # ACTION REQUIRED
+    source_layer_id: "REPLACE_WITH_CONVLAYERA_ID" # ACTION REQUIRED
+    target_layer_id: "REPLACE_WITH_MAXPOOLA_ID" # ACTION REQUIRED
+  ) {
+    layers { id, name, type }
+    edges { source_id, target_ids } # <--- Verify the edge is removed here
+    sorted
+  }
+}
+
+# 6. Delete a Layer and Verify Updated Graph State
+mutation DeleteMaxPoolLayer {
+  deleteInModuleGraph(
+    model_id: "REPLACE_WITH_YOUR_MODEL_ID" # ACTION REQUIRED
+    layer_id: "REPLACE_WITH_MAXPOOLA_ID" # ACTION REQUIRED
+  ) {
+    layers { id, name, type } # <--- Verify the layer is removed here
+    edges { source_id, target_ids } # <--- Verify associated edges are removed here
+    sorted
+  }
+}

@@ -7,7 +7,8 @@ from config import logging, \
 from modelManager import ModelManager
 from backendUtils import parseFromLayerConfig, \
                         parseFromTrainConfig, \
-                        parseFromDataset
+                        parseFromDataset 
+from backendModuleGraphBuilder import parseModuleGraphInput, buildModuleGraph
 from serializationUtils import serialize_model_manager, deserialize_model_manager
 
 from typedefs import *
@@ -20,11 +21,10 @@ def processMessage(message_data, model: ModelManager, redis_client: redis.Redis)
         message = json.loads(message_data)
         # get event type
         event_type = message.get("event_type")
-        
         # handle LAYER_ADDED event 
         if event_type == "LAYER_ADDED":
             id = message.get("model_id")
-            layer_config = message.get("layer_config")
+            layer_config = cast(TSLayerInput, message.get("layer_config"))
             parsed_layer_config: LayerConfig = parseFromLayerConfig(layer_config)
             model.appendLayer(layer_config=parsed_layer_config)
         # handle LAYER_DELETED event
@@ -38,7 +38,15 @@ def processMessage(message_data, model: ModelManager, redis_client: redis.Redis)
             layer_id = message.get("layer_id")
             layer_config = message.get("layer_config")
             parsed_layer_config: LayerConfig = parseFromLayerConfig(layer_config)
-            model.modifyLayer(parsed_layer_config)        
+            model.modifyLayer(parsed_layer_config)
+        # handle CONSTRUCT_MODULE_GRAPH event
+        elif event_type == "CONSTRUCT_MODULE_GRAPH":
+            id = message.get("model_id")
+            module_graph = message.get("module_graph")
+            module_graph_input = cast(ModuleGraph, parseModuleGraphInput(module_graph))
+            logging.info(f"Received Module Graph: {json.dumps(module_graph, indent=4)}")
+            module = buildModuleGraph(module_graph_input)
+            model.setModule(module)
         # handle MODEL_CREATED event
         elif event_type == "MODEL_CREATED":
             id = message.get("model_id")

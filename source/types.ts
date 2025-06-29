@@ -1,8 +1,12 @@
+import { Module } from "vm";
+
 // ------------------------------- Layers & Configuration ----------------------------------
 export interface LayerConfig {
     id: string;
     type: string;
     name?: string;
+    in_dimension?: number[];
+    out_dimension?: number[];
 };
 
 export interface LinearLayerConfig extends LayerConfig {
@@ -21,6 +25,18 @@ export interface Conv2dLayerConfig extends LayerConfig {
     groups?: number[];
     bias?: boolean;
     padding_mode?: string;
+};
+
+export interface ConvTranspose2dLayerConfig extends LayerConfig {
+    in_channels: number;
+    out_channels: number;
+    kernel_size: number[];
+    stride?: number[];
+    padding?: number[];
+    dilation?: number[];
+    groups?: number[];
+    bias?: boolean;
+    output_padding?: number[];
 };
 
 export interface Conv1dLayerConfig extends LayerConfig {
@@ -96,6 +112,10 @@ export interface DropoutLayerConfig extends LayerConfig {
     p?: number;
 }
 
+export interface Dropout2dLayerConfig extends LayerConfig {
+    p?: number;
+}
+
 export interface ELULayerConfig extends LayerConfig {
     alpha?: number;
     inplace?: boolean;
@@ -110,10 +130,10 @@ export interface LeakyReLULayerConfig extends LayerConfig {
     inplace?: boolean;
 }
 
+
 export interface SigmoidLayerConfig extends LayerConfig {}
 export interface LogSigmoidLayerConfig extends LayerConfig {}
 export interface TanhLayerConfig extends LayerConfig {}
-
 
 export type LinearLayerConfigInput = {
     name?: string;
@@ -134,6 +154,19 @@ export type Conv2dLayerConfigInput = {
     bias?: boolean;
     padding_mode?: string;
 }
+
+export type ConvTranspose2dLayerConfigInput = {
+    name?: string;
+    in_channels: number;
+    out_channels: number;
+    kernel_size: number[];
+    stride?: number[];
+    padding?: number[];
+    dilation?: number[];
+    groups?: number[];
+    bias?: boolean;
+    output_padding?: number[];
+};
 
 export type Conv1dLayerConfigInput  = {
     name?: string;
@@ -217,6 +250,11 @@ export type DropoutLayerConfigInput = {
     p?: number;
 }
 
+export type Dropout2dLayerConfigInput = {
+    name?: string;
+    p?: number;
+}
+
 export type ELULayerConfigInput = {
     name?: string;
     alpha?: number;
@@ -246,11 +284,11 @@ export type TanhLayerConfigInput = {
     name?: string;
 }
 
-
 export type LayerConfigInput = {
     type: string; 
     linear?: LinearLayerConfigInput;
     conv2d?: Conv2dLayerConfigInput;
+    convtranspose2d?: ConvTranspose2dLayerConfigInput;
     conv1d?: Conv1dLayerConfigInput;
     maxpool2d?: MaxPool2dLayerConfigInput;
     maxpool1d?: MaxPool1dLayerConfigInput;
@@ -260,6 +298,7 @@ export type LayerConfigInput = {
     batchnorm1d?: BatchNorm1dLayerConfigInput;
     flatten?: FlattenLayerConfigInput;
     dropout?: DropoutLayerConfigInput;
+    dropout2d?: Dropout2dLayerConfigInput;
     elu?: ELULayerConfigInput;
     relu?: ReLULayerConfigInput;
     leakyrelu?: LeakyReLULayerConfigInput;
@@ -411,10 +450,33 @@ export type DatasetConfigInput  = {
     custom_csv?: CustomCSVDatasetConfigInput
 };
 
+// ------------------------------ Module Graphs ------------------------------
+export type ModuleAdjacencyList =  {
+    source_id: string;
+    target_ids: string[];
+}
+
+export type ModuleGraph = {
+    layers: LayerConfig[];
+    edges: ModuleAdjacencyList[];
+    sorted: string[];
+}
+
+export type ModuleAdjacencyListInput =  {
+    source_id: string;
+    target_ids: string[];
+}
+
+export type ModuleGraphInput = {
+    layers: LayerConfigInput[];
+    edges: ModuleAdjacencyListInput[];
+}
+
 // ------------------------------- Model ----------------------------------
 export type Model  = {
     id: string;
     name: string;
+    module_graph?: ModuleGraph;
     layers_config: LayerConfig[];
     train_config: TrainConfig;
     dataset_config: DatasetConfig;
@@ -455,6 +517,33 @@ export type ModifyLayerArgs = {
     layer_id: string;
     layer_config: LayerConfigInput;
 };
+
+// appendToModuleGraph function args
+export type AppendToModuleGraphArgs = {
+    layer_config: LayerConfigInput
+}
+
+// connectInModuleGraph function args
+export type ConnectInModuleGraphArgs = {
+    source_layer_id: string;
+    target_layer_id: string;
+}
+
+// disconnectInModuleGraph function args
+export type DisconnectInModuleGraphArgs = {
+    source_layer_id: string;
+    target_layer_id: string;
+}
+
+// deleteInModuleGraph function args
+export type DeleteInModuleGraphArgs = {
+    layer_id: string
+}
+
+// buildModuleGraph function args
+export type BuildModuleGraphArgs = {
+    module_graph: ModuleGraphInput;
+}
 
 // setTrainConfig function args
 export type SetTrainConfigArgs = {
