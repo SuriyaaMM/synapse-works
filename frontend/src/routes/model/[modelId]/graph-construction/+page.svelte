@@ -40,22 +40,29 @@
     to: string;
   }
 
+  // Drag modes
+  type DragMode = 'none' | 'move' | 'connect';
+
   // State
   let nodes: Node[] = [];
   let edges: Edge[] = [];
   let selectedLayerType: typeof layerTypes[number] | null = null;
   let selectedNode: Node | null = null;
   let selectedEdge: Edge | null = null;
-  let connectionMode = false;
-  let firstSelectedNode: Node | null = null;
   let nodeCounter = 1;
   let dragOffset = { x: 0, y: 0 };
-  let isDragging = false;
+  let dragMode: DragMode = 'none';
+  let dragStartNode: Node | null = null;
   let canvas: HTMLDivElement | null = null;
   let modelId: string | null = null;
   let loading = false;
   let error: string | null = null;
   let buildResult: any = null;
+  
+  // Connection preview state
+  let showConnectionPreview = false;
+  let connectionPreviewStart = { x: 0, y: 0 };
+  let connectionPreviewEnd = { x: 0, y: 0 };
   
   // Form fields - Linear
   let layerName = '';
@@ -89,8 +96,6 @@
     selectedLayerType = layerType;
     selectedNode = null;
     selectedEdge = null;
-    connectionMode = false;
-    firstSelectedNode = null;
     
     resetFormFields();
   }
@@ -303,7 +308,6 @@
         fetchPolicy: 'no-cache'
       });
 
-
       if (!response.data?.appendToModuleGraph) {
         throw new Error('Failed to add layer to graph - no data returned');
       }
@@ -408,30 +412,13 @@
     throw new Error(`Unsupported layer type: ${layer.type}`);
   }
   
-  async function selectNode(node: Node, event: MouseEvent) {
+  function selectNode(node: Node, event: MouseEvent) {
     event.stopPropagation();
     
-    if (connectionMode) {
-      if (!firstSelectedNode) {
-        firstSelectedNode = node;
-        node.selected = true;
-        nodes = [...nodes];
-      } else if (firstSelectedNode.id !== node.id) {
-        // Create connection via GraphQL
-        await createConnection(firstSelectedNode.id, node.id);
-        
-        // Reset connection mode
-        firstSelectedNode.selected = false;
-        firstSelectedNode = null;
-        connectionMode = false;
-        nodes = [...nodes];
-      }
-    } else {
-      selectedNode = node;
-      selectedLayerType = null;
-      selectedEdge = null;
-      populateFormFromNode(node);
-    }
+    selectedNode = node;
+    selectedLayerType = null;
+    selectedEdge = null;
+    populateFormFromNode(node);
   }
 
   async function createConnection(fromId: string, toId: string) {
@@ -455,7 +442,7 @@
         fetchPolicy: 'no-cache'
       });
 
-      console.log('Connect response:', response.data); // Add this line
+      console.log('Connect response:', response.data);
 
       if (!response.data?.connectInModuleGraph) {
         throw new Error('Failed to connect layers - no data returned');
@@ -518,8 +505,6 @@
     selectedEdge = edge;
     selectedNode = null;
     selectedLayerType = null;
-    connectionMode = false;
-    firstSelectedNode = null;
   }
   
   async function deleteSelectedNode() {
@@ -540,7 +525,7 @@
         fetchPolicy: 'no-cache'
       });
 
-      console.log('Delete response:', response.data); // Add this line
+      console.log('Delete response:', response.data);
 
       if (!response.data?.deleteInModuleGraph) {
         throw new Error('Failed to delete layer - no data returned');
@@ -587,8 +572,6 @@
 
       console.log('Disconnect response:', response.data);
 
-      // Check for the correct response field - it's likely NOT connectInModuleGraph
-      // Replace 'disconnectInModuleGraph' with the actual field name from your GraphQL schema
       if (!response.data?.disconnectInModuleGraph) {
         throw new Error('Failed to disconnect layers - no data returned');
       }
@@ -599,7 +582,6 @@
       // Dispatch event for external listeners
       dispatch('connectionDeleted', { connectionId: selectedEdge.id });
 
-      
       selectedEdge = null;
       saveStateToStorage();
 
@@ -662,78 +644,115 @@
     }
   }
   
-  function startConnection() {
-    connectionMode = true;
-    firstSelectedNode = null;
-    selectedNode = null;
-    selectedEdge = null;
-    
-    // Clear any existing selections
-    nodes.forEach(node => node.selected = false);
-    nodes = [...nodes];
-  }
-  
-  function cancelConnection() {
-    connectionMode = false;
-    if (firstSelectedNode) {
-      firstSelectedNode.selected = false;
-      firstSelectedNode = null;
-      nodes = [...nodes];
-    }
-  }
-  
   function clearSelection() {
     selectedLayerType = null;
     selectedNode = null;
     selectedEdge = null;
-    connectionMode = false;
-    if (firstSelectedNode) {
-      firstSelectedNode.selected = false;
-      firstSelectedNode = null;
-    }
-    nodes = [...nodes];
-    error = null; // Clear any errors when clearing selection
+    error = null;
   }
   
-  // Drag functionality
+  // Enhanced drag functionality
   function startDrag(node: Node, event: MouseEvent) {
-    isDragging = true;
-    selectedNode = node; // Ensure the dragged node is selected
-    const rect = canvas!.getBoundingClientRect();
-    dragOffset.x = event.clientX - rect.left - node.x;
-    dragOffset.y = event.clientY - rect.top - node.y;
-    
-    document.addEventListener('mousemove', drag);
-    document.addEventListener('mouseup', stopDrag);
-    
-    // Prevent text selection during drag
     event.preventDefault();
+    event.stopPropagation();
+    
+    // Determine drag mode based on modifier keys
+    if (event.shiftKey || event.ctrlKey) {
+      // Start connection drag
+      dragMode = 'connect';
+      dragStartNode = node;
+      showConnectionPreview = true;
+      
+      const rect = canvas!.getBoundingClientRect();
+      const nodeWidth = 100;
+      const nodeHeight = 80;
+      
+      connectionPreviewStart = {
+        x: node.x + nodeWidth,
+        y: node.y + nodeHeight / 2
+      };
+      connectionPreviewEnd = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    } else {
+      // Start move drag
+      dragMode = 'move';
+      selectedNode = node;
+      
+      const rect = canvas!.getBoundingClientRect();
+      dragOffset.x = event.clientX - rect.left - node.x;
+      dragOffset.y = event.clientY - rect.top - node.y;
+    }
+    
+    document.addEventListener('mousemove', handleDrag);
+    document.addEventListener('mouseup', stopDrag);
   }
 
-  function drag(event: MouseEvent) {
-    if (!isDragging || !selectedNode) return;
+  function handleDrag(event: MouseEvent) {
+    if (dragMode === 'none') return;
     
     const rect = canvas!.getBoundingClientRect();
-    selectedNode.x = event.clientX - rect.left - dragOffset.x;
-    selectedNode.y = event.clientY - rect.top - dragOffset.y;
     
-    // Constrain to canvas bounds (optional)
-    const nodeWidth = 100; // Approximate node width
-    const nodeHeight = 80; // Approximate node height
-    selectedNode.x = Math.max(0, Math.min(rect.width - nodeWidth, selectedNode.x));
-    selectedNode.y = Math.max(0, Math.min(rect.height - nodeHeight, selectedNode.y));
-    
-    // Trigger reactivity to update both nodes and edges
-    nodes = [...nodes];
-    edges = [...edges]; // This will trigger edge path recalculation
+    if (dragMode === 'move' && selectedNode) {
+      // Move node
+      selectedNode.x = event.clientX - rect.left - dragOffset.x;
+      selectedNode.y = event.clientY - rect.top - dragOffset.y;
+      
+      // Constrain to canvas bounds
+      const nodeWidth = 100;
+      const nodeHeight = 80;
+      selectedNode.x = Math.max(0, Math.min(rect.width - nodeWidth, selectedNode.x));
+      selectedNode.y = Math.max(0, Math.min(rect.height - nodeHeight, selectedNode.y));
+      
+      // Trigger reactivity
+      nodes = [...nodes];
+      edges = [...edges];
+    } else if (dragMode === 'connect') {
+      // Update connection preview
+      connectionPreviewEnd = {
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top
+      };
+    }
   }
 
-  function stopDrag() {
-    isDragging = false;
-    document.removeEventListener('mousemove', drag);
+  function stopDrag(event?: MouseEvent) {
+    if (dragMode === 'connect' && event && dragStartNode) {
+      const targetNode = getNodeAtPosition(event);
+      if (targetNode && targetNode.id !== dragStartNode.id) {
+        createConnection(dragStartNode.id, targetNode.id);
+      }
+    }
+
+    // Only save state if we actually moved something
+    if (dragMode === 'move') {
+      saveStateToStorage();
+    }
+
+    // Reset drag state
+    dragMode = 'none';
+    dragStartNode = null;
+    showConnectionPreview = false;
+
+    document.removeEventListener('mousemove', handleDrag);
     document.removeEventListener('mouseup', stopDrag);
 
-    saveStateToStorage();
+    // Force reactivity on nodes array
+    nodes = [...nodes];
+  }
+
+  function getNodeAtPosition(event: MouseEvent): Node | null {
+    const rect = canvas!.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+    
+    return nodes.find(node => {
+      const nodeWidth = 100;
+      const nodeHeight = 80;
+      return x >= node.x && x <= node.x + nodeWidth &&
+             y >= node.y && y <= node.y + nodeHeight;
+    }) || null;
   }
 
   function getEdgePath(edge: Edge) {
@@ -761,6 +780,16 @@
     const controlY2 = toY;
     
     return `M ${fromX} ${fromY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${toX} ${toY}`;
+  }
+
+  function getConnectionPreviewPath() {
+    const controlOffset = Math.abs(connectionPreviewEnd.x - connectionPreviewStart.x) * 0.5;
+    const controlX1 = connectionPreviewStart.x + controlOffset;
+    const controlY1 = connectionPreviewStart.y;
+    const controlX2 = connectionPreviewEnd.x - controlOffset;
+    const controlY2 = connectionPreviewEnd.y;
+    
+    return `M ${connectionPreviewStart.x} ${connectionPreviewStart.y} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${connectionPreviewEnd.x} ${connectionPreviewEnd.y}`;
   }
 
   // Save state to sessionStorage
@@ -815,19 +844,6 @@
         {layerType.label}
       </button>
     {/each}
-    
-    <div class="connection-controls">
-      <button 
-        class="connect-button"
-        class:active={connectionMode}
-        on:click={connectionMode ? cancelConnection : startConnection}
-      >
-        {connectionMode ? 'Cancel Connection' : 'Connect Layers'}
-      </button>
-      {#if connectionMode}
-        <p class="help-text">Select two layers to connect them</p>
-      {/if}
-    </div>
   </div>
   
   <!-- Canvas -->
@@ -853,8 +869,7 @@
           stroke="#374151"
           stroke-width="2"
           fill="none"
-          class="edge"
-          class:selected={selectedEdge?.id === edge.id}
+          class="edge {selectedEdge?.id === edge.id ? 'selected' : ''}"
           on:click={(e) => selectEdge(edge, e)}
         />
       {/each}
@@ -863,23 +878,10 @@
     <!-- Nodes -->
     {#each nodes as node}
       <div
-        class="node"
-        class:selected={selectedNode?.id === node.id || node.selected}
+        class="node {selectedNode?.id === node.id || node.selected ? 'selected' : ''}"
         style="left: {node.x}px; top: {node.y}px; border-color: {node.color}"
-        on:click={(e) => {
-          if (!isDragging) {
-            selectNode(node, e);
-          }
-        }}
-        on:mousedown={(e) => {
-          // Always select the node first
-          selectNode(node, e);
-          
-          // Only start dragging if not in connection mode
-          if (!connectionMode) {
-            startDrag(node, e);
-          }
-        }}
+        on:click={(e) => selectNode(node, e)}
+        on:mousedown={(e) => startDrag(node, e)}
       >
         <div class="node-header" style="background-color: {node.color}">
           {node.layerConfig.linear?.name || node.layerConfig.conv2d?.name || node.layerConfig.conv1d?.name || node.id}
@@ -1054,11 +1056,8 @@
         <p>• Select a layer type to add new layers</p>
         <p>• Click on layers to select and edit them</p>
         <p>• Click on connections to select and delete them</p>
-        <p>• Use "Connect Layers" to link two layers</p>
-        <p>• Drag layers to reposition them</p>
-        {#if modelId}
-          <p><strong>Model ID:</strong> {modelId}</p>
-        {/if}
+        <p>• <strong>Shift + Drag</strong> to add connection between layers</p>
+        <p>• <strong>Drag</strong> layers to reposition them</p>
         
         {#if buildResult}
           <div class="build-result">
