@@ -1,0 +1,48 @@
+type Mutation {
+    # create model
+    createModel(name: String!): Model!
+    # append layer to model
+    appendLayer(
+        model_id: ID!
+        layer_config: LayerConfigInput!
+    ): Model!
+    # delete layer
+    deleteLayer(
+        model_id: ID!, 
+        layer_id: ID!): Model!
+    # modify layer
+    modifyLayer(
+        model_id: ID!,
+        layer_id: ID!,
+        layer_config: LayerConfigInput!): Model!
+    # appends layerconfig to module graph
+    appendToModuleGraph(
+        layer_config: LayerConfigInput!): ModuleGraph!
+    # deletes layer_id in the graph
+    deleteInModuleGraph(
+        layer_id: ID!) : ModuleGraph!
+    # adds an edge
+    connectInModuleGraph(
+        source_layer_id: ID!
+        target_layer_id: ID!) : ModuleGraph!
+    # removes an edge
+    disconnectInModuleGraph(
+        source_layer_id: ID!
+        target_layer_id: ID!) : ModuleGraph!
+    # build's the graph and sorts it topologically & sets it to the model
+    buildModuleGraph: Model!
+    # validate graph
+    validateModuleGraph(in_dimension: [Int!]!): ModuleGraphDimensionStatus!
+    # set's training configuration
+    setTrainConfig(train_config: TrainConfigInput!): Model!
+    # set's dataset configuration
+    setDataset(dataset_config: DatasetConfigInput!): Model!
+    # train model
+    train(args: TrainArgs): Model!
+    # save model
+    saveModel: Boolean!
+    # load model
+    loadModel(model_id: ID!): Model!
+    # start tensorboard
+    startTensorboard: String!
+}

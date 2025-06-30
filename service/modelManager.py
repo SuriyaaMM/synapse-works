@@ -74,7 +74,7 @@ class ModelManager(object):
         Args:
             train_config_td: TrainConfig graphql object
         """
-        self._internal_manager.setTrainConfig(train_config=train_config_td, debug=self.debug)
+        self._internal_manager.setTrainConfig(train_config=train_config_td)
 
     def setDatasetConfig(self, dataset_config_td: DatasetConfig):
         R"""Sets dataset configuration for the model
@@ -82,7 +82,7 @@ class ModelManager(object):
         Args:
             dataset_config_td: DatasetConfig graphql object
         """
-        self._internal_manager.setDatasetConfig(dataset_config=dataset_config_td, debug=self.debug)
+        self._internal_manager.setDatasetConfig(dataset_config=dataset_config_td)
         logging.info(f"Set DatasetConfig to Model({self.id}) with config: {json.dumps(dataset_config_td['kwargs'], indent=4, default=custom_json_encoder)}")
     
     def setModule(self, module: nn.Module):

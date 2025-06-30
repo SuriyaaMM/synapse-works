@@ -28,6 +28,8 @@ import {
     CatLayerConfig,
     DeleteLayerArgs,
     ModifyLayerArgs,
+    GraphLayerDimensionResult,
+    GraphLayerDimensionHandler
 } from "./types.js"
 
 type LayerHandlerMap = {
@@ -473,6 +475,222 @@ export const layerHandler: LayerHandlerMap = {
         return new_layer_config;
     },
 }
+
+function convOutputDim(
+    input: number,
+    padding: number,
+    dilation: number,
+    kernel: number,
+    stride: number
+): number {
+    return Math.floor((input + 2 * padding - dilation * (kernel - 1) - 1) / stride + 1);
+}
+
+export const layerDimensionHandler: Record<string, GraphLayerDimensionHandler> = {
+    "linear": (layer_config, in_dimension) => {
+        const cfg = layer_config as LinearLayerConfig;
+        const required_in_dimension = [cfg.in_features];
+        const out_dimension = [cfg.out_features];
+
+        if (JSON.stringify(required_in_dimension) !== JSON.stringify(in_dimension)) {
+            return {
+                out_dimension,
+                message: `invalid configuration for linear layer, expected ${required_in_dimension} but received ${in_dimension}`,
+                required_in_dimension
+            };
+        }
+
+        return { out_dimension };
+    },
+
+    "flatten": (layer_config, in_dimension) => {
+        const cfg = layer_config as FlattenLayerConfig;
+
+        let end = cfg.end_dim ?? in_dimension.length;
+        if (end === -1) end = in_dimension.length;
+
+        let begin = cfg.start_dim ?? 0;
+        if (begin === 1) begin = 0;
+
+        const out: number[] = [];
+        let flattened = 1;
+
+        for (let i = 0; i < end; i++) {
+            if (i < begin) out.push(in_dimension[i]);
+            else flattened *= in_dimension[i];
+        }
+
+        out.push(flattened);
+        return { out_dimension: out };
+    },
+
+    "conv2d": (layer_config, in_dimension) => {
+        const cfg = layer_config as Conv2dLayerConfig;
+
+        if (in_dimension.length !== 3) {
+            return {
+                out_dimension: [],
+                message: `conv2d requires 3d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0, 0]
+            };
+        }
+
+        if (in_dimension[0] !== cfg.in_channels) {
+            return {
+                out_dimension: [],
+                message: `invalid configuration for conv2d, expected input_channels: ${cfg.in_channels}, received: ${in_dimension[0]}`,
+                required_in_dimension: [cfg.in_channels, 0, 0]
+            };
+        }
+
+        const padding = cfg.padding ?? [0, 0];
+        const dilation = cfg.dilation ?? [1, 1];
+        const stride = cfg.stride ?? [1, 1];
+        const kernel = cfg.kernel_size;
+
+        const h = convOutputDim(in_dimension[1], padding[0], dilation[0], kernel[0], stride[0]);
+        const w = convOutputDim(in_dimension[2], padding[1], dilation[1], kernel[1], stride[1]);
+
+        return { out_dimension: [cfg.out_channels, h, w] };
+    },
+
+    "conv1d": (layer_config, in_dimension) => {
+        const cfg = layer_config as Conv1dLayerConfig;
+
+        if (in_dimension.length !== 2) {
+            return {
+                out_dimension: [],
+                message: `conv1d requires 2d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0]
+            };
+        }
+
+        if (in_dimension[0] !== cfg.in_channels) {
+            return {
+                out_dimension: [],
+                message: `invalid configuration for conv1d, expected input_channels: ${cfg.in_channels}, received: ${in_dimension[0]}`,
+                required_in_dimension: [cfg.in_channels, 0]
+            };
+        }
+
+        const padding = cfg.padding ?? [0, 0];
+        const dilation = cfg.dilation ?? [1, 1];
+        const stride = cfg.stride ?? [1, 1];
+        const kernel = cfg.kernel_size;
+
+        const l = convOutputDim(in_dimension[1], padding[0], dilation[0], kernel[0], stride[0]);
+        return { out_dimension: [cfg.out_channels, l] };
+    },
+
+    "maxpool2d": (layer_config, in_dimension) => {
+        const cfg = layer_config as MaxPool2dLayerConfig;
+
+        if (in_dimension.length !== 3) {
+            return {
+                out_dimension: [],
+                message: `maxpool2d requires 3d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0, 0]
+            };
+        }
+
+        const padding = cfg.padding ?? [0, 0];
+        const dilation = cfg.dilation ?? [1, 1];
+        const stride = cfg.stride ?? [1, 1];
+        const kernel = cfg.kernel_size;
+
+        const h = convOutputDim(in_dimension[1], padding[0], dilation[0], kernel[0], stride[0]);
+        const w = convOutputDim(in_dimension[2], padding[1], dilation[1], kernel[1], stride[1]);
+
+        return { out_dimension: [in_dimension[0], h, w] };
+    },
+
+    "avgpool2d": (layer_config, in_dimension) => {
+        const cfg = layer_config as AvgPool2dLayerConfig;
+
+        if (in_dimension.length !== 3) {
+            return {
+                out_dimension: [],
+                message: `avgpool2d requires 3d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0, 0]
+            };
+        }
+
+        const padding = cfg.padding ?? [0, 0];
+        const stride = cfg.stride ?? [1, 1];
+        const kernel = cfg.kernel_size;
+
+        const h = convOutputDim(in_dimension[1], padding[0], 1, kernel[0], stride[0]);
+        const w = convOutputDim(in_dimension[2], padding[1], 1, kernel[1], stride[1]);
+
+        return { out_dimension: [in_dimension[0], h, w] };
+    },
+
+    "maxpool1d": (layer_config, in_dimension) => {
+        const cfg = layer_config as MaxPool1dLayerConfig;
+
+        if (in_dimension.length !== 2) {
+            return {
+                out_dimension: [],
+                message: `maxpool1d requires 2d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0]
+            };
+        }
+
+        const padding = cfg.padding ?? [0, 0];
+        const dilation = cfg.dilation ?? [1, 1];
+        const stride = cfg.stride ?? [1, 1];
+        const kernel = cfg.kernel_size;
+
+        const l = convOutputDim(in_dimension[1], padding[0], dilation[0], kernel[0], stride[0]);
+
+        return { out_dimension: [in_dimension[0], l] };
+    },
+
+    "avgpool1d": (layer_config, in_dimension) => {
+        const cfg = layer_config as AvgPool1dLayerConfig;
+
+        if (in_dimension.length !== 2) {
+            return {
+                out_dimension: [],
+                message: `avgpool1d requires 2d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0]
+            };
+        }
+
+        const padding = cfg.padding ?? [0, 0];
+        const stride = cfg.stride ?? [1, 1];
+        const kernel = cfg.kernel_size;
+
+        const l = convOutputDim(in_dimension[1], padding[0], 1, kernel[0], stride[0]);
+
+        return { out_dimension: [in_dimension[0], l] };
+    },
+
+    "batchnorm2d": (layer_config, in_dimension) => {
+        if (in_dimension.length !== 3) {
+            return {
+                out_dimension: [],
+                message: `batchnorm2d requires 3d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0, 0]
+            };
+        }
+
+        return { out_dimension: in_dimension };
+    },
+
+    "batchnorm1d": (layer_config, in_dimension) => {
+        if (in_dimension.length !== 2) {
+            return {
+                out_dimension: [],
+                message: `batchnorm1d requires 2d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0]
+            };
+        }
+
+        return { out_dimension: in_dimension };
+    }
+};
+
 
 export async function appendLayerResolver(model: Model, args: AppendLayerArgs) {
 

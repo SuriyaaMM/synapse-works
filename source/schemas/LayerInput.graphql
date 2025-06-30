@@ -1,0 +1,177 @@
+input LinearLayerConfigInput {
+    name: String
+    in_features: Int!
+    out_features: Int!
+    bias: Boolean
+}
+
+input Conv2dLayerConfigInput {
+    name: String
+    in_channels: Int!
+    out_channels: Int!
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    groups: [Int]
+    bias: Boolean
+    padding_mode: String
+}
+
+input ConvTranspose2dLayerConfigInput {
+    name: String
+    in_channels: Int!
+    out_channels: Int!
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    groups: [Int]
+    bias: Boolean
+    output_padding: [Int]
+}
+
+input Conv1dLayerConfigInput {
+    name: String
+    in_channels: Int!
+    out_channels: Int!
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    groups: [Int]
+    bias: Boolean
+    padding_mode: String
+}
+
+input MaxPool2dLayerConfigInput {
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    return_indices: Boolean
+    ceil_mode: Boolean
+}
+
+input MaxPool1dLayerConfigInput {
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    return_indices: Boolean
+    ceil_mode: Boolean
+}
+
+input AvgPool2dLayerConfigInput {
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    count_include_pad: Boolean
+    divisor_override: Int
+    ceil_mode: Boolean
+}
+
+input AvgPool1dLayerConfigInput {
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    count_include_pad: Boolean
+    divisor_override: Int
+    ceil_mode: Boolean
+}
+
+input BatchNorm2dLayerConfigInput {
+    name: String
+    num_features: Int!
+    eps: Float
+    momentum: Float
+    affine: Boolean
+    track_running_status: Boolean
+}
+
+input BatchNorm1dLayerConfigInput {
+    name: String
+    num_features: Int!
+    eps: Float
+    momentum: Float
+    affine: Boolean
+    track_running_status: Boolean
+}
+
+input FlattenLayerConfigInput {
+    name: String
+    start_dim: Int
+    end_dim: Int
+}
+
+input DropoutLayerConfigInput {
+    name: String
+    p: Float
+}
+
+input Dropout2dLayerConfigInput {
+    name: String
+    p: Float
+}
+
+input ELULayerConfigInput {
+    name: String
+    alpha: Float
+    inplace: Boolean
+}
+
+input ReLULayerConfigInput {
+    name: String
+    inplace: Boolean
+}
+
+input LeakyReLULayerConfigInput {
+    name: String
+    negative_slope: Float
+    inplace: Boolean
+}
+
+input SigmoidLayerConfigInput {
+    name: String
+}
+
+input LogSigmoidLayerConfigInput {
+    name: String
+}
+
+input TanhLayerConfigInput {
+    name: String
+}
+
+input CatLayerConfigInput {
+    name: String
+    dimension: Int
+}
+
+input LayerConfigInput {
+    type: String!
+    linear: LinearLayerConfigInput
+    conv2d: Conv2dLayerConfigInput
+    convtranspose2d: ConvTranspose2dLayerConfigInput
+    conv1d: Conv1dLayerConfigInput
+    maxpool2d: MaxPool2dLayerConfigInput
+    maxpool1d: MaxPool1dLayerConfigInput
+    avgpool2d: AvgPool2dLayerConfigInput
+    avgpool1d: AvgPool1dLayerConfigInput
+    batchnorm2d: BatchNorm2dLayerConfigInput
+    batchnorm1d: BatchNorm1dLayerConfigInput
+    flatten: FlattenLayerConfigInput
+    dropout: DropoutLayerConfigInput
+    dropout2d: Dropout2dLayerConfigInput
+    elu: ELULayerConfigInput
+    relu: ReLULayerConfigInput
+    leakyrelu: LeakyReLULayerConfigInput
+    sigmoid: SigmoidLayerConfigInput
+    logsigmoid: LogSigmoidLayerConfigInput
+    tanh: TanhLayerConfigInput
+    cat: CatLayerConfigInput
+}

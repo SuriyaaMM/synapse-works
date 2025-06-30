@@ -41,7 +41,6 @@ def processMessage(message_data, model: ModelManager, redis_client: redis.Redis)
             model.modifyLayer(parsed_layer_config)
         # handle CONSTRUCT_MODULE_GRAPH event
         elif event_type == "CONSTRUCT_MODULE_GRAPH":
-            id = message.get("model_id")
             module_graph = message.get("module_graph")
             module_graph_input = cast(ModuleGraph, parseModuleGraphInput(module_graph))
             logging.info(f"Received Module Graph: {json.dumps(module_graph, indent=4)}")
@@ -55,19 +54,16 @@ def processMessage(message_data, model: ModelManager, redis_client: redis.Redis)
             return model
         # handle SET_TRAIN_CONFIG
         elif event_type == "SET_TRAIN_CONFIG":
-            id = message.get("model_id")
             train_config = message.get("train_config")
             parsed_train_config = parseFromTrainConfig(train_config)
             model.setTrainingConfig(parsed_train_config) 
         # handle SET_DATASET
         elif event_type == "SET_DATSET":
-            id = message.get("model_id")
             dataset_config = message.get("dataset_config")
             parsed_dataset_config = parseFromDataset(dataset_config)
             model.setDatasetConfig(parsed_dataset_config)        
         # handle TRAIN_MODEL
         elif event_type == "TRAIN_MODEL":
-            id = message.get("model_id")
             args = cast(TSTrainArgsInput, message.get("args"))
             logging.info(f"Received Train Args: {json.dumps(args, indent=4)}")
             model.train(redis_client=redis_client, args=args)

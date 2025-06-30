@@ -1,0 +1,199 @@
+interface LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+}
+
+type LinearLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    in_features: Int!
+    out_features: Int!
+    bias: Boolean
+}
+
+type Conv2dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    in_channels: Int!
+    out_channels: Int!
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    groups: [Int]
+    bias: Boolean
+    padding_mode: String
+}
+
+type ConvTranspose2dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    in_channels: Int!
+    out_channels: Int!
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    groups: [Int]
+    bias: Boolean
+    output_padding: [Int]
+}
+
+type Conv1dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    in_channels: Int!
+    out_channels: Int!
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    groups: [Int]
+    bias: Boolean
+    padding_mode: String
+}
+
+type MaxPool2dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    return_indices: Boolean
+    ceil_mode: Boolean
+}
+
+type MaxPool1dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    dilation: [Int]
+    return_indices: Boolean
+    ceil_mode: Boolean
+}
+
+type AvgPool2dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    count_include_pad: Boolean
+    divisor_override: Int
+    ceil_mode: Boolean
+}
+
+type AvgPool1dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    kernel_size: [Int!]!
+    stride: [Int]
+    padding: [Int]
+    count_include_pad: Boolean
+    divisor_override: Int
+    ceil_mode: Boolean
+}
+
+type BatchNorm2dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    num_features: Int!
+    eps: Float
+    momentum: Float
+    affine: Boolean
+    track_running_status: Boolean
+}
+
+type BatchNorm1dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    num_features: Int!
+    eps: Float
+    momentum: Float
+    affine: Boolean
+    track_running_status: Boolean
+}
+
+type FlattenLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    start_dim: Int
+    end_dim: Int
+}
+
+type DropoutLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    p: Float
+}
+
+type Dropout2dLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    p: Float
+}
+
+type ELULayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    alpha: Float
+    inplace: Boolean
+}
+
+type ReLULayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    inplace: Boolean
+}
+
+type LeakyReLULayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    negative_slope: Float
+    inplace: Boolean
+}
+
+type SigmoidLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+}
+
+type LogSigmoidLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+}
+
+type TanhLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+}
+
+type CatLayerConfig implements LayerConfig {
+    id: ID!
+    type: String!
+    name: String
+    dimension: Int
+}

@@ -1,0 +1,92 @@
+type OptimizerConfig {
+    lr: Float!
+    eps: Float
+    # for adam family
+    weight_decay: Float
+    # for adam
+    betas: [Float]
+    # for adadelta
+    rho: Float
+    # for adafactor
+    beta2_decay: Float
+    d: Float
+    # for sgd family
+    # for asgd
+    lambd: Float
+    alpha: Float
+    t0: Float
+    # for sgd
+    momentum: Float
+    dampening: Float
+    nesterov: Boolean
+    # for rprop
+    etas: [Float]
+    step_sizes: [Float]
+    # for lgbfs
+    max_iter: Int
+    max_eval: Int
+    tolerance_grad: Float
+    tolerance_change: Float
+    history_size: Int
+}
+
+type TrainConfig {
+    epochs: Int!
+    optimizer: String!
+    optimizer_config: OptimizerConfig!
+    loss_function: String!
+}
+
+type TrainStatus {
+    epoch: Int!
+    loss: Float!
+    accuracy: Float!
+    completed: Boolean!
+}
+
+input OptimizerConfigInput {
+    lr: Float!
+    eps: Float
+    # for adam family
+    weight_decay: Float
+    # for adam
+    betas: [Float]
+    # for adadelta
+    rho: Float
+    # for adafactor
+    beta2_decay: Float
+    d: Float
+    # for sgd family
+    # for asgd
+    lambd: Float
+    alpha: Float
+    t0: Float
+    # for sgd
+    momentum: Float
+    dampening: Float
+    nesterov: Boolean
+    # for rprop
+    etas: [Float]
+    step_sizes: [Float]
+    # for lgbfs
+    max_iter: Int
+    max_eval: Int
+    tolerance_grad: Float
+    tolerance_change: Float
+    history_size: Int
+}
+
+input TrainConfigInput {
+    epochs: Int!
+    optimizer: String!
+    optimizer_config: OptimizerConfigInput!
+    loss_function: String!
+}
+
+enum ExportType {
+    TorchTensor
+    ONNX
+}
+input TrainArgs {
+    export_to: ExportType
+}
