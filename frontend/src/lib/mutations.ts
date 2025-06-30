@@ -200,13 +200,13 @@ export const START_TENSORBOARD = gql`
 
 export const SAVE_MODEL = gql`
   mutation SaveModel {
-    save
+    saveModel
   }
 `;
 
 export const LOAD_MODEL = gql`
-  mutation LoadModel {
-    load {
+  mutation LoadModel($modelId: String!){
+    loadModel(model_id: $modelId) {
       id
       name
       layers_config {
@@ -231,6 +231,73 @@ export const LOAD_MODEL = gql`
         batch_size
         split_length
         shuffle
+      }
+    }
+  }
+`;
+
+export const ADD_TO_GRAPH = gql`
+  mutation AppendLayer($layer_config: LayerConfigInput!) {
+    appendToModuleGraph(layer_config: $layer_config) {
+      layers {
+        id
+        name
+        type
+        ... on Conv2dLayerConfig { in_channels, out_channels, kernel_size, padding }
+        ... on Conv1dLayerConfig { in_channels, out_channels, kernel_size, padding }
+        ... on LinearLayerConfig { in_features, out_features }
+      }
+      edges { source_id, target_ids }
+    }
+  }
+`;
+
+export const CONNECT_NODES = gql`
+  mutation ConnectLayers($source_layer_id: ID!, $target_layer_id: ID!) {
+    connectInModuleGraph(source_layer_id: $source_layer_id, target_layer_id: $target_layer_id) {
+      layers { id, name, type }
+      edges { source_id, target_ids }
+      sorted
+    }
+  }
+`;
+
+export const DISCONNECT_NODES = gql`
+  mutation DisconnectLayers($source_layer_id: ID!, $target_layer_id: ID!) {
+    disconnectInModuleGraph(source_layer_id: $source_layer_id, target_layer_id: $target_layer_id) {
+      layers { id, name, type }
+      edges { source_id, target_ids }
+      sorted
+    }
+  }
+`;
+
+export const DELETE_FROM_GRAPH = gql`
+  mutation DeleteLayer($layer_id: ID!) {
+    deleteInModuleGraph(layer_id: $layer_id) {
+      layers { id, name, type }
+      edges { source_id, target_ids }
+      sorted
+    }
+  }
+`;
+
+export const BUILD_MODULE_GRAPH = gql`
+  mutation ConstructGraph {
+    buildModuleGraph {
+      id
+      name
+      module_graph {
+        layers { 
+          id
+          type
+          name
+        }
+        edges { 
+          source_id
+          target_ids
+        }
+        sorted
       }
     }
   }

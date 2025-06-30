@@ -43,7 +43,7 @@
     }
     checkTensorboardConnection();
     // Check connection every 2 seconds
-    connectionCheckInterval = setInterval(checkTensorboardConnection, 2000);
+    connectionCheckInterval = setInterval(checkTensorboardConnection, 500);
   });
 
   onDestroy(() => {

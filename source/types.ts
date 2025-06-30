@@ -567,9 +567,9 @@ export type SetDatasetArgs = {
     dataset_config: DatasetConfigInput;
 };
 
-enum ExportType {
-    TorchTensor,
-    ONNX
+export enum ExportType {
+    TorchTensor = "TorchTensor",
+    ONNX = "ONNX"
 }
 
 export type GraphQLTrainArgs = {

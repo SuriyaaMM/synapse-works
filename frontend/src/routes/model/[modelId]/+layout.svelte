@@ -9,6 +9,7 @@
 
   const currentStep = derived(page, ($page) => {
     if ($page.url.pathname.includes('/layer-config')) return 'layer-config';
+    if ($page.url.pathname.includes('/graph-construction')) return 'graph-construction';
     if ($page.url.pathname.includes('/dataset-config')) return 'dataset-config';
     if ($page.url.pathname.includes('/training-config')) return 'training-config';
     if ($page.url.pathname.includes('/train-model')) return 'train-model';
@@ -34,6 +35,14 @@
         on:click={() => goto(`/model/${modelId}/layer-config`)}
       >
          Configure Layers
+      </button>
+      <button
+        class="w-full text-left py-2 px-4 rounded-lg transition 
+                hover:bg-gray-200 
+                {($currentStep === 'graph-construction') ? 'bg-blue-100 font-semibold' : ''}"
+        on:click={() => goto(`/model/${modelId}/graph-construction`)}
+      >
+         Graph Construction
       </button>
       <button
         class="w-full text-left py-2 px-4 rounded-lg transition 

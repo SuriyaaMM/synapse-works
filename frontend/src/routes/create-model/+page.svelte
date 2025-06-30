@@ -1,7 +1,7 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import client from '$lib/apolloClient';
-  import { CREATE_MODEL, LOAD_MODEL } from '$lib/mutations';
+  import { CREATE_MODEL, LOAD_MODEL } from '$lib/mutations'; // Updated import
   import { GET_MODELS } from '$lib/queries';
   import { onMount } from 'svelte';
   import type { Model, CreateModelArgs } from '../../../../source/types';
@@ -55,30 +55,41 @@
     }
   }
 
-  // Load saved models using LOAD_MODEL mutation
+  // Load a specific model using LOAD_UNET_MODEL mutation
+  async function loadSpecificModel(modelId: string): Promise<Model | null> {
+    try {
+      const res = await client.mutate({
+        mutation: LOAD_MODEL,
+        variables: { modelId }
+      });
+      return res.data?.loadModel || null;
+    } catch (err) {
+      console.error('Error loading specific model:', err);
+      return null;
+    }
+  }
+
+  // Load saved models - now using GET_MODELS since LOAD_MODEL doesn't return all models
   async function loadSavedModels(): Promise<void> {
     loadingSavedModels = true;
     try {
-      const res = await client.mutate({
-        mutation: LOAD_MODEL
+      // Since LOAD_UNET_MODEL requires a specific modelId, we'll use GET_MODELS
+      // to get the list of available models, then optionally load specific ones
+      const res = await client.query({
+        query: GET_MODELS,
+        fetchPolicy: 'network-only'
       });
-      savedModels = res.data?.load || [];
+      savedModels = res.data?.getModels || [];
       
-      // If saved models don't have full details, fetch them using GET_MODELS
-      if (savedModels.length > 0 && !savedModels[0].layers_config) {
-        console.log('Saved models missing details, fetching from GET_MODELS...');
-        const detailsRes = await client.query({
-          query: GET_MODELS,
-          fetchPolicy: 'network-only'
-        });
-        const modelsWithDetails = detailsRes.data?.getModels || [];
-        
-        // Match saved models with detailed models by ID
-        savedModels = savedModels.map(savedModel => {
-          const detailedModel = modelsWithDetails.find((m: Model) => m.id === savedModel.id);
-          return detailedModel || savedModel;
-        });
-      }
+      // If you need to load specific model details using LOAD_UNET_MODEL,
+      // you can do so for each model:
+      // for (const model of savedModels) {
+      //   const detailedModel = await loadSpecificModel(model.id);
+      //   if (detailedModel) {
+      //     // Update the model with detailed information
+      //   }
+      // }
+      
     } catch (err) {
       console.error('Error loading saved models:', err);
     } finally {
@@ -214,6 +225,13 @@
                     >
                       View/Edit
                     </button>
+                    <!-- Add button to load specific model details -->
+                    <button
+                      on:click={() => loadSpecificModel(model.id)}
+                      class="load-button"
+                    >
+                      Load Details
+                    </button>
                   </div>
                 </div>
               </div>
@@ -279,6 +297,13 @@
                       class="view-edit-button"
                     >
                       View/Edit
+                    </button>
+                    <!-- Add button to load specific model details -->
+                    <button
+                      on:click={() => loadSpecificModel(model.id)}
+                      class="load-button"
+                    >
+                      Load Details
                     </button>
                   </div>
                 </div>
