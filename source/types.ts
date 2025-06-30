@@ -461,6 +461,22 @@ export type DatasetConfigInput  = {
 };
 
 // ------------------------------ Module Graphs ------------------------------
+export type GraphLayerDimensionResult = {
+    out_dimension: number[];
+    message?: string;
+    required_in_dimension?: number[];
+};
+
+export type ModuleGraphDimensionStatus = {
+    status?: GraphLayerDimensionResult[];
+}
+
+export type GraphLayerDimensionHandler = (
+    layer_config: LayerConfig,
+    in_dimension: number[]
+    
+) => GraphLayerDimensionResult;
+
 export type ModuleAdjacencyList =  {
     source_id: string;
     target_ids: string[];
@@ -557,13 +573,11 @@ export type BuildModuleGraphArgs = {
 
 // setTrainConfig function args
 export type SetTrainConfigArgs = {
-    model_id: string;
     train_config: TrainConfigInput;
 };
 
 // setDataset function args
 export type SetDatasetArgs = {
-    model_id: string;
     dataset_config: DatasetConfigInput;
 };
 
@@ -578,7 +592,6 @@ export type GraphQLTrainArgs = {
 
 // train function args
 export type TrainArgs = {
-    model_id: string;
     args: GraphQLTrainArgs;
 };
 

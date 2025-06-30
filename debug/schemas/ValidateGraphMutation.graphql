@@ -1,0 +1,9 @@
+mutation ValidateGraph($in_dimension: [Int!]!) {
+  validateModuleGraph(in_dimension: $in_dimension) {
+    status {
+      message
+      out_dimension
+      required_in_dimension
+    }
+  }
+}

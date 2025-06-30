@@ -1,0 +1,8 @@
+type Query {
+    # get the model by id
+    getModel: Model!
+    # get training status
+    getTrainingStatus: TrainStatus!
+    # validate model
+    validateModel(id: ID!, in_dimension: [Int!]!): ModelDimensionResolveStatus!
+}

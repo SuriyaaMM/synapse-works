@@ -1,0 +1,55 @@
+type ModuleAdjacencyList {
+    source_id: ID!
+    target_ids: [ID!]!
+}
+type ModuleGraph {
+    layers: [LayerConfig!]!
+    edges: [ModuleAdjacencyList!]!
+    sorted: [String!]!
+}
+type ModuleGraphValidationError {
+    layer_id: ID!
+    source_id: ID!
+    target_id: ID!
+    required_dimension: [Int]
+    received_dimension: [Int]
+    message: String!
+}
+input ModuleAdjacencyListInput {
+    source_id: ID!
+    target_ids: [ID!]!
+}
+input ModuleGraphInput {
+    layers: [LayerConfigInput!]!
+    edges: [ModuleAdjacencyListInput!]!
+}
+# Model type
+type Model {
+    id: ID!
+    name: String!
+    # this is optional for now, but in future we should make layers_config optional       
+    module_graph: ModuleGraph
+    layers_config: [LayerConfig!]! 
+    train_config: TrainConfig!
+    dataset_config: DatasetConfig!
+}
+type ModelDimensionResolveStatusStruct {
+    layer_id: ID!
+    message: String
+    in_dimension: [Int!]!
+    out_dimension: [Int!]!
+    required_in_dimension: [Int!]
+}
+type ModelDimensionResolveStatus {
+    status: [ModelDimensionResolveStatusStruct]
+}
+
+type GraphLayerDimensionResult {
+    out_dimension: [Int!]!
+    message: String
+    required_in_dimension: [Int!]
+}
+
+type ModuleGraphDimensionStatus {
+    status: [GraphLayerDimensionResult]
+}

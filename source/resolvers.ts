@@ -31,7 +31,8 @@ import {
     buildModuleGraphResolver, 
     connectInModuleGraphResolver, 
     deleteInModuleGraphResolver, 
-    disconnectInModuleGraphResolver } from "./graphResolver.js";
+    disconnectInModuleGraphResolver, 
+    validateModuleGraphResolver} from "./graphResolver.js";
 
 let model: Model;
 export let tensorboardProcess: ChildProcess = null;
@@ -185,6 +186,9 @@ export const resolvers = {
         },
         buildModuleGraph: async(_:unknown) => {
             return await buildModuleGraphResolver(model);
+        },
+        validateModuleGraph: async(_:unknown, {in_dimension}: {in_dimension: number[]}) => {
+            return await validateModuleGraphResolver(model, in_dimension);
         },
         // setTrainConfig mutation
         setTrainConfig: async (_:unknown, args: SetTrainConfigArgs) => {

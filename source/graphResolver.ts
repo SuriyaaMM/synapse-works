@@ -1,4 +1,4 @@
-import { layerHandler } from "./layerResolver.js";
+import { layerDimensionHandler, layerHandler } from "./layerResolver.js";
 import { enqueueMessage } from "./redisClient.js";
 import { setModuleGraph } from "./resolvers.js";
 import { 
@@ -10,7 +10,10 @@ import {
     ConnectInModuleGraphArgs,
     ModuleAdjacencyList,
     DeleteInModuleGraphArgs,
-    DisconnectInModuleGraphArgs
+    DisconnectInModuleGraphArgs,
+    ModelDimensionResolveStatus,
+    GraphLayerDimensionResult,
+    ModuleGraphDimensionStatus,
 } from "./types.js";
 
 // initialize an empty module graph
@@ -203,4 +206,88 @@ export async function buildModuleGraphResolver(model: Model){
     await enqueueMessage(message);
 
     return model;
+}
+
+export async function validateModuleGraphResolver(model: Model, initial_in_dimension: number[]): Promise<ModelDimensionResolveStatus> {
+    console.log("[synapse]: Validating graph began!")
+    const resolve_status: ModelDimensionResolveStatus = { status: [] };
+
+    if (!model.module_graph) {
+        throw new Error(`[synapse]: Module Graph must be provided for validation!`);
+    }
+
+    const layer_id_to_config_map = new Map<string, LayerConfig>();
+    for (const layer of model.module_graph.layers) {
+        layer_id_to_config_map.set(layer.id, layer);
+    }
+
+    const resolved_output_dimensions = new Map<string, number[]>();
+
+    // iterate through topologically sorted order
+    for (let i = 0; i < model.module_graph.sorted.length; i++) {
+
+        const layer_id = model.module_graph.sorted[i];
+        const layer_config = layer_id_to_config_map.get(layer_id);
+
+        let current_in_dimension: number[];
+
+        // for the first layer in the topological sort, use the initial input dimension
+        if (i === 0) {
+            current_in_dimension = initial_in_dimension;
+        } else {
+            // for subsequent layers, find its predecessor in the sorted list
+            // and use its resolved output dimension as the input.
+            const previous_layer_id = model.module_graph.sorted[i - 1];
+            const prev_out_dim = resolved_output_dimensions.get(previous_layer_id);
+
+            console.log(`[synapse]: Processing previous layer_id: ${previous_layer_id}`)
+
+            if (!prev_out_dim) {
+                // This should ideally not happen if the topological sort is correct
+                // and all previous layers were successfully processed.
+                resolve_status.status?.push({
+                    layer_id: layer_id,
+                    message: `Could not determine input dimension for layer ${layer_id}: predecessor ${previous_layer_id} output not resolved.`,
+                    in_dimension: [],
+                    out_dimension: []
+                });
+                return resolve_status;
+            }
+            current_in_dimension = prev_out_dim;
+        }
+
+        // get the appropriate dimension handler for the layer type
+        const handler = layerDimensionHandler[layer_config.type];
+        if (!handler) {
+            resolve_status.status?.push({
+                layer_id: layer_id,
+                message: `No dimension handler found for layer type: ${layer_config.type}`,
+                in_dimension: current_in_dimension,
+                out_dimension: []
+            });
+            return resolve_status; // Stop on critical error
+        }
+
+        // calculate the output dimension for the current layer
+        const result = handler(layer_config, current_in_dimension);
+
+        // add the status for the current layer
+        resolve_status.status?.push({
+            layer_id: layer_id,
+            message: result.message,
+            in_dimension: current_in_dimension,
+            out_dimension: result.out_dimension,
+            required_in_dimension: result.required_in_dimension
+        });
+
+        // if there's an error message, stop validation and return the current status
+        if (result.message) {
+            return resolve_status;
+        }
+
+        // store the resolved output dimension for this layer
+        resolved_output_dimensions.set(layer_id, result.out_dimension);
+    }
+
+    return resolve_status;
 }

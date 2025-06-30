@@ -68,11 +68,11 @@ class TorchModelManager(AbstractModelManager):
             if self.layers[i].id == layer_config["id"]:
                 self.layers[i].layer = layer
 
-    def setDatasetConfig(self, dataset_config: DatasetConfig, debug: bool = True):
+    def setDatasetConfig(self, dataset_config: DatasetConfig):
         self.dataset_config = dataset_config
         logging.info(f"Set DatasetConfig {json.dumps(dataset_config, indent=4, default=custom_json_encoder)}")
         
-    def setTrainConfig(self, train_config: TrainConfig,  debug: bool = True):
+    def setTrainConfig(self, train_config: TrainConfig):
         self.train_config: TrainConfig = train_config
         logging.info(f"Set TrainConfig {json.dumps(train_config, indent=4)}")
 
@@ -86,8 +86,7 @@ class TorchTrainManager(nn.Module):
                  layers: list[nn.Module],
                  train_config: TrainConfig,
                  dataset_config: DatasetConfig,
-                 module: Optional[nn.Module],
-                 debug: bool = True):
+                 module: Optional[nn.Module]):
         # initialize nn.Module
         super().__init__()
         self.id = id
@@ -105,10 +104,10 @@ class TorchTrainManager(nn.Module):
         optimizerType = torch_optimizer_name_map(train_config["optimizer"])
         
         self.optimizer = optimizerType(self.neuralNet.parameters(), **train_config["optimizer_kwargs"]) # type:ignore
-        self.loss_function = torch_loss_function_name_map(train_config["loss_function"], debug)()
+        self.loss_function = torch_loss_function_name_map(train_config["loss_function"])()
         self.epochs = train_config["epochs"]
 
-        self.dataset = torch_dataset_name_map(dataset_config["name"], debug)(**dataset_config["kwargs"]) # type:ignore
+        self.dataset = torch_dataset_name_map(dataset_config["name"])(**dataset_config["kwargs"]) # type:ignore
         # split datasets
         self.train_dataset, self.test_dataset = random_split(self.dataset, dataset_config["split_length"])
         # initialize dataloaders
@@ -121,7 +120,6 @@ class TorchTrainManager(nn.Module):
     def forward(self, x: torch.Tensor):
         return self.neuralNet(x)
 
-# refer: https://github.com/SuriyaaMM/dl-analysis/blob/main/analysis/regularization/train.py
 def _TrainEpoch(train_manager: TorchTrainManager,
                 current_epoch: int, 
                 writer: torch.utils.tensorboard.SummaryWriter) -> tuple[float, float, int]:
@@ -196,11 +194,11 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
     f"{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}")
 
     writer = torch.utils.tensorboard.SummaryWriter(writer_filename)
-    logging.info(f"initialized writer {writer}")
-    logging.info(f"using device {train_manager.device}")
-    logging.info(f"using torch: {torch.__version__}")
+    logging.info(f"Initialized writer {writer}")
+    logging.info(f"Using device {train_manager.device}")
+    logging.info(f"Using torch: {torch.__version__}")
 
-    # writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
+    writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
 
     with torch.profiler.profile(
     activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
@@ -265,12 +263,13 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
     model_dir = f"savefile/model"
     os.makedirs(model_dir, exist_ok=True)
 
-    if "export_to" in args.keys():
+    if args is not None:
         if args["export_to"] == "TorchTensor": # type:ignore
             model_path = os.path.join(model_dir, f"{train_manager}.pt")
             torch.save(train_manager.neuralNet.state_dict(), model_path)
         elif args["export_to"] == "ONNX": #type:ignore
             model_path = os.path.join(model_dir, f"{train_manager.id}.onnx")
             torch.onnx.export(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph,
-                              model_path, input_names=["input"], output_names=["output"])
+                                model_path, input_names=["input"], output_names=["output"])
         logging.info(f"saved model to {model_path}")
+            

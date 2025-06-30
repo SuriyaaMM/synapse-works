@@ -144,22 +144,22 @@ mutation AppendLinearFinal {
 
 mutation ConnectConvEncToPoolEnc {
   connectInModuleGraph(
-    source_layer_id: "10cb5b30-101d-4828-9c34-9236ce243c2a" # ConvEncoder
-    target_layer_id: "61afc7e0-6634-4d8c-b0d0-ea9a926cf74d" # MaxPoolEncoder
+    source_layer_id: "861e2550-5291-423b-9cb5-a33230a3c227" # ConvEncoder
+    target_layer_id: "46a26d04-3512-48f4-b1f4-487692ea636d" # MaxPoolEncoder
   ) { layers { id, name }, edges { source_id, target_ids } }
 }
 
 mutation ConnectPoolEncToConvDeep {
   connectInModuleGraph(
-    source_layer_id: "61afc7e0-6634-4d8c-b0d0-ea9a926cf74d" # MaxPoolEncoder
-    target_layer_id: "825fe86c-3e96-45fa-b470-c1d5e7ddea88" # ConvDeepEncoder 
+    source_layer_id: "46a26d04-3512-48f4-b1f4-487692ea636d" # MaxPoolEncoder
+    target_layer_id: "6bae0dfa-6c85-4304-a144-a2883f58221c" # ConvDeepEncoder 
   ) { layers { id, name }, edges { source_id, target_ids } }
 }
 
 mutation ConnectConvDeepToConvTrans {
   connectInModuleGraph(
-    source_layer_id: "825fe86c-3e96-45fa-b470-c1d5e7ddea88" # ConvDeepEncoder
-    target_layer_id: "491c16f3-73c2-4ba7-b02c-890656581e94" # ConvTransposeDecoder
+    source_layer_id: "f13399c7-7e53-4ead-ba8c-9fad01f9c311" # ConvDeepEncoder
+    target_layer_id: "d3005918-f92b-407f-9ce4-66282fd76cd5" # ConvTransposeDecoder
   ) { layers { id, name }, edges { source_id, target_ids } }
 }
 
@@ -217,7 +217,6 @@ mutation ConstructAndVerifyCatGraph {
 # --- 5. Set Training Configuration for MNIST ---
 mutation SetSGDTrainConfig {
   setTrainConfig(
-    model_id: "REPLACE_WITH_YOUR_MODEL_ID" 
     train_config: {
       epochs: 10
       optimizer: "sgd"
@@ -240,7 +239,6 @@ mutation SetSGDTrainConfig {
 # --- 6. Set Dataset Configuration for MNIST ---
 mutation SetMNISTDatasetConfig {
   setDataset(
-    model_id: "REPLACE_WITH_YOUR_MODEL_ID" # ACTION REQUIRED
     dataset_config: {
       name: "mnist" # Specify MNIST dataset
       shuffle: true
@@ -269,10 +267,32 @@ mutation SaveModel {
 # --- 8. Train the Model ---
 # This initiates the training process.
 mutation TrainModel {
-  train(model_id: "REPLACE_WITH_YOUR_MODEL_ID") { # ACTION REQUIRED
+  train() { # ACTION REQUIRED
     id
     name
     train_config { epochs }
     dataset_config { name }
   }
+}
+
+mutation DisconnectEdge {
+  disconnectInModuleGraph(
+    source_layer_id: "861e2550-5291-423b-9cb5-a33230a3c227" # ConvDeepEncoder
+    target_layer_id: "46a26d04-3512-48f4-b1f4-487692ea636d" # ConvTransposeDecoder
+  ) { layers { id, name }, edges { source_id, target_ids } }
+}
+
+# 6. Delete a Layer and Verify Updated Graph State
+mutation DeleteLayer {
+  deleteInModuleGraph(
+    layer_id: "d3005918-f92b-407f-9ce4-66282fd76cd5" # ACTION REQUIRED
+  ) {
+    layers { id, name, type } # <--- Verify the layer is removed here
+    edges { source_id, target_ids } # <--- Verify associated edges are removed here
+    sorted
+  }
+}
+
+mutation save {
+  saveModel
 }
