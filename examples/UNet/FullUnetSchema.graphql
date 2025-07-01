@@ -1,0 +1,396 @@
+mutation {
+  createModel(name: "MNIST_Full_UNet") {
+    id
+    name
+  }
+}
+
+# --- Encoder Block 1 ---
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Enc1_Conv1"
+      in_channels: 1
+      out_channels: 64
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Enc1_Conv2"
+      in_channels: 64
+      out_channels: 64
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "maxpool2d"
+    maxpool2d: {
+      name: "Enc1_Pool"
+      kernel_size: [2, 2]
+      stride: [2, 2]
+    }
+  }) { layers { id name type } }
+}
+
+# --- Encoder Block 2 ---
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Enc2_Conv1"
+      in_channels: 64
+      out_channels: 128
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Enc2_Conv2"
+      in_channels: 128
+      out_channels: 128
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "maxpool2d"
+    maxpool2d: {
+      name: "Enc2_Pool"
+      kernel_size: [2, 2]
+      stride: [2, 2]
+    }
+  }) { layers { id name type } }
+}
+
+# --- Bottleneck ---
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Bottleneck_Conv1"
+      in_channels: 128
+      out_channels: 256
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Bottleneck_Conv2"
+      in_channels: 256
+      out_channels: 256
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+# --- Decoder Block 1 ---
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "convtranspose2d"
+    convtranspose2d: {
+      name: "Dec1_Up"
+      in_channels: 256
+      out_channels: 128
+      kernel_size: [2, 2]
+      stride: [2, 2]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "cat"
+    cat: {
+      name: "SkipCat1"
+      dimension: 1
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Dec1_Conv1"
+      in_channels: 256
+      out_channels: 128
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Dec1_Conv2"
+      in_channels: 128
+      out_channels: 128
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+# --- Decoder Block 2 ---
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "convtranspose2d"
+    convtranspose2d: {
+      name: "Dec2_Up"
+      in_channels: 128
+      out_channels: 64
+      kernel_size: [2, 2]
+      stride: [2, 2]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "cat"
+    cat: {
+      name: "SkipCat2"
+      dimension: 1
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Dec2_Conv1"
+      in_channels: 128
+      out_channels: 64
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "Dec2_Conv2"
+      in_channels: 64
+      out_channels: 64
+      kernel_size: [3, 3]
+      padding: [1, 1]
+    }
+  }) { layers { id name type } }
+}
+
+# --- Final Output ---
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "conv2d"
+    conv2d: {
+      name: "FinalConv"
+      in_channels: 64
+      out_channels: 1
+      kernel_size: [1, 1]
+      padding: [0, 0]
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "flatten"
+    flatten: {
+      name: "FlattenOut"
+      start_dim: 1
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  appendToModuleGraph(layer_config: {
+    type: "linear"
+    linear: {
+      name: "FinalLinear"
+      in_features: 784
+      out_features: 10
+    }
+  }) { layers { id name type } }
+}
+
+mutation {
+  connectInModuleGraph(source_layer_id: "d19e9499-fef6-4175-99fb-452b2188df02", target_layer_id: "c030e441-3ef6-4d93-aa41-539888587c6d") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "c030e441-3ef6-4d93-aa41-539888587c6d", target_layer_id: "0eea198c-7f80-4834-80d7-a1d53452eda9") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "0eea198c-7f80-4834-80d7-a1d53452eda9", target_layer_id: "91cf31cc-1a8d-433c-b2f9-4f4ed0bab53c") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "91cf31cc-1a8d-433c-b2f9-4f4ed0bab53c", target_layer_id: "49ec27e1-9641-44b0-9d4b-f61f6e445d6f") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "49ec27e1-9641-44b0-9d4b-f61f6e445d6f", target_layer_id: "6927cd6a-a652-4758-a973-daca9522b007") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "6927cd6a-a652-4758-a973-daca9522b007", target_layer_id: "35d86741-84f0-4ec1-a9b5-3d2876ffd4f6") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "35d86741-84f0-4ec1-a9b5-3d2876ffd4f6", target_layer_id: "01dc148f-bdec-4584-90fa-5e2970bff5ad") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "01dc148f-bdec-4584-90fa-5e2970bff5ad", target_layer_id: "36c365e7-bbb5-4243-a25d-37b12d3892fe") { edges { source_id target_ids } }
+}
+# Skip connection: Enc2_Conv2 → SkipCat1
+mutation {
+  connectInModuleGraph(source_layer_id: "49ec27e1-9641-44b0-9d4b-f61f6e445d6f", target_layer_id: "70f0db35-de67-4ad9-8a97-2255aa73c812") { edges { source_id target_ids } }
+}
+# Up → SkipCat1
+mutation {
+  connectInModuleGraph(source_layer_id: "36c365e7-bbb5-4243-a25d-37b12d3892fe", target_layer_id: "70f0db35-de67-4ad9-8a97-2255aa73c812") { edges { source_id target_ids } }
+}
+# Cat → Dec1_Conv1
+mutation {
+  connectInModuleGraph(source_layer_id: "70f0db35-de67-4ad9-8a97-2255aa73c812", target_layer_id: "cae13268-ca77-41c0-813a-69521e452635") { edges { source_id target_ids } }
+}
+# Dec1_Conv1 → Dec1_Conv2
+mutation {
+  connectInModuleGraph(source_layer_id: "cae13268-ca77-41c0-813a-69521e452635", target_layer_id: "43f9da93-e612-49cb-a583-5f7d04107a9f") { edges { source_id target_ids } }
+}
+# Dec1_Conv2 → Dec2_Up
+mutation {
+  connectInModuleGraph(source_layer_id: "43f9da93-e612-49cb-a583-5f7d04107a9f", target_layer_id: "b94f4bea-6335-4edf-973a-de22daa90859") { edges { source_id target_ids } }
+}
+# Skip connection: Enc1_Conv2 → SkipCat2
+mutation {
+  connectInModuleGraph(source_layer_id: "c030e441-3ef6-4d93-aa41-539888587c6d", target_layer_id: "bb1c4d24-bc81-438b-9243-8c4794157aa0") { edges { source_id target_ids } }
+}
+# Up → SkipCat2
+mutation {
+  connectInModuleGraph(source_layer_id: "b94f4bea-6335-4edf-973a-de22daa90859", target_layer_id: "bb1c4d24-bc81-438b-9243-8c4794157aa0") { edges { source_id target_ids } }
+}
+# Cat → Dec2_Conv1
+mutation {
+  connectInModuleGraph(source_layer_id: "bb1c4d24-bc81-438b-9243-8c4794157aa0", target_layer_id: "92863010-98ef-4d14-80b7-6c8bf3b1786a") { edges { source_id target_ids } }
+}
+# Dec2_Conv1 → Dec2_Conv2
+mutation {
+  connectInModuleGraph(source_layer_id: "92863010-98ef-4d14-80b7-6c8bf3b1786a", target_layer_id: "c946ba03-11f6-427c-8aba-564e8d305221") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "c946ba03-11f6-427c-8aba-564e8d305221", target_layer_id: "4be47850-c823-493d-9cf9-c59f053ad6b8") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "4be47850-c823-493d-9cf9-c59f053ad6b8", target_layer_id: "3e3e6971-86e1-47f6-8bff-d3745141a8b5") { edges { source_id target_ids } }
+}
+mutation {
+  connectInModuleGraph(source_layer_id: "3e3e6971-86e1-47f6-8bff-d3745141a8b5", target_layer_id: "1e4b63ed-b3e2-418a-8c7f-889407252b84") { edges { source_id target_ids } }
+}
+
+
+mutation {
+  buildModuleGraph {
+    id
+    name
+    module_graph {
+      layers { id name type }
+      edges { source_id target_ids }
+      sorted
+    }
+  }
+}
+
+mutation {
+  setTrainConfig(
+    train_config: {
+      epochs: 10
+      optimizer: "sgd"
+      optimizer_config: {
+        lr: 0.0003
+        momentum: 0.9
+        dampening: 0.0
+        weight_decay: 0.0001
+        nesterov: true
+      }
+      loss_function: "ce"
+    }
+  ) {
+    id
+    name
+    train_config {
+      epochs
+      optimizer
+      optimizer_config { lr momentum }
+      loss_function
+    }
+  }
+}
+
+mutation {
+  setDataset(
+    dataset_config: {
+      name: "mnist"
+      shuffle: true
+      split_length: [0.8, 0.2]
+      batch_size: 1024
+      mnist: {
+        root: "./data/mnist"
+        train: true
+        download: true
+        transform: ["ToTensor", "Normalize"]
+      }
+    }
+  ) {
+    id
+    name
+    dataset_config {
+      name
+      batch_size
+      split_length
+      shuffle
+      ... on MNISTDatasetConfig {
+        root
+        train
+        download
+        transform
+      }
+    }
+  }
+}
+
+mutation {
+  train {
+    id
+    name
+    train_config { epochs }
+    dataset_config { name }
+  }
+}
+
+
