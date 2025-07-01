@@ -1,0 +1,10 @@
+mutation TrainModel {
+  train(args: {
+    export_to: ONNX
+  }) {
+    id
+    name
+    train_config { epochs }
+    dataset_config { name }
+  }
+}

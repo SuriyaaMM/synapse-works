@@ -267,7 +267,7 @@ mutation SaveModel {
 # --- 8. Train the Model ---
 # This initiates the training process.
 mutation TrainModel {
-  train() { # ACTION REQUIRED
+  train { # ACTION REQUIRED
     id
     name
     train_config { epochs }

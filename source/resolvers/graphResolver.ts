@@ -64,8 +64,6 @@ export async function connectInModuleGraphResolver(args: ConnectInModuleGraphArg
     }
 
     return module_graph;
-
-    // overall O(3n) at worst case
 }
 
 export async function disconnectInModuleGraphResolver(args: DisconnectInModuleGraphArgs) : Promise<ModuleGraph>{
@@ -126,8 +124,6 @@ export async function deleteInModuleGraphResolver(args: DeleteInModuleGraphArgs)
     }
 
     return module_graph;
-
-    // overall O(n) at worst case
 }
 
 export async function buildModuleGraphResolver(model: Model) : Promise<Model>{
@@ -165,17 +161,24 @@ export async function buildModuleGraphResolver(model: Model) : Promise<Model>{
 
     let sorted: string[] = [];
 
+    // with this map, the following loop becomes O(V + E)
+    // else if would be O(V*2)
+    const adj_list_map: Map<string, string[]> = new Map();
+    for (const edge of module_graph.edges) {
+        adj_list_map.set(edge.source_id, edge.target_ids);
+    }
+
     while (q.length > 0) {
         const current = q.shift()!;
         sorted.push(current);
         
-        for (const edge of module_graph.edges) {
-            if (edge.source_id === current) {
-                for (const neighbour of edge.target_ids) {
-                    indegree_map.set(neighbour, indegree_map.get(neighbour)! - 1);
-                    if (indegree_map.get(neighbour) === 0) {
-                        q.push(neighbour);
-                    }
+        const neighbors = adj_list_map.get(current);
+
+        if (neighbors) {
+            for (const neighbour of neighbors) {
+                indegree_map.set(neighbour, indegree_map.get(neighbour)! - 1);
+                if (indegree_map.get(neighbour) === 0) {
+                    q.push(neighbour);
                 }
             }
         }
@@ -183,7 +186,7 @@ export async function buildModuleGraphResolver(model: Model) : Promise<Model>{
 
     // cycle detected
     if (sorted.length !== module_graph.layers.length) {
-        throw new Error(`[synapse][graphql]: Cycle detected in the model graph`);
+        throw new Error(`[synapse]: Cycle detected in the model graph`);
     }
 
     model.module_graph = {
@@ -193,7 +196,7 @@ export async function buildModuleGraphResolver(model: Model) : Promise<Model>{
     }
 
     // push message to redis
-    console.log(`[synapse][graphql]: Appending to LAYER_MODIFIED redis message Queue`);
+    console.log(`[synapse]: Appending to CONSTRUCT_MODULE_GRAPH Event to redis Queue`);
     const message = {
         event_type: "CONSTRUCT_MODULE_GRAPH",
         module_graph: model.module_graph,
