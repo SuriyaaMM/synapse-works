@@ -103,8 +103,10 @@ def buildModuleGraph(module_graph: ModuleGraph) -> nn.Module:
 
     fx_module = torch.fx.GraphModule(DynamicModuleForFX(nn_modules), graph)
     
-    logging.info("--- Generated FX GraphModule ---")
+    logging.info("-"*20)
+    logging.info("Generated FX GraphModule")
+    logging.info("-"*20)
     logging.info(fx_module)
-    logging.info("--------------------------------")
+    logging.info("-"*20)
 
     return fx_module

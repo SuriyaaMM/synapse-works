@@ -1,11 +1,14 @@
-import { enqueueMessage } from "./redisClient.js";
-import { DatasetConfigInput, 
+import { enqueueMessage } from "../redisClient.js";
+import { 
+    DatasetConfig,
+    DatasetConfigInput, 
     MNISTDatasetConfig, 
     CIFAR10DatasetConfig,
     CustomCSVDatasetConfig,
-    ImageFolderDatasetConfig,
-    Model, SetDatasetArgs } from "./types";
-import { DatasetConfig  } from "./types";
+    ImageFolderDatasetConfig } from "../types/datasetTypes.js";
+
+import { Model } from "../types/modelTypes.js";
+import { SetDatasetArgs } from "../types/argTypes.js";
 
 type DatasetHandlerMap = {
     [K in DatasetConfig['name']]: (config: DatasetConfigInput) => DatasetConfig;
@@ -17,7 +20,7 @@ export const datasetHandlers: DatasetHandlerMap = {
         // destructure the dataset
         const {split_length, shuffle, batch_size,mnist} = dataset;
         // if mnistConfig is not found, report error
-        if(!mnist) throw new Error("[synapse][graphql]: mnist config is missing");
+        if(!mnist) throw new Error("[synapse]: mnist config is missing");
         // create MNISTDataset object & return it
         const newDataset: MNISTDatasetConfig = {
             name: "mnist",
@@ -35,7 +38,7 @@ export const datasetHandlers: DatasetHandlerMap = {
         // destructure the dataset
         const {split_length, shuffle, batch_size, cifar10} = dataset;
         // if cifar10Config is not found, report error
-        if(!cifar10) throw new Error("[synapse][graphql]: cifar10 config is missing");
+        if(!cifar10) throw new Error("[synapse]: cifar10 config is missing");
         // create CIFAR10Dataset object & return it
         const newDataset: CIFAR10DatasetConfig = {
             name: "cifar10",
@@ -53,7 +56,7 @@ export const datasetHandlers: DatasetHandlerMap = {
         // destructure the dataset
         const {split_length, shuffle, batch_size, custom_csv} = dataset;
         // if customCSVDatasetConfig is not found, report error
-        if(!custom_csv) throw new Error("[synapse][graphql]: custom_csv config is missing");
+        if(!custom_csv) throw new Error("[synapse]: custom_csv config is missing");
         // create CustomCSVDataset object & return it
         const newDataset: CustomCSVDatasetConfig = {
             name: "custom_csv",
@@ -71,7 +74,7 @@ export const datasetHandlers: DatasetHandlerMap = {
         // destructure the dataset
         const {split_length, shuffle, batch_size, image_folder} = dataset;
         // if image_folder Config is not found, report error
-        if(!image_folder) throw new Error("[synapse][graphql]: custom_csv config is missing");
+        if(!image_folder) throw new Error("[synapse]: custom_csv config is missing");
         // create ImageFolderDataset object & return it
         const newDataset: ImageFolderDatasetConfig = {
             name: "image_folder",
@@ -89,20 +92,20 @@ export const datasetHandlers: DatasetHandlerMap = {
 export async function setDatasetResolver(model: Model, args: SetDatasetArgs){
     // handle model doesn't exist 
     if(!model){
-        throw new Error(`[synapse][graphql]: Model doesn't exist yet, create it first`)
+        throw new Error(`[synapse]: Model doesn't exist yet, create it first`)
     }
     // get the corresponding dataset
     const handler = datasetHandlers[args.dataset_config.name];
     // handle invalid dataset
-    if(!handler) throw new Error(`[synapse][graphql]: dataset with name ${args.dataset_config.name} doesn't exist`);
+    if(!handler) throw new Error(`[synapse]: Dataset with name ${args.dataset_config.name} doesn't exist`);
     // create new dataset object
     const new_dataset_config = handler(args.dataset_config)
     // set newDataset in the model
     model.dataset_config = new_dataset_config;
-    console.log(`[symapse][graphql]: set new dataset configuration ${JSON.stringify(new_dataset_config)} to model (Id = ${model.id})`);
+    console.log(`[symapse]: Set new dataset configuration ${JSON.stringify(new_dataset_config)} to model (Id = ${model.id})`);
     
     // push message to redis
-    console.log(`[synapse][graphql]: Appending to redis message Queue`)
+    console.log(`[synapse][graphql]: Appending SET_DATASET Event to redis message Queue`)
     const message = {
         event_type: "SET_DATSET",
         model_id: model.id,

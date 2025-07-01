@@ -1,0 +1,32 @@
+type ModuleAdjacencyList {
+    source_id: ID!
+    target_ids: [ID!]!
+}
+
+type ModuleGraph {
+    layers: [LayerConfig!]!
+    edges: [ModuleAdjacencyList!]!
+    sorted: [String!]!
+}
+
+input ModuleAdjacencyListInput {
+    source_id: ID!
+    target_ids: [ID!]!
+}
+
+input ModuleGraphInput {
+    layers: [LayerConfigInput!]!
+    edges: [ModuleAdjacencyListInput!]!
+}
+
+type ModuleGraphValidateDimensionStatusStruct {
+    layer_id: String
+    in_dimension: [Int!]!
+    out_dimension: [Int!]!
+    message: String
+    required_in_dimension: [Int!]
+}
+
+type ModuleGraphValidateDimensionStatus {
+    status: [ModuleGraphValidateDimensionStatusStruct]
+}

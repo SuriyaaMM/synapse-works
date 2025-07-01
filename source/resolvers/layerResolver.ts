@@ -1,12 +1,10 @@
 import { v4 as uuidv4 } from "uuid";
-import { enqueueMessage } from "./redisClient.js";
+import { enqueueMessage } from "../redisClient.js";
 
 import {
     LayerConfig,
     LayerConfigInput,
     LinearLayerConfig, 
-    Model,
-    AppendLayerArgs,
     Conv2dLayerConfig,
     ConvTranspose2dLayerConfig,
     Conv1dLayerConfig,
@@ -26,11 +24,14 @@ import {
     LogSigmoidLayerConfig,
     TanhLayerConfig,
     CatLayerConfig,
+} from "../types/layerTypes.js"
+
+import { GraphLayerDimensionHandler } from "../types/graphTypes.js"
+import { Model } from "../types/modelTypes.js"
+import {
+    AppendLayerArgs,
     DeleteLayerArgs,
-    ModifyLayerArgs,
-    GraphLayerDimensionResult,
-    GraphLayerDimensionHandler
-} from "./types.js"
+    ModifyLayerArgs } from "../types/argTypes.js"
 
 type LayerHandlerMap = {
     [K in LayerConfigInput['type']]: (config: LayerConfigInput) => LayerConfig;
@@ -781,4 +782,3 @@ export async function modifyLayerResolver(model: Model, args: ModifyLayerArgs) {
     // return model
     return model;
 }
-

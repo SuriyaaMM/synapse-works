@@ -3,6 +3,7 @@ type Query {
     getModel: Model!
     # get training status
     getTrainingStatus: TrainStatus!
+    # ********************* DEPRECATED ********************
     # validate model
-    validateModel(id: ID!, in_dimension: [Int!]!): ModelDimensionResolveStatus!
+    # validateModel(id: ID!, in_dimension: [Int!]!): ModelDimensionResolveStatus!
 }
