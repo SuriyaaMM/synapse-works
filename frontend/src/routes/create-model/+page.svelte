@@ -1,10 +1,9 @@
 <script lang="ts">
   import { goto } from '$app/navigation';
   import client from '$lib/apolloClient';
-  import { CREATE_MODEL, LOAD_MODEL } from '$lib/mutations'; // Updated import
-  import { GET_MODELS } from '$lib/queries';
-  import { onMount } from 'svelte';
-  import type { Model, CreateModelArgs } from '../../../../source/types';
+  import { CREATE_MODEL, LOAD_MODEL } from '$lib/mutations';
+  import type { Model } from '../../../../source/types/modelTypes';
+  import type { CreateModelArgs } from '../../../../source/types/argTypes';
 
   import './create-model.css';
 
@@ -12,10 +11,7 @@
   let modelName: string = '';
   let loading: boolean = false;
   let error: string | null = null;
-  let savedModels: Model[] = [];
-  let availableModels: Model[] = [];
-  let loadingSavedModels: boolean = false;
-  let loadingAvailableModels: boolean = false;
+  let fileInput: HTMLInputElement;
 
   // Create new model and navigate to layer configuration
   async function createModel(): Promise<void> {
@@ -42,11 +38,8 @@
         throw new Error('Model creation failed - no ID returned');
       }
 
-      // Reload models after creating a new one
-      await loadSavedModels();
-
       // Navigate to layer configuration page
-      await goto(`/model/${model.id}/layer-config`);
+      await goto(`/model/${model.id}/dataset-config`);
     } catch (err: any) {
       console.error('Apollo Error:', err);
       error = err.message || err.toString() || 'Unknown error occurred';
@@ -55,7 +48,49 @@
     }
   }
 
-  // Load a specific model using LOAD_UNET_MODEL mutation
+  function showLoadModelDialog(): void {
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  async function handleFileLoad(event: Event): Promise<void> {
+    const input = event.target as HTMLInputElement;
+    const file = input.files?.[0];
+    
+    if (!file) return;
+
+    loading = true;
+    error = null;
+
+    try {
+      const fileContent = await file.text();
+      const modelData = JSON.parse(fileContent);
+      
+      console.log('Loaded model data:', modelData);
+      
+      if (!modelData.id) {
+        throw new Error('Invalid model file: Missing model ID');
+      }
+
+      const loadedModel = await loadSpecificModel(modelData.id);
+      
+      if (loadedModel) {
+        await goto(`/model/${modelData.id}/dataset-config`);
+      } else {
+        console.warn('Backend model loading failed, but navigating with file data');
+        await goto(`/model/${modelData.id}/layer-config`);
+      }
+      
+    } catch (err) {
+      console.error('Error loading model file:', err);
+      error = err instanceof Error ? err.message : 'Error loading model file. Please check the file format.';
+    } finally {
+      loading = false;
+      input.value = '';
+    }
+  }
+
   async function loadSpecificModel(modelId: string): Promise<Model | null> {
     try {
       const res = await client.mutate({
@@ -68,61 +103,16 @@
       return null;
     }
   }
-
-  // Load saved models - now using GET_MODELS since LOAD_MODEL doesn't return all models
-  async function loadSavedModels(): Promise<void> {
-    loadingSavedModels = true;
-    try {
-      // Since LOAD_UNET_MODEL requires a specific modelId, we'll use GET_MODELS
-      // to get the list of available models, then optionally load specific ones
-      const res = await client.query({
-        query: GET_MODELS,
-        fetchPolicy: 'network-only'
-      });
-      savedModels = res.data?.getModels || [];
-      
-      // If you need to load specific model details using LOAD_UNET_MODEL,
-      // you can do so for each model:
-      // for (const model of savedModels) {
-      //   const detailedModel = await loadSpecificModel(model.id);
-      //   if (detailedModel) {
-      //     // Update the model with detailed information
-      //   }
-      // }
-      
-    } catch (err) {
-      console.error('Error loading saved models:', err);
-    } finally {
-      loadingSavedModels = false;
-    }
-  }
-
-  // Load available models using GET_MODELS query
-  async function loadAvailableModels(): Promise<void> {
-    loadingAvailableModels = true;
-    try {
-      const res = await client.query({
-        query: GET_MODELS,
-        fetchPolicy: 'network-only' // Always fetch fresh data
-      });
-      availableModels = res.data?.getModels || [];
-    } catch (err) {
-      console.error('Error loading available models:', err);
-    } finally {
-      loadingAvailableModels = false;
-    }
-  }
-
-  // Load all models
-  async function loadAllModels(): Promise<void> {
-    await Promise.all([loadSavedModels(), loadAvailableModels()]);
-  }
-
-  // Load models on component mount
-  onMount(() => {
-    loadAllModels();
-  });
 </script>
+
+<!-- Hidden file input for loading model files -->
+<input
+  bind:this={fileInput}
+  type="file"
+  accept=".json,.model,.txt"
+  on:change={handleFileLoad}
+  style="display: none;"
+/>
 
 <div class="full-page">
   <!-- Header -->
@@ -165,152 +155,30 @@
       </form>
     </div>
 
-    <!-- Right Panel: Models -->
+    <!-- Right Panel: Load Model -->
     <div class="right-panel">
-      <!-- Your Models Section -->
       <div class="model-section">
         <div class="section-header">
-          <h2 class="section-title">Your Models</h2>
-          <button
-            on:click={loadSavedModels}
-            disabled={loadingSavedModels}
-            class="refresh-button"
-          >
-            {loadingSavedModels ? 'Loading...' : 'Refresh'}
-          </button>
+          <h2 class="section-title">Load Saved Model</h2>
         </div>
 
-        {#if loadingSavedModels}
-          <div class="loading-section">
-            <div class="loading-text">Loading saved models...</div>
-          </div>
-        {:else if savedModels.length === 0}
-          <p class="empty-text">No saved models found. Create your first model to get started!</p>
-        {:else}
-          <div class="model-list">
-            {#each savedModels as model}
-              <div class="model-card">
-                <div class="model-card-header">
-                  <div class="model-details">
-                    <h3 class="model-name">{model.name}</h3>
-                    <p class="model-id">ID: {model.id}</p>
-
-                    {#if model.layers_config && model.layers_config.length > 0}
-                      <div class="model-layers">
-                        <p class="model-layer-title">Layers ({model.layers_config.length}):</p>
-                        <div class="model-layer-list">
-                          {#each model.layers_config as layer}
-                            <div class="layer-item">
-                              <span class="layer-type">{layer.type}</span>
-                              <span class="dot">•</span>
-                              <span class="layer-name">{layer.name}</span>
-                              <span class="layer-id">(ID: {layer.id})</span>
-                            </div>
-                          {/each}
-                        </div>
-                      </div>
-                    {:else}
-                      <p class="model-no-layer">No layers configured</p>
-                    {/if}
-
-                    {#if model.dataset_config}
-                      <p class="model-dataset">Dataset: {model.dataset_config.name}</p>
-                    {/if}
-                  </div>
-
-                  <div class="model-actions">
-                    <button
-                      on:click={() => goto(`/model/${model.id}/layer-config`)}
-                      class="view-edit-button"
-                    >
-                      View/Edit
-                    </button>
-                    <!-- Add button to load specific model details -->
-                    <button
-                      on:click={() => loadSpecificModel(model.id)}
-                      class="load-button"
-                    >
-                      Load Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
-      </div>
-
-      <!-- Available Models Section -->
-      <div class="model-section available-section">
-        <div class="section-header">
-          <h2 class="section-title">Available Models</h2>
+        <div class="load-model-section">
+          <p class="load-description">
+            Click the button below to load a previously saved model file from your computer.
+          </p>
+          
           <button
-            on:click={loadAvailableModels}
-            disabled={loadingAvailableModels}
-            class="refresh-button"
+            on:click={showLoadModelDialog}
+            disabled={loading}
+            class="load-file-button"
           >
-            {loadingAvailableModels ? 'Loading...' : 'Refresh'}
+            {loading ? '⏳ Loading...' : '📂 Choose Model File'}
           </button>
+
+          {#if error}
+            <div class="load-error">{error}</div>
+          {/if}
         </div>
-
-        {#if loadingAvailableModels}
-          <div class="loading-section">
-            <div class="loading-text">Loading available models...</div>
-          </div>
-        {:else if availableModels.length === 0}
-          <p class="empty-text">No available models found.</p>
-        {:else}
-          <div class="model-list">
-            {#each availableModels as model}
-              <div class="available-card">
-                <div class="model-card-header">
-                  <div class="model-details">
-                    <h3 class="model-name">{model.name}</h3>
-                    <p class="model-id">ID: {model.id}</p>
-
-                    {#if model.layers_config && model.layers_config.length > 0}
-                      <div class="model-layers">
-                        <p class="model-layer-title">Layers ({model.layers_config.length}):</p>
-                        <div class="model-layer-list">
-                          {#each model.layers_config as layer}
-                            <div class="layer-item">
-                              <span class="layer-type available-layer">{layer.type}</span>
-                              <span class="dot">•</span>
-                              <span class="layer-name">{layer.name}</span>
-                              <span class="layer-id">(ID: {layer.id})</span>
-                            </div>
-                          {/each}
-                        </div>
-                      </div>
-                    {:else}
-                      <p class="model-no-layer">No layers configured</p>
-                    {/if}
-
-                    {#if model.dataset_config}
-                      <p class="model-dataset">Dataset: {model.dataset_config.name}</p>
-                    {/if}
-                  </div>
-
-                  <div class="model-actions">
-                    <button
-                      on:click={() => goto(`/model/${model.id}/layer-config`)}
-                      class="view-edit-button"
-                    >
-                      View/Edit
-                    </button>
-                    <!-- Add button to load specific model details -->
-                    <button
-                      on:click={() => loadSpecificModel(model.id)}
-                      class="load-button"
-                    >
-                      Load Details
-                    </button>
-                  </div>
-                </div>
-              </div>
-            {/each}
-          </div>
-        {/if}
       </div>
     </div>
   </div>

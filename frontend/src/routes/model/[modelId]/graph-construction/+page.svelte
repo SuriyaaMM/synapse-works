@@ -1,11 +1,22 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { page } from '$app/stores';
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import client from '$lib/apolloClient';
-  import { ADD_TO_GRAPH, CONNECT_NODES, DELETE_FROM_GRAPH, DISCONNECT_NODES, BUILD_MODULE_GRAPH } from '$lib/mutations';
+  import { ADD_TO_GRAPH, CONNECT_NODES, DELETE_FROM_GRAPH, DISCONNECT_NODES,
+          BUILD_MODULE_GRAPH } from '$lib/mutations';
+  import {VALIDATE_GRAPH} from '$lib/mutations';
+  import {GET_MODEL} from '$lib/queries';
+  import type {Model} from '../../../../../../source/types/modelTypes';
   import type { LayerConfigInput, LinearLayerConfigInput, 
-                Conv2dLayerConfigInput, Conv1dLayerConfigInput } from '../../../../../../source/types';
+                Conv2dLayerConfigInput, Conv1dLayerConfigInput, 
+                MaxPool2dLayerConfigInput, MaxPool1dLayerConfigInput,
+                AvgPool2dLayerConfigInput, AvgPool1dLayerConfigInput, 
+                BatchNorm2dLayerConfigInput, BatchNorm1dLayerConfigInput,
+                FlattenLayerConfigInput, DropoutLayerConfigInput,
+                ELULayerConfigInput, ReLULayerConfigInput,
+                LeakyReLULayerConfigInput, SigmoidLayerConfigInput, 
+                LogSigmoidLayerConfigInput, TanhLayerConfigInput} from '../../../../../../source/types/layerTypes';
   import './graph-construction.css';
 
   // Type-safe dispatch functions
@@ -16,11 +27,28 @@
     connectionDeleted: { connectionId: string };
   }>();
 
+  let validationResult: any = null;
+  let validationTrigger = 0;
+
   // Available layer types
   const layerTypes = [
     { type: 'linear', color: '#DC2626', label: 'Linear' },
     { type: 'conv2d', color: '#4F46E5', label: 'Conv2D' },
-    { type: 'conv1d', color: '#7C3AED', label: 'Conv1D' }
+    { type: 'conv1d', color: '#7C3AED', label: 'Conv1D' },
+    { type: 'maxpool2d', color: '#0D9488', label: 'MaxPool2D' },
+    { type: 'maxpool1d', color: '#14B8A6', label: 'MaxPool1D' },
+    { type: 'avgpool2d', color: '#0EA5E9', label: 'AvgPool2D' },
+    { type: 'avgpool1d', color: '#38BDF8', label: 'AvgPool1D' },
+    { type: 'batchnorm2d', color: '#F59E0B', label: 'BatchNorm2D' },
+    { type: 'batchnorm1d', color: '#FBBF24', label: 'BatchNorm1D' },
+    { type: 'flatten', color: '#6B7280', label: 'Flatten' },
+    { type: 'dropout', color: '#9CA3AF', label: 'Dropout' },
+    { type: 'elu', color: '#9333EA', label: 'ELU' },
+    { type: 'relu', color: '#10B981', label: 'ReLU' },
+    { type: 'leakyrelu', color: '#8B5CF6', label: 'LeakyReLU' },
+    { type: 'sigmoid', color: '#EF4444', label: 'Sigmoid' },
+    { type: 'logsigmoid', color: '#F87171', label: 'LogSigmoid' },
+    { type: 'tanh', color: '#6366F1', label: 'Tanh' }
   ];
   
   // Types
@@ -81,11 +109,68 @@
   let convBias = true;
   let paddingMode = 'zeros';
 
+  // MaxPool2d and MaxPool1d layer fields
+  let poolKernelSize = '';
+  let poolStride = '';
+  let poolPadding = '';
+  let poolDilation = '';
+  let returnIndices = false;
+  let ceilMode = false;
+
+  // AvgPool2d and AvgPool1d layer fields
+  let countIncludePad = false;
+  let divisorOverride = '';
+
+  // BatchNorm layer fields
+  let numFeatures = '';
+  let eps = '1e-05';
+  let momentum = '0.1';
+  let affine = true;
+  let trackRunningStatus = false;
+
+  // Flatten layer fields
+  let startDim = '1';
+  let endDim = '-1';
+
+  // Dropout layer fields
+  let dropoutP = '0.5';
+
+  // ELU layer fields
+  let alpha = '1.0';
+  let eluInplace = false;
+
+  // ReLU layer fields
+  let reluInplace = false;
+
+  // LeakyReLU layer fields
+  let negativeSlope = '0.01';
+  let leakyReluInplace = false;
+
+  let modelDetails: Model | null = null;
+  let graphValidationResult: any = null;
+
   // Extract modelId from URL
   $: {
     const pathParts = $page.url.pathname.split('/');
     const modelIndex = pathParts.indexOf('model');
     modelId = (modelIndex !== -1 && modelIndex + 1 < pathParts.length) ? pathParts[modelIndex + 1] : null;
+  }
+
+  fetchModelDetails();
+
+  async function fetchModelDetails() {
+    
+    try {
+      const response = await client.query({
+        query: GET_MODEL,
+        fetchPolicy: 'network-only'
+      });
+      
+      modelDetails = response.data?.getModel;
+    } catch (err) {
+      console.error('Error fetching model details:', err);
+      error = 'Failed to fetch model details';
+    }
   }
 
   $: if (modelId && typeof window !== 'undefined') {
@@ -104,7 +189,6 @@
     layerName = '';
     inFeatures = '';
     outFeatures = '';
-    bias = true;
     inChannels = '';
     outChannels = '';
     kernelSize = '';
@@ -112,8 +196,27 @@
     padding = '';
     dilation = '';
     groups = '1';
-    convBias = true;
-    paddingMode = 'zeros';
+    poolKernelSize = '';
+    poolStride = '';
+    poolPadding = '';
+    poolDilation = '';
+    returnIndices = false;
+    ceilMode = false;
+    countIncludePad = false;
+    divisorOverride = '';
+    numFeatures = '';
+    eps = '';
+    momentum = '0.1';
+    affine = false;
+    trackRunningStatus = false;
+    startDim = '1';
+    endDim = '-1';
+    dropoutP = '0.5';
+    alpha = '1.0';
+    eluInplace = false;
+    reluInplace = false;
+    negativeSlope = '0.01';
+    leakyReluInplace = false;
   }
 
   function parseArrayInput(input: string): number[] | null {
@@ -180,18 +283,103 @@
       if (!groups || isNaN(groupsNum) || groupsNum <= 0) {
         return 'Groups must be a positive number';
       }
-      
-      // Validate kernel size format
       const kernelSizeArray = parseArrayInput(kernelSize);
       if (!kernelSizeArray || kernelSizeArray.length !== 1) {
         return 'Kernel size must be a number (e.g., "3")';
       }
+    } else if (selectedLayerType.type === 'maxpool2d') {
+      if (!poolKernelSize.trim()) {
+        return 'Kernel size is required';
+      }
+      
+      // Validate kernel size format
+      const kernelSizeArray = parseArrayInput(poolKernelSize);
+      if (!kernelSizeArray || kernelSizeArray.length !== 2) {
+        return 'Kernel size must be an array of exactly two numbers (e.g., "2,2")';
+      }
+    } else if (selectedLayerType.type === 'maxpool1d') {
+      if (!poolKernelSize.trim()) {
+        return 'Kernel size is required';
+      }
+      
+      // Validate kernel size format
+      const kernelSizeArray = parseArrayInput(poolKernelSize);
+      if (!kernelSizeArray || kernelSizeArray.length !== 1) {
+        return 'Kernel size must be a number (e.g., "2")';
+      }
+    } else if (selectedLayerType.type === 'avgpool2d') {
+      if (!poolKernelSize.trim()) {
+          return 'Kernel size is required';
+      }
+      
+      // Validate kernel size format
+      const kernelSizeArray = parseArrayInput(poolKernelSize);
+      if (!kernelSizeArray || kernelSizeArray.length !== 2) {
+          return 'Kernel size must be an array of exactly two numbers (e.g., "2,2")';
+      }
+    } else if (selectedLayerType.type === 'avgpool1d') {
+      if (!poolKernelSize.trim()) {
+          return 'Kernel size is required';
+      }
+      
+      // Validate kernel size format
+      const kernelSizeArray = parseArrayInput(poolKernelSize);
+      if (!kernelSizeArray || kernelSizeArray.length !== 1) {
+          return 'Kernel size must be a number (e.g., "2")';
+      }
+    } else if (selectedLayerType.type === 'batchnorm2d' || selectedLayerType.type === 'batchnorm1d') {
+      const numFeaturesNum = Number(numFeatures);
+      
+      if (!numFeatures || isNaN(numFeaturesNum) || numFeaturesNum <= 0) {
+          return 'Number of features must be a positive number';
+      }
+      
+      const epsNum = Number(eps);
+      if (isNaN(epsNum) || epsNum <= 0) {
+          return 'Eps must be a positive number';
+      }
+      
+      const momentumNum = Number(momentum);
+      if (isNaN(momentumNum) || momentumNum < 0 || momentumNum > 1) {
+          return 'Momentum must be between 0 and 1';
+      }
+    } else if (selectedLayerType.type === 'flatten') {
+      const startDimNum = Number(startDim);
+      const endDimNum = Number(endDim);
+      
+      if (isNaN(startDimNum)) {
+        return 'Start dimension must be a valid number';
+      }
+      if (isNaN(endDimNum)) {
+        return 'End dimension must be a valid number';
+      }
+    } else if (selectedLayerType.type === 'dropout') {
+      const pNum = Number(dropoutP);
+      
+      if (isNaN(pNum) || pNum < 0 || pNum > 1) {
+        return 'Dropout probability must be between 0 and 1';
+      }
+    } else if (selectedLayerType.type === 'elu') {
+      const alphaNum = Number(alpha);
+      
+      if (isNaN(alphaNum) || alphaNum <= 0) {
+        return 'Alpha must be a positive number';
+      }
+    } else if (selectedLayerType.type === 'leakyrelu') {
+      const slopeNum = Number(negativeSlope);
+      
+      if (isNaN(slopeNum)) {
+        return 'Negative slope must be a valid number';
+      }
+    } else if (selectedLayerType.type === 'sigmoid' || selectedLayerType.type === 'logsigmoid' || selectedLayerType.type === 'tanh') {
+    // No additional validation needed for these layers
     }
     
     return null;
   }
 
   function createLayerConfig(): LayerConfigInput {
+    console.log('Creating layer config for type:', selectedLayerType);
     const layerNameValue = layerName.trim() || `${selectedLayerType!.type}Layer${nodeCounter}`;
     
     if (selectedLayerType!.type === 'linear') {
@@ -280,6 +468,169 @@
         type: 'conv1d',
         conv1d: conv1dConfig
       };
+    } else if (selectedLayerType!.type === 'maxpool2d') {
+      const maxpool2dConfig: MaxPool2dLayerConfigInput = {
+        name: layerNameValue,
+        kernel_size: parseArrayInput(poolKernelSize) || [2, 2],
+        stride: poolStride ? (parseArrayInput(poolStride) ?? undefined) : undefined,
+        padding: poolPadding ? (parseArrayInput(poolPadding) ?? undefined) : undefined,
+        dilation: poolDilation ? (parseArrayInput(poolDilation) ?? undefined) : undefined,
+        return_indices: returnIndices,
+        ceil_mode: ceilMode
+      };
+      
+      return {
+        type: 'maxpool2d',
+        maxpool2d: maxpool2dConfig
+      };
+    } else if (selectedLayerType!.type === 'maxpool1d') {
+      const maxpool1dConfig: MaxPool1dLayerConfigInput = {
+        name: layerNameValue,
+        kernel_size: parseArrayInput(poolKernelSize) || [2],
+        stride: poolStride ? (parseArrayInput(poolStride) ?? undefined) : undefined,
+        padding: poolPadding ? (parseArrayInput(poolPadding) ?? undefined) : undefined,
+        dilation: poolDilation ? (parseArrayInput(poolDilation) ?? undefined) : undefined,
+        return_indices: returnIndices,
+        ceil_mode: ceilMode
+      };
+      
+      return {
+        type: 'maxpool1d',
+        maxpool1d: maxpool1dConfig
+      };
+    } else if (selectedLayerType!.type === 'avgpool2d') {
+      const avgpool2dConfig: AvgPool2dLayerConfigInput = {
+        name: layerNameValue,
+        kernel_size: parseArrayInput(poolKernelSize) || [2, 2],
+        stride: poolStride ? (parseArrayInput(poolStride) ?? undefined) : undefined,
+        padding: poolPadding ? (parseArrayInput(poolPadding) ?? undefined) : undefined,
+        count_include_pad: countIncludePad,
+        divisor_override: divisorOverride.trim() ? Number(divisorOverride) : undefined
+      };
+      
+      return {
+        type: 'avgpool2d',
+        avgpool2d: avgpool2dConfig
+      };
+    } else if (selectedLayerType!.type === 'avgpool1d') {
+      const avgpool1dConfig: AvgPool1dLayerConfigInput = {
+        name: layerNameValue,
+        kernel_size: parseArrayInput(poolKernelSize) || [2],
+        stride: poolStride ? (parseArrayInput(poolStride) ?? undefined) : undefined,
+        padding: poolPadding ? (parseArrayInput(poolPadding) ?? undefined) : undefined,
+        count_include_pad: countIncludePad,
+        divisor_override: divisorOverride.trim() ? Number(divisorOverride) : undefined
+      };
+
+      return {
+        type: 'avgpool1d',
+        avgpool1d: avgpool1dConfig
+      };
+    } else if (selectedLayerType!.type === 'batchnorm2d') {
+      const batchnorm2dConfig: BatchNorm2dLayerConfigInput = {
+        name: layerNameValue,
+        num_features: parseInt(numFeatures, 10),
+        eps: parseFloat(eps) || 1e-5,
+        momentum: parseFloat(momentum) || 0.1,
+        affine,
+        track_running_status: trackRunningStatus
+      };
+      
+      return {
+        type: 'batchnorm2d',
+        batchnorm2d: batchnorm2dConfig
+      };
+    } else if (selectedLayerType!.type === 'batchnorm1d') {
+      const batchnorm1dConfig: BatchNorm1dLayerConfigInput = {
+        name: layerNameValue,
+        num_features: parseInt(numFeatures, 10),
+        eps: parseFloat(eps) || 1e-5,
+        momentum: parseFloat(momentum) || 0.1,
+        affine,
+        track_running_status: trackRunningStatus
+      };
+      
+      return {
+        type: 'batchnorm1d',
+        batchnorm1d: batchnorm1dConfig
+      };
+    } else if (selectedLayerType!.type === 'flatten') {
+      const flattenConfig: FlattenLayerConfigInput = {
+        name: layerNameValue,
+        start_dim: parseInt(startDim, 10) || 1,
+        end_dim: parseInt(endDim, 10) || -1
+      };
+      
+      return {
+        type: 'flatten',
+        flatten: flattenConfig
+      };
+    } else if (selectedLayerType!.type === 'dropout') {
+      const dropoutConfig: DropoutLayerConfigInput = {
+        name: layerNameValue,
+        p: parseFloat(dropoutP) || 0.5
+      };
+      
+      return {
+        type: 'dropout',
+        dropout: dropoutConfig
+      };
+    } else if (selectedLayerType!.type === 'elu') {
+      const eluConfig: ELULayerConfigInput = {
+        name: layerNameValue,
+        alpha: parseFloat(alpha) || 1.0,
+        inplace: eluInplace
+      };
+      
+      return {
+        type: 'elu',
+        elu: eluConfig
+      };
+    } else if (selectedLayerType!.type === 'relu') {
+      const reluConfig: ReLULayerConfigInput = {
+        name: layerNameValue,
+        inplace: reluInplace
+      };
+      
+      return {
+        type: 'relu',
+        relu: reluConfig
+      };
+    } else if (selectedLayerType!.type === 'leakyrelu') {
+      const leakyReluConfig: LeakyReLULayerConfigInput = {
+        name: layerNameValue,
+        negative_slope: parseFloat(negativeSlope) || 0.01,
+        inplace: leakyReluInplace
+      };
+      
+      return {
+        type: 'leakyrelu',
+        leakyrelu: leakyReluConfig
+      };
+    } else if (selectedLayerType!.type === 'sigmoid') {
+      const sigmoidConfig: SigmoidLayerConfigInput = {
+        name: layerNameValue
+      };
+      return { 
+        type: 'sigmoid', 
+        sigmoid: sigmoidConfig
+      };
+    } else if (selectedLayerType!.type === 'logsigmoid') {
+      const logsigmoidConfig: LogSigmoidLayerConfigInput = {
+        name: layerNameValue
+      };
+      return { 
+        type: 'logsigmoid', 
+        logsigmoid: logsigmoidConfig
+      };
+    } else if (selectedLayerType!.type === 'tanh') {
+      const tanhConfig: TanhLayerConfigInput = {
+        name: layerNameValue
+      };
+      return { 
+        type: 'tanh', 
+        tanh: tanhConfig
+      };
     }
 
     throw new Error(`Unsupported layer type: ${selectedLayerType!.type}`);
@@ -307,6 +658,8 @@
         variables: { layer_config: layerConfig },
         fetchPolicy: 'no-cache'
       });
+
+      console.log('Add to graph response:', response.data);
 
       if (!response.data?.appendToModuleGraph) {
         throw new Error('Failed to add layer to graph - no data returned');
@@ -407,6 +760,138 @@
           padding_mode: layer.padding_mode || 'zeros'
         }
       };
+    } else if (layer.type === 'maxpool1d') {
+      return {
+        type: 'maxpool1d',
+        maxpool1d: {
+          name: layer.name,
+          kernel_size: layer.kernel_size,
+          stride: layer.stride,
+          padding: layer.padding,
+          dilation: layer.dilation,
+          return_indices: layer.return_indices ?? false,
+          ceil_mode: layer.ceil_mode ?? false
+        }
+      };
+    } else if (layer.type === 'maxpool2d') {
+      return {
+        type: 'maxpool2d',
+        maxpool2d: {
+          name: layer.name,
+          kernel_size: layer.kernel_size,
+          stride: layer.stride,
+          padding: layer.padding,
+          dilation: layer.dilation,
+          return_indices: layer.return_indices ?? false,
+          ceil_mode: layer.ceil_mode ?? false
+        }
+      };
+    } else if (layer.type === 'avgpool1d') {
+      return {
+        type: 'avgpool1d',
+        avgpool1d: {
+          name: layer.name,
+          kernel_size: layer.kernel_size,
+          stride: layer.stride,
+          padding: layer.padding,
+          count_include_pad: layer.count_include_pad ?? false,
+          divisor_override: layer.divisor_override || ''
+        }
+      };
+    } else if (layer.type === 'avgpool2d') {
+      return {
+        type: 'avgpool2d',
+        avgpool2d: {
+          name: layer.name,
+          kernel_size: layer.kernel_size,
+          stride: layer.stride,
+          padding: layer.padding,
+          count_include_pad: layer.count_include_pad ?? false,
+          divisor_override: layer.divisor_override || ''
+        }
+      };
+    } else if (layer.type === 'batchnorm1d') {
+      return {
+        type: 'batchnorm1d',
+        batchnorm1d: {
+          name: layer.name,
+          num_features: layer.num_features,
+          eps: layer.eps || 1e-5,
+          momentum: layer.momentum || 0.1,
+          affine: layer.affine ?? true,
+          track_running_status: layer.track_running_stats ?? true
+        }
+      };
+    } else if (layer.type === 'batchnorm2d') {
+      return {
+        type: 'batchnorm2d',
+        batchnorm2d: {
+          name: layer.name,
+          num_features: layer.num_features,
+          eps: layer.eps || 1e-5,
+          momentum: layer.momentum || 0.1,
+          affine: layer.affine ?? true,
+          track_running_status: layer.track_running_stats ?? true
+        }
+      };
+    } else if(layer.type === 'flatten') {
+      return {
+        type: 'flatten',
+        flatten: {
+          name: layer.name,
+          start_dim: layer.start_dim || 1,
+          end_dim: layer.end_dim || -1
+        }
+      };
+    } else if (layer.type === 'dropout') {
+      return {
+        type: 'dropout',
+        dropout: {
+          name: layer.name,
+          p: layer.p || 0.5
+        }
+      };
+    } else if (layer.type === 'elu') {
+      return {
+        type: 'elu',
+        elu: {
+          name: layer.name,
+          alpha: layer.alpha || 1.0,
+          inplace: layer.inplace ?? false
+        }
+      };
+    } else if (layer.type === 'relu') {
+      return {
+        type: 'relu',
+        relu: {
+          name: layer.name,
+          inplace: layer.inplace ?? false
+        }
+      };
+    } else if (layer.type === 'leakyrelu') {
+      return {
+        type: 'leakyrelu',
+        leakyrelu: {
+          name: layer.name,
+          negative_slope: layer.negative_slope || 0.01,
+          inplace: layer.inplace ?? false
+        }
+      };
+    } else if (layer.type === 'sigmoid') {
+      return { type: 'sigmoid',
+        sigmoid: {
+          name: layer.name,
+        } };
+    } else if (layer.type === 'logsigmoid') {
+      return { type: 'logsigmoid',
+        logsigmoid: {
+          name: layer.name,
+        } };
+    } else if (layer.type === 'tanh') {
+      return { type: 'tanh',
+        tanh: {
+          name: layer.name,
+        } };
     }
 
     throw new Error(`Unsupported layer type: ${layer.type}`);
@@ -497,6 +982,83 @@
       groups = config.conv1d.groups ? config.conv1d.groups[0].toString() : '1';
       convBias = config.conv1d.bias ?? true;
       paddingMode = config.conv1d.padding_mode ?? 'zeros';
+    } else if (config.type === 'maxpool2d' && config.maxpool2d) {
+      layerName = config.maxpool2d.name ?? '';
+      poolKernelSize = config.maxpool2d.kernel_size.join(',');
+      poolStride = config.maxpool2d.stride ? config.maxpool2d.stride.join(',') : '';
+      poolPadding = config.maxpool2d.padding ? config.maxpool2d.padding.join(',') : '';
+      poolDilation = config.maxpool2d.dilation ? config.maxpool2d.dilation.join(',') : '';
+      returnIndices = config.maxpool2d.return_indices ?? false;
+      ceilMode = config.maxpool2d.ceil_mode ?? false;
+    } else if (config.type === 'maxpool1d' && config.maxpool1d) {
+      layerName = config.maxpool1d.name ?? '';
+      poolKernelSize = config.maxpool1d.kernel_size.join(',');
+      poolStride = config.maxpool1d.stride ? config.maxpool1d.stride.join(',') : '';
+      poolPadding = config.maxpool1d.padding ? config.maxpool1d.padding.join(',') : '';
+      poolDilation = config.maxpool1d.dilation ? config.maxpool1d.dilation.join(',') : '';
+      returnIndices = config.maxpool1d.return_indices ?? false;
+      ceilMode = config.maxpool1d.ceil_mode ?? false;
+    } else if (config.type === 'avgpool2d' && config.avgpool2d) {
+      layerName = config.avgpool2d.name ?? '';
+      poolKernelSize = config.avgpool2d.kernel_size.join(',');
+      poolStride = config.avgpool2d.stride ? config.avgpool2d.stride.join(',') : '';
+      poolPadding = config.avgpool2d.padding ? config.avgpool2d.padding.join(',') : '';
+      countIncludePad = config.avgpool2d.count_include_pad ?? false;
+      divisorOverride = config.avgpool2d.divisor_override !== undefined && config.avgpool2d.divisor_override !== null
+        ? config.avgpool2d.divisor_override.toString()
+        : '';
+    } else if (config.type === 'avgpool1d' && config.avgpool1d) {
+      layerName = config.avgpool1d.name ?? '';
+      poolKernelSize = config.avgpool1d.kernel_size.join(',');
+      poolStride = config.avgpool1d.stride ? config.avgpool1d.stride.join(',') : '';
+      poolPadding = config.avgpool1d.padding ? config.avgpool1d.padding.join(',') : '';
+      countIncludePad = config.avgpool1d.count_include_pad ?? false;
+      divisorOverride = config.avgpool1d.divisor_override !== undefined && config.avgpool1d.divisor_override !== null
+        ? config.avgpool1d.divisor_override.toString()
+        : '';
+    } else if (config.type === 'batchnorm2d' && config.batchnorm2d) {
+      layerName = config.batchnorm2d.name ?? '';
+      numFeatures = config.batchnorm2d.num_features.toString();
+      eps = config.batchnorm2d.eps?.toString() || '';
+      momentum = config.batchnorm2d.momentum?.toString() || '0.1';
+      affine = config.batchnorm2d.affine ?? true;
+      trackRunningStatus = config.batchnorm2d.track_running_status ?? true;
+    } else if (config.type === 'batchnorm1d' && config.batchnorm1d){
+      layerName = config.batchnorm1d.name ?? '';
+      numFeatures = config.batchnorm1d.num_features.toString();
+      eps = config.batchnorm1d.eps?.toString() || '';
+      momentum = config.batchnorm1d.momentum?.toString() || '0.1';
+      affine = config.batchnorm1d.affine ?? true;
+      trackRunningStatus = config.batchnorm1d.track_running_status ?? true;
+    } else if (config.type === 'flatten' && config.flatten) {
+      layerName = config.flatten.name ?? '';
+      startDim = config.flatten.start_dim?.toString() || '1';
+      endDim = config.flatten.end_dim?.toString() || '-1';
+    } else if (config.type === 'dropout' && config.dropout) {
+      layerName = config.dropout.name ?? '';
+      dropoutP = config.dropout.p?.toString() || '0.5';
+    } else if (config.type === 'elu' && config.elu) {
+      layerName = config.elu.name ?? '';
+      alpha = config.elu.alpha?.toString() || '1.0';
+      eluInplace = config.elu.inplace ?? false;
+    } else if (config.type === 'relu' && config.relu) {
+      layerName = config.relu.name ?? '';
+      reluInplace = config.relu.inplace ?? false;
+    } else if (config.type === 'leakyrelu' && config.leakyrelu) {
+      layerName = config.leakyrelu.name ?? '';
+      negativeSlope = config.leakyrelu.negative_slope?.toString() || '0.01';
+      leakyReluInplace = config.leakyrelu.inplace ?? false;
+    } else if (config.type === 'sigmoid') {
+      layerName = config.sigmoid?.name ?? '';
+      // No additional fields for Sigmoid
+    } else if (config.type === 'logsigmoid') {
+      layerName = config.logsigmoid?.name ?? '';
+      // No additional fields for LogSigmoid
+    } else if (config.type === 'tanh') {
+      layerName = config.tanh?.name ?? '';
+      // No additional fields for Tanh
+    } else {
+      console.warn(`Unknown layer type: ${config.type}`);
     }
   }
   
@@ -518,8 +1080,7 @@
     try {
       const response = await client.mutate({
         mutation: DELETE_FROM_GRAPH,
-        variables: { 
-          model_id: modelId, 
+        variables: {
           layer_id: selectedNode.id
         },
         fetchPolicy: 'no-cache'
@@ -598,11 +1159,6 @@
   }
   
   async function buildModuleGraph() {
-    if (!modelId) {
-      error = 'Model ID is missing';
-      return;
-    }
-    
     loading = true;
     error = null;
 
@@ -624,6 +1180,8 @@
       const graphData = response.data.buildModuleGraph;
 
       buildResult = graphData;
+
+      await validateGraphStructure();
       
       // Update the local state with the built and sorted graph
       if (graphData.module_graph) {
@@ -782,16 +1340,6 @@
     return `M ${fromX} ${fromY} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${toX} ${toY}`;
   }
 
-  function getConnectionPreviewPath() {
-    const controlOffset = Math.abs(connectionPreviewEnd.x - connectionPreviewStart.x) * 0.5;
-    const controlX1 = connectionPreviewStart.x + controlOffset;
-    const controlY1 = connectionPreviewStart.y;
-    const controlX2 = connectionPreviewEnd.x - controlOffset;
-    const controlY2 = connectionPreviewEnd.y;
-    
-    return `M ${connectionPreviewStart.x} ${connectionPreviewStart.y} C ${controlX1} ${controlY1}, ${controlX2} ${controlY2}, ${connectionPreviewEnd.x} ${connectionPreviewEnd.y}`;
-  }
-
   // Save state to sessionStorage
   function saveStateToStorage() {
     if (typeof window === 'undefined') return;
@@ -821,6 +1369,49 @@
       } catch (err) {
         console.error('Error loading saved state:', err);
       }
+    }
+  }
+
+  async function validateGraphStructure() {
+
+    try {
+      let inputDimension: number[];
+      const datasetType = modelDetails?.dataset_config?.name?.toLowerCase();
+      switch (datasetType) {
+        case 'mnist':
+          inputDimension = [1, 28, 28];
+          break;
+        case 'cifar10':
+          inputDimension = [3, 32, 32];
+          break;
+        case 'image_folder':
+          inputDimension = [3, 224, 224];
+          break;
+        default:
+          inputDimension = [1, 28, 28];
+      }
+
+      const response = await client.mutate({
+        mutation: VALIDATE_GRAPH,
+        variables: { in_dimension: inputDimension },
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all'
+      });
+
+      console.log('Validation response:', response.data);
+
+      if (response.data?.validateModuleGraph) {
+        graphValidationResult = { ...response.data.validateModuleGraph, status: response.data.validateModuleGraph.status || [] };
+        validationTrigger++;
+        await tick();
+      } else {
+        graphValidationResult = null;
+        validationTrigger++;
+      }
+    } catch (err) {
+      console.error('Validation error:', err);
+      graphValidationResult = null;
+      validationTrigger++;
     }
   }
 
@@ -884,7 +1475,12 @@
         on:mousedown={(e) => startDrag(node, e)}
       >
         <div class="node-header" style="background-color: {node.color}">
-          {node.layerConfig.linear?.name || node.layerConfig.conv2d?.name || node.layerConfig.conv1d?.name || node.id}
+          {node.layerConfig.linear?.name || node.layerConfig.conv2d?.name || node.layerConfig.conv1d?.name || 
+          node.layerConfig.maxpool2d?.name || node.layerConfig.maxpool1d?.name || node.layerConfig.avgpool2d?.name || 
+          node.layerConfig.avgpool1d?.name || node.layerConfig.batchnorm2d?.name || node.layerConfig.batchnorm1d?.name ||
+          node.layerConfig.flatten?.name || node.layerConfig.dropout?.name || node.layerConfig.elu?.name ||
+          node.layerConfig.relu?.name || node.layerConfig.leakyrelu?.name || node.layerConfig.sigmoid?.name ||
+          node.layerConfig.logsigmoid?.name || node.layerConfig.tanh?.name || node.id}
         </div>
         <div class="node-body">
           <div class="node-type">{node.layerConfig.type}</div>
@@ -958,6 +1554,110 @@
             <input type="checkbox" bind:checked={convBias}>
             Bias
           </label>
+        {:else if selectedLayerType.type === 'maxpool1d' || selectedLayerType.type === 'maxpool2d'}
+          <label>
+            Kernel Size:
+            <input type="text" bind:value={poolKernelSize} placeholder= {selectedLayerType.type === 'maxpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Stride (optional):
+            <input type="text" bind:value={poolStride} placeholder ={selectedLayerType.type === 'maxpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Padding (optional):
+            <input type="text" bind:value={poolPadding} placeholder= {selectedLayerType.type === 'maxpool2d' ? "e.g., 0,0" : "e.g., 0"}>
+          </label>
+          <label>
+            Dilation (optional):
+            <input type="text" bind:value={poolDilation} placeholder= {selectedLayerType.type === 'maxpool2d' ? "e.g., 1,1" : "e.g., 1"}>
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={returnIndices}>
+            Return Indices
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={ceilMode}>
+            Ceil Mode
+          </label>
+        {:else if selectedLayerType.type === 'avgpool1d' || selectedLayerType.type === 'avgpool2d'}
+          <label>
+            Kernel Size:
+            <input type="text" bind:value={poolKernelSize} placeholder={selectedLayerType.type === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Stride (optional):
+            <input type="text" bind:value={poolStride} placeholder={selectedLayerType.type === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Padding (optional):
+            <input type="text" bind:value={poolPadding} placeholder={selectedLayerType.type === 'avgpool2d' ? "e.g., 0,0" : "e.g., 0"}>
+          </label>
+          <label>
+            Count Include Pad:
+            <input type="checkbox" bind:checked={countIncludePad}>
+          </label>
+          <label>
+            Divisor Override:
+            <input type="text" bind:value={divisorOverride} placeholder="Optional divisor override">
+          </label>
+        {:else if selectedLayerType.type === 'batchnorm1d' || selectedLayerType.type === 'batchnorm2d'}
+          <label>
+            Number of Features:
+            <input type="text" bind:value={numFeatures} placeholder="Enter number of features">
+          </label>
+          <label>
+            Epsilon:
+            <input type="text" bind:value={eps} placeholder="Default: 1e-5">
+          </label>
+          <label>
+            Momentum:
+            <input type="text" bind:value={momentum} placeholder="Default: 0.1">
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={affine}>
+            Affine
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={trackRunningStatus}>
+            Track Running Status
+          </label>
+        {:else if selectedLayerType.type === 'flatten'}
+          <label>
+            Start Dimension:
+            <input type="text" bind:value={startDim} placeholder="Default: 1">
+          </label>
+          <label>
+            End Dimension:
+            <input type="text" bind:value={endDim} placeholder="Default: -1">
+          </label>
+        {:else if selectedLayerType.type === 'dropout'}
+          <label>
+            Dropout Probability:
+            <input type="text" bind:value={dropoutP} placeholder="Default: 0.5">
+          </label>
+        {:else if selectedLayerType.type === 'elu'}
+          <label>
+            Alpha:
+            <input type="text" bind:value={alpha} placeholder="Default: 1.0">
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={eluInplace}>
+            Inplace
+          </label>
+        {:else if selectedLayerType.type === 'relu'}
+          <label>
+            <input type="checkbox" bind:checked={reluInplace}>
+            Inplace
+          </label>
+        {:else if selectedLayerType.type === 'leakyrelu'}
+          <label>
+            Negative Slope:
+            <input type="text" bind:value={negativeSlope} placeholder="Default: 0.01">
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={leakyReluInplace}>
+            Inplace
+          </label>
         {/if}
         
         <button class="add-button" on:click={addNodeToGraph}>Add to Graph</button>
@@ -1027,6 +1727,118 @@
               <input type="checkbox" bind:checked={convBias}>
               Bias
             </label>
+          {:else if selectedNode.layerConfig.type === 'maxpool1d' || selectedNode.layerConfig.type === 'maxpool2d'}
+            <label>
+              Kernel Size:
+              <input type="text" bind:value={poolKernelSize}>
+            </label>
+            <label>
+              Stride:
+              <input type="text" bind:value={poolStride}>
+            </label>
+            <label>
+              Padding:
+              <input type="text" bind:value={poolPadding}>
+            </label>
+            <label>
+              Dilation:
+              <input type="text" bind:value={poolDilation}>
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={returnIndices}>
+              Return Indices
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={ceilMode}>
+              Ceil Mode
+            </label>
+          {:else if selectedNode.layerConfig.type === 'avgpool1d' || selectedNode.layerConfig.type === 'avgpool2d'}
+            <label>
+              Kernel Size:
+              <input type="text" bind:value={poolKernelSize}>
+            </label>
+            <label>
+              Stride:
+              <input type="text" bind:value={poolStride}>
+            </label>
+            <label>
+              Padding:
+              <input type="text" bind:value={poolPadding}>
+            </label>
+            <label>
+              Count Include Pad:
+              <input type="checkbox" bind:checked={countIncludePad}>
+            </label>
+            <label>
+              Divisor Override:
+              <input type="text" bind:value={divisorOverride} placeholder="Optional divisor override">
+            </label>
+          {:else if selectedNode.layerConfig.type === 'batchnorm1d' || selectedNode.layerConfig.type === 'batchnorm2d'}
+            <label>
+              Number of Features:
+              <input type="text" bind:value={numFeatures}>
+            </label>
+            <label>
+              Epsilon:
+              <input type="text" bind:value={eps} placeholder="Default: 1e-5">
+            </label>
+            <label>
+              Momentum:
+              <input type="text" bind:value={momentum} placeholder="Default: 0.1">
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={affine}>
+              Affine
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={trackRunningStatus}>
+              Track Running Status
+            </label>
+          {:else if selectedNode.layerConfig.type === 'flatten'}
+            <label>
+              Start Dimension:
+              <input type="text" bind:value={startDim} placeholder="Default: 1">
+            </label>
+            <label>
+              End Dimension:
+              <input type="text" bind:value={endDim} placeholder="Default: -1">
+            </label>
+          {:else if selectedNode.layerConfig.type === 'dropout'}
+            <label>
+              Dropout Probability:
+              <input type="text" bind:value={dropoutP} placeholder="Default: 0.5">
+            </label>
+          {:else if selectedNode.layerConfig.type === 'elu'}
+            <label>
+              Alpha:
+              <input type="text" bind:value={alpha} placeholder="Default: 1.0">
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={eluInplace}>
+              Inplace
+            </label>
+          {:else if selectedNode.layerConfig.type === 'relu'}
+            <label>
+              <input type="checkbox" bind:checked={reluInplace}>
+              Inplace
+            </label>
+          {:else if selectedNode.layerConfig.type === 'leakyrelu'}
+            <label>
+              Negative Slope:
+              <input type="text" bind:value={negativeSlope} placeholder="Default: 0.01">
+            </label>
+            <label>
+              <input type="checkbox" bind:checked={leakyReluInplace}>
+              Inplace
+            </label>
+          {:else if selectedNode.layerConfig.type === 'sigmoid'}
+            <!-- No additional fields for Sigmoid -->
+          {:else if selectedNode.layerConfig.type === 'logsigmoid'}
+            <!-- No additional fields for LogSigmoid -->
+          {:else if selectedNode.layerConfig.type === 'tanh'}
+            <!-- No additional fields for Tanh -->
+          {:else}
+            <p>Unknown layer type: {selectedNode.layerConfig.type}</p>
           {/if}
           
           <div class="button-group">
@@ -1041,7 +1853,12 @@
           {@const node = nodes.find(n => n.id === nodeId)}
           {#if node}
             <p><strong>{index === 0 ? 'From' : 'To'}:</strong> 
-              {node.layerConfig.linear?.name || node.layerConfig.conv2d?.name || node.layerConfig.conv1d?.name || nodeId} 
+              {node.layerConfig.linear?.name || node.layerConfig.conv2d?.name || node.layerConfig.conv1d?.name || 
+                node.layerConfig.maxpool2d?.name || node.layerConfig.maxpool1d?.name || node.layerConfig.avgpool2d?.name || 
+                node.layerConfig.avgpool1d?.name || node.layerConfig.batchnorm2d?.name || node.layerConfig.batchnorm1d?.name ||
+                node.layerConfig.flatten?.name || node.layerConfig.dropout?.name || node.layerConfig.elu?.name ||
+                node.layerConfig.relu?.name || node.layerConfig.leakyrelu?.name || node.layerConfig.sigmoid?.name ||
+                node.layerConfig.logsigmoid?.name || node.layerConfig.tanh?.name || node.id} 
               <span class="node-type">({node.layerConfig.type})</span>
             </p>
           {:else}
@@ -1062,17 +1879,89 @@
         {#if buildResult}
           <div class="build-result">
             <h4>Built Graph Successfully</h4>
-            <p><strong>Layers:</strong> {buildResult.module_graph.layers.length}</p>
-            <p><strong>Connections:</strong> {buildResult.module_graph.edges.length}</p>
+            <div class="build-summary">
+              <div class="summary-item">
+                <span class="label">Layers:</span>
+                <span class="value">{buildResult.module_graph.layers.length}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Connections:</span>
+                <span class="value">{buildResult.module_graph.edges.length}</span>
+              </div>
+            </div>
             
+            <!-- Graph Validation Results -->
+            {#if graphValidationResult}
+              <div class="graph-validation">
+                <h5>🔍 Graph Validation</h5>
+                
+                {#if graphValidationResult.status && graphValidationResult.status.length > 0}
+                  <!-- Check if there are validation errors -->
+                  {#if graphValidationResult.status.some((s: any) => s.message)}
+                    <div class="validation-error">
+                      <div class="status-header">
+                        <span class="status-icon">⚠️</span>
+                        <strong>Validation Issues Found</strong>
+                      </div>
+                      
+                      {#each graphValidationResult.status as status, index}
+                        {#if status.message}
+                          <div class="error-item">
+                            <div class="error-number">Issue #{index + 1}</div>
+                            <div class="error-details">
+                              <p class="error-message">{status.message}</p>
+                              
+                              {#if status.out_dimension && status.out_dimension.length > 0}
+                                <div class="dimension-info">
+                                  <span class="dim-label">Output:</span>
+                                  <code class="dimension">[{status.out_dimension.join(', ')}]</code>
+                                </div>
+                              {/if}
+                              
+                              {#if status.required_in_dimension && status.required_in_dimension.length > 0}
+                                <div class="dimension-info">
+                                  <span class="dim-label">Required Input:</span>
+                                  <code class="dimension">[{status.required_in_dimension.join(', ')}]</code>
+                                </div>
+                              {/if}
+                            </div>
+                          </div>
+                        {/if}
+                      {/each}
+                    </div>
+                  {:else}
+                    <div class="validation-success">
+                      <div class="status-header">
+                        <span class="status-icon">✅</span>
+                        <strong>Graph is Valid!</strong>
+                      </div>
+                      <p>All layer dimensions match correctly</p>
+                    </div>
+                  {/if}
+                  
+          
+                {:else}
+                  <div class="no-validation">
+                    <p>No validation data available</p>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+            
+            <!-- Layer Execution Order -->
             {#if buildResult.module_graph.sorted && buildResult.module_graph.layers.length > 0}
               <div class="layer-order">
-                <strong>Layer Execution Order:</strong>
-                <ol>
-                  {#each buildResult.module_graph.layers as layer}
-                    <li>{layer.name} ({layer.type})</li>
+                <h5>🔄 Layer Execution Order</h5>
+                <div class="layer-list">
+                  {#each buildResult.module_graph.layers as layer, index}
+                    <div class="layer-item">
+                      <div class="layer-info">
+                        <span class="layer-name">{layer.name}</span>
+                        <span class="layer-type">({layer.type})</span>
+                      </div>
+                    </div>
                   {/each}
-                </ol>
+                </div>
               </div>
             {/if}
           </div>

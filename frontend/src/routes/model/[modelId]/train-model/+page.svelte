@@ -4,11 +4,11 @@
   import client from '$lib/apolloClient';
   import { TRAIN_MODEL } from '$lib/mutations';
   import { GET_MODEL, GET_TRAINING_STATUS } from '$lib/queries';
-  import type { Model, TrainStatus } from '../../../../../../source/types';
+  import type { Model } from '../../../../../../source/types/modelTypes';
+  import type { TrainStatus } from '../../../../../../source/types/trainTypes';
 
   import './train-model.css';
   
-  let modelId: string | null = null;
   let loading = false;
   let training = false;
   let error: string | null = null;
@@ -17,27 +17,10 @@
   let statusInterval: any = null;
   let stoppedByUser = false;
 
-  // Extract modelId from URL path instead of query parameters
-  $: {
-    const pathParts = $page.url.pathname.split('/');
-    const modelIndex = pathParts.indexOf('model');
-    if (modelIndex !== -1 && modelIndex + 1 < pathParts.length) {
-      modelId = pathParts[modelIndex + 1];
-    } else {
-      modelId = null;
-    }
-  }
-
-  // Fetch model details when modelId changes
-  $: if (modelId) {
-    fetchModelDetails();
-  }
-
+  fetchModelDetails();
+  
   onMount(() => {
-    // Check if training is already in progress
-    if (modelId) {
-      checkTrainingStatus();
-    }
+    checkTrainingStatus();
   });
 
   onDestroy(() => {
@@ -47,12 +30,10 @@
   });
 
   async function fetchModelDetails() {
-    if (!modelId) return;
     
     try {
       const response = await client.query({
         query: GET_MODEL,
-        variables: { id: modelId },
         fetchPolicy: 'network-only'
       });
       
@@ -64,13 +45,11 @@
   }
 
   async function checkTrainingStatus() {
-    if (!modelId) return;
     
     try {
       const response = await client.query({
         query: GET_TRAINING_STATUS,
-        variables: { modelId },
-        fetchPolicy: 'no-cache' // Force fresh data
+        fetchPolicy: 'no-cache'
       });
       
       const newStatus = response.data?.getTrainingStatus;
@@ -95,12 +74,10 @@
       clearInterval(statusInterval);
       statusInterval = null;
     }
-    
-    // Reset training state
+
     training = false;
-    stoppedByUser = true;  // Add this line
+    stoppedByUser = true;
     
-    // Reset training status
     if (trainingStatus) {
       trainingStatus = {
         ...trainingStatus,
@@ -118,8 +95,7 @@
       try {
         const response = await client.query({
           query: GET_TRAINING_STATUS,
-          variables: { modelId },
-          fetchPolicy: 'no-cache' // Always get fresh data
+          fetchPolicy: 'no-cache'
         });
         
         const newStatus = response.data?.getTrainingStatus;
@@ -144,14 +120,15 @@
   }
 
   async function startTraining() {
-    if (!modelId) {
-      error = 'Model ID is missing from URL parameters';
-      return;
-    }
 
     // Validate that model is fully configured
     if (!modelDetails?.layers_config?.length) {
       error = 'Model has no layers configured';
+      return;
+    }
+
+    if (!modelDetails?.module_graph?.layers.length) {
+      error = 'Model has no module graph defined';
       return;
     }
 
@@ -173,7 +150,6 @@
     try {
       const res = await client.mutate({
         mutation: TRAIN_MODEL,
-        variables: { modelId },
         errorPolicy: 'all'
       });
       
@@ -236,17 +212,6 @@
 
 <div class="start-training-container">
   <h1 class="heading">Start Training</h1>
-
-  {#if !modelId}
-    <div class="error-box">
-      <p>No model ID provided in the URL.</p>
-      <p class="mt-2">
-        <a href="/create-model" class="checklist-links">
-          Go back to create a model
-        </a>
-      </p>
-    </div>
-  {:else}
     <div class="space-y-6">
       {#if modelDetails}
         <div class="model-overview">
@@ -298,8 +263,8 @@
           <h3 class="checklist-title">Pre-Training Checklist</h3>
           <div>
             <div class="checklist-item">
-              <div class="check-circle {modelDetails.layers_config?.length > 0 ? 'green' : 'red'}"></div>
-              <span>Model Architecture: {modelDetails.layers_config?.length || 0} layers configured</span>
+              <div class="check-circle {modelDetails?.module_graph?.layers.length ? 'green' : 'red'}"></div>
+              <span>Build Graph: {modelDetails?.module_graph?.layers.length ? 'Ready' : 'Missing'}</span>
             </div>
             <div class="checklist-item">
               <div class="check-circle {modelDetails.train_config ? 'green' : 'red'}"></div>
@@ -311,24 +276,13 @@
             </div>
           </div>
           
-          {#if modelDetails.layers_config?.length > 0 && modelDetails.train_config && modelDetails.dataset_config}
+          {#if modelDetails?.module_graph?.layers?.length && modelDetails.train_config && modelDetails.dataset_config}
             <div class="checklist-ready">
               ✅ All configurations complete. Ready to start training!
             </div>
           {:else}
             <div class="checklist-warning">
               ❌ Please complete all configurations before starting training.
-              <div class="checklist-links" style="margin-top: 8px;">
-                {#if !modelDetails.layers_config?.length}
-                  <a href={`/create-model?modelId=${modelId}`}>Add Layers</a>
-                {/if}
-                {#if !modelDetails.train_config}
-                  <a href={`/train-config?modelId=${modelId}`}>Configure Training</a>
-                {/if}
-                {#if !modelDetails.dataset_config}
-                  <a href={`/dataset-config?modelId=${modelId}`}>Configure Dataset</a>
-                {/if}
-              </div>
             </div>
           {/if}
         </div>
@@ -371,7 +325,7 @@
         {#if !training && !trainingStatus?.completed}
           <button 
             on:click={startTraining}
-            disabled={loading || !modelDetails?.layers_config?.length || !modelDetails?.train_config || !modelDetails?.dataset_config}
+            disabled={loading || !modelDetails?.module_graph?.layers?.length || !modelDetails?.train_config || !modelDetails?.dataset_config}
             class="start-button"
           >
             {loading ? 'Starting Training...' : '🚀 Start Training'}
@@ -399,5 +353,4 @@
         </div>
       {/if}
     </div>
-  {/if}
 </div>

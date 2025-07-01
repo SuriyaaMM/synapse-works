@@ -1,25 +1,21 @@
 import { layerDimensionHandler, layerHandler } from "./layerResolver.js";
-import { enqueueMessage } from "./redisClient.js";
-import { setModuleGraph } from "./resolvers.js";
+import { enqueueMessage } from "../redisClient.js";
+import { LayerConfig } from "../types/layerTypes.js";
+import { Model } from "../types/modelTypes.js";
 import { 
-    Model,
-    LayerConfig,
     ModuleGraph,
-    BuildModuleGraphArgs,
+    ModuleAdjacencyList,
+    ModuleGraphValidateDimensionStatus } from "../types/graphTypes.js";
+import { 
     AppendToModuleGraphArgs,
     ConnectInModuleGraphArgs,
-    ModuleAdjacencyList,
     DeleteInModuleGraphArgs,
-    DisconnectInModuleGraphArgs,
-    ModelDimensionResolveStatus,
-    GraphLayerDimensionResult,
-    ModuleGraphDimensionStatus,
-} from "./types.js";
+    DisconnectInModuleGraphArgs } from "../types/argTypes.js";
 
 // initialize an empty module graph
 const module_graph: ModuleGraph = { layers: [], edges: [], sorted: []}
 
-export async function appendToModuleGraphResolver(args: AppendToModuleGraphArgs){
+export async function appendToModuleGraphResolver(args: AppendToModuleGraphArgs) : Promise<ModuleGraph>{
     
     // get the handler for this layer config
     const handler = layerHandler[args.layer_config.type];
@@ -35,7 +31,7 @@ export async function appendToModuleGraphResolver(args: AppendToModuleGraphArgs)
     // overall O(1) at worst case
 }
 
-export async function connectInModuleGraphResolver(args: ConnectInModuleGraphArgs){
+export async function connectInModuleGraphResolver(args: ConnectInModuleGraphArgs) : Promise<ModuleGraph>{
     // check for whether these indices exist as layer first
     const source_layer_index = module_graph.layers.findIndex(layer => layer.id === args.source_layer_id);
     const target_layer_index = module_graph.layers.findIndex(layer => layer.id === args.target_layer_id);
@@ -72,7 +68,7 @@ export async function connectInModuleGraphResolver(args: ConnectInModuleGraphArg
     // overall O(3n) at worst case
 }
 
-export async function disconnectInModuleGraphResolver(args: DisconnectInModuleGraphArgs){
+export async function disconnectInModuleGraphResolver(args: DisconnectInModuleGraphArgs) : Promise<ModuleGraph>{
     // check for whether these indices exist as layer first
     const source_layer_index = module_graph.layers.findIndex(layer => layer.id === args.source_layer_id);
     const target_layer_index = module_graph.layers.findIndex(layer => layer.id === args.target_layer_id);
@@ -109,7 +105,7 @@ export async function disconnectInModuleGraphResolver(args: DisconnectInModuleGr
     return module_graph;
 }
 
-export async function deleteInModuleGraphResolver(args: DeleteInModuleGraphArgs){
+export async function deleteInModuleGraphResolver(args: DeleteInModuleGraphArgs) : Promise<ModuleGraph>{
     // check for whether this layer exists first
     const source_layer_index = module_graph.layers.findIndex(layer => layer.id === args.layer_id);
     // if this layer doesn't exist, put a warning 
@@ -134,7 +130,7 @@ export async function deleteInModuleGraphResolver(args: DeleteInModuleGraphArgs)
     // overall O(n) at worst case
 }
 
-export async function buildModuleGraphResolver(model: Model){
+export async function buildModuleGraphResolver(model: Model) : Promise<Model>{
     // handle model doesn't exist 
     if(!model){
         throw new Error(`[synapse][graphql]: Model doesn't exist yet, create it first`);
@@ -208,9 +204,10 @@ export async function buildModuleGraphResolver(model: Model){
     return model;
 }
 
-export async function validateModuleGraphResolver(model: Model, initial_in_dimension: number[]): Promise<ModelDimensionResolveStatus> {
+export async function validateModuleGraphResolver(model: Model, initial_in_dimension: number[]): 
+    Promise<ModuleGraphValidateDimensionStatus> {
     console.log("[synapse]: Validating graph began!")
-    const resolve_status: ModelDimensionResolveStatus = { status: [] };
+    const resolve_status: ModuleGraphValidateDimensionStatus = { status: [] };
 
     if (!model.module_graph) {
         throw new Error(`[synapse]: Module Graph must be provided for validation!`);

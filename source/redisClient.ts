@@ -1,6 +1,6 @@
 import Redis from 'ioredis'; 
 import type { Redis as RedisClientType } from 'ioredis';
-import {TrainStatus} from './types.js'
+import { TrainStatus } from './types/trainTypes.js'
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
 const REDIS_MAIN_QUEUE_NAME = 'model_main_queue';

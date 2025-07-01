@@ -1,17 +1,19 @@
 import { gql } from '@apollo/client/core';
 
 export const GET_MODEL = gql`
-  query GetModel($id: ID!) {
-    getModel(id: $id) {
+  query GetModel {
+    getModel {
       id
       name
-      layers_config {
-        id
-        type
-        name
-        ... on LinearLayerConfig {
-          in_features
-          out_features
+      module_graph {
+        layers {
+          id
+          type
+          name
+        }
+        edges {
+          source_id
+          target_ids
         }
       }
       train_config { 

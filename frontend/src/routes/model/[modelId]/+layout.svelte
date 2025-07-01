@@ -25,65 +25,55 @@
     <button on:click={() => goto('/create-model')} class="border px-4 py-2 rounded hover:bg-gray-100">Create Another Model</button>
   </div>
 
-  <div class="flex flex-1 border rounded-lg shadow overflow-hidden">
-    <!-- Sidebar Stepper -->
-    <div class="w-64 bg-gray-50 border-r p-6 space-y-6">
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'layer-config') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/layer-config`)}
+  <div class="flex flex-1 h-full border rounded-lg shadow overflow-hidden">
+    <!-- Sidebar Stepper (hover-to-expand) -->
+    <div class="group relative h-full">
+      <div
+        class="h-full w-4 hover:w-64 group-hover:w-64 transition-all duration-300 ease-in-out bg-gray-50 border-r p-2 group-hover:p-6 space-y-4 overflow-hidden"
       >
-         Configure Layers
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'graph-construction') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/graph-construction`)}
-      >
-         Graph Construction
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'training-config') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/training-config`)}
-      >
-         Configure Training
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'dataset-config') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/dataset-config`)}
-      >
-         Configure Dataset
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'train-model') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/train-model`)}
-      >
-         Train the Model
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'save-model') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/save-model`)}
-      >
-         Save Model
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'visualisation') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/visualisation`)}
-      >
-         Visualisation
-      </button>
+        <button
+          class="w-full text-left py-2 px-4 rounded-lg transition hover:bg-gray-200
+                  {($currentStep === 'dataset-config') ? 'bg-blue-100 font-semibold' : ''}"
+          on:click={() => goto(`/model/${modelId}/dataset-config`)}
+        >
+          Configure Dataset
+        </button>
+        <button
+          class="w-full text-left py-2 px-4 rounded-lg transition hover:bg-gray-200
+                  {($currentStep === 'graph-construction') ? 'bg-blue-100 font-semibold' : ''}"
+          on:click={() => goto(`/model/${modelId}/graph-construction`)}
+        >
+          Graph Construction
+        </button>
+        <button
+          class="w-full text-left py-2 px-4 rounded-lg transition hover:bg-gray-200
+                  {($currentStep === 'training-config') ? 'bg-blue-100 font-semibold' : ''}"
+          on:click={() => goto(`/model/${modelId}/training-config`)}
+        >
+          Configure Training
+        </button>
+        <button
+          class="w-full text-left py-2 px-4 rounded-lg transition hover:bg-gray-200
+                  {($currentStep === 'train-model') ? 'bg-blue-100 font-semibold' : ''}"
+          on:click={() => goto(`/model/${modelId}/train-model`)}
+        >
+          Train the Model
+        </button>
+        <button
+          class="w-full text-left py-2 px-4 rounded-lg transition hover:bg-gray-200
+                  {($currentStep === 'visualisation') ? 'bg-blue-100 font-semibold' : ''}"
+          on:click={() => goto(`/model/${modelId}/visualisation`)}
+        >
+          Visualisation
+        </button>
+        <button
+          class="w-full text-left py-2 px-4 rounded-lg transition hover:bg-gray-200
+                  {($currentStep === 'save-model') ? 'bg-blue-100 font-semibold' : ''}"
+          on:click={() => goto(`/model/${modelId}/save-model`)}
+        >
+          Save Model
+        </button>
+      </div>
     </div>
 
     <!-- Main Content -->

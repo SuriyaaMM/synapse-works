@@ -1,38 +1,30 @@
-import { createModelResolver, validateModelResolver } from './modelResolver.js';
-import { setTrainConfigResolver, trainResolver } from './trainResolvers.js';
-import { setDatasetResolver } from './datasetResolver.js';
+import { createModelResolver } from './resolvers/modelResolver.js';
+import { setTrainConfigResolver, trainResolver } from './resolvers/trainResolvers.js';
+import { setDatasetResolver } from './resolvers/datasetResolver.js';
 import { dequeueMessage } from "./redisClient.js";
 import { spawn, ChildProcess } from "child_process";
-import { loadModelResolver, saveResolver } from "./saveResolver.js";
-import {
-    LayerConfig,
-    Model,
-    AppendLayerArgs,
+import { loadModelResolver, saveResolver } from "./resolvers/saveResolver.js";
+
+import { Model } from './types/modelTypes';
+import { LayerConfig } from './types/layerTypes';
+import { DatasetConfig } from './types/datasetTypes';
+import { ModuleGraph } from './types/graphTypes';
+import { 
     SetDatasetArgs,
     SetTrainConfigArgs,
     CreateModelArgs,
-    DatasetConfig,
     TrainArgs,
-    DeleteLayerArgs,
-    ModifyLayerArgs,
-    ModuleGraph,
     AppendToModuleGraphArgs,
     DeleteInModuleGraphArgs,
     ConnectInModuleGraphArgs,
-    DisconnectInModuleGraphArgs,
-    BuildModuleGraphArgs
-} from "./types.js"
-import { 
-    appendLayerResolver, 
-    deleteLayerResolver, 
-    modifyLayerResolver } from "./layerResolver.js";
+    DisconnectInModuleGraphArgs } from "./types/argTypes.js";
 import { 
     appendToModuleGraphResolver, 
     buildModuleGraphResolver, 
     connectInModuleGraphResolver, 
     deleteInModuleGraphResolver, 
     disconnectInModuleGraphResolver, 
-    validateModuleGraphResolver} from "./graphResolver.js";
+    validateModuleGraphResolver} from "./resolvers/graphResolver.js";
 
 let model: Model;
 export let tensorboardProcess: ChildProcess = null;
@@ -145,10 +137,11 @@ export const resolvers = {
         // getTrainStatus query
         // return the status (pop from redis queue)
         getTrainingStatus: () => dequeueMessage(),
+        // ******************** DEPRECATED ********************
         // validateModel query
-        validateModel: async (_: unknown, {in_dimension} : {in_dimension:number[]}) => {
-            return validateModelResolver(model, in_dimension);
-        }
+        // validateModel: async (_: unknown, {in_dimension} : {in_dimension:number[]}) => {
+        //     return validateModelResolver(model, in_dimension);
+        // }
     },
     // graphql mutations
     Mutation: {
@@ -156,18 +149,21 @@ export const resolvers = {
         createModel: async (_: unknown, args: CreateModelArgs) => {
             return await createModelResolver(args);
         },
+        // ******************** DEPRECATED ********************
         // appendLayer mutation
-        appendLayer: async (_: unknown, args : AppendLayerArgs) => {
-            return await appendLayerResolver(model, args);
-        },
+        // appendLayer: async (_: unknown, args : AppendLayerArgs) => {
+        //     return await appendLayerResolver(model, args);
+        // },
+        // ******************** DEPRECATED ********************
         // deleteLayer mutation
-        deleteLayer: async(_:unknown, args: DeleteLayerArgs) => {
-            return await deleteLayerResolver(model, args)
-        },
+        // deleteLayer: async(_:unknown, args: DeleteLayerArgs) => {
+        //     return await deleteLayerResolver(model, args)
+        // },
+        // ******************** DEPRECATED ********************
         // modifyLayer mutation
-        modifyLayer: async(_:unknown, args: ModifyLayerArgs) => {
-            return await modifyLayerResolver(model, args);
-        },
+        // modifyLayer: async(_:unknown, args: ModifyLayerArgs) => {
+        //     return await modifyLayerResolver(model, args);
+        // },
         // appendToModuleGraph mutation
         appendToModuleGraph: async (_:unknown, args: AppendToModuleGraphArgs) => {
             return await appendToModuleGraphResolver(args);

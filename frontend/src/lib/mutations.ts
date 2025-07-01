@@ -5,9 +5,6 @@ export const CREATE_MODEL = gql`
     createModel(name: $name) {
       id
       name
-      layers_config {
-        id
-      }
     }
   }
 `;
@@ -74,14 +71,12 @@ export const MODIFY_LAYER = gql`
 
 export const SET_TRAIN_CONFIG = gql`
   mutation SetMyModelTrainConfig(
-    $modelId: ID!
     $epochs: Int!
     $optimizer: String!
     $optimizerConfig: OptimizerConfigInput!
     $loss_function: String!
   ) {
     setTrainConfig(
-      model_id: $modelId
       train_config: {
         epochs: $epochs
         optimizer: $optimizer
@@ -91,15 +86,6 @@ export const SET_TRAIN_CONFIG = gql`
     ) {
       id
       name
-      layers_config { 
-        id
-        type
-        name
-        ... on LinearLayerConfig { 
-          in_features
-          out_features
-        }
-      }
       train_config { 
         epochs
         optimizer
@@ -114,24 +100,13 @@ export const SET_TRAIN_CONFIG = gql`
 
 export const SET_DATASET_CONFIG = gql`
   mutation SetMyDatasetConfig(
-    $modelId: ID!
     $datasetConfig: DatasetConfigInput!
   ) {
     setDataset(
-      model_id: $modelId 
       dataset_config: $datasetConfig
     ) {
       id
       name
-      layers_config { 
-        id
-        type
-        name
-        ... on LinearLayerConfig { 
-          in_features
-          out_features
-        }
-      }
       train_config { 
         epochs
         optimizer
@@ -205,19 +180,10 @@ export const SAVE_MODEL = gql`
 `;
 
 export const LOAD_MODEL = gql`
-  mutation LoadModel($modelId: String!){
+  mutation LoadModel($modelId: ID!){
     loadModel(model_id: $modelId) {
       id
       name
-      layers_config {
-        id
-        type
-        name
-        ... on LinearLayerConfig {
-          in_features
-          out_features
-        }
-      }
       train_config { 
         epochs
         optimizer
@@ -301,4 +267,16 @@ export const BUILD_MODULE_GRAPH = gql`
       }
     }
   }
+`;
+
+export const VALIDATE_GRAPH = gql`
+  mutation ValidateGraph($in_dimension: [Int!]!) {
+  validateModuleGraph(in_dimension: $in_dimension) {
+    status {
+      message
+      out_dimension
+      required_in_dimension
+    }
+  }
+}
 `;

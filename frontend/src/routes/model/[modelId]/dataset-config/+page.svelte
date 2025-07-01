@@ -1,18 +1,16 @@
 <script lang="ts">
-  import { page } from '$app/stores';
   import client from '$lib/apolloClient';
   import { SET_DATASET_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
-
-  import type { Model, DatasetConfig, MNISTDatasetConfig, 
+  import type { Model } from '../../../../../../source/types/modelTypes';
+  import type { DatasetConfig, MNISTDatasetConfig, 
                 DatasetConfigInput, MNISTDatasetConfigInput, 
                 CIFAR10DatasetConfigInput, CIFAR10DatasetConfig,
                 CustomCSVDatasetConfig, CustomCSVDatasetConfigInput,
-                ImageFolderDatasetConfig, ImageFolderDatasetConfigInput } from '../../../../../../source/types';
+                ImageFolderDatasetConfig, ImageFolderDatasetConfigInput } from '../../../../../../source/types/datasetTypes';
   import Papa from 'papaparse';
   import './dataset-config.css';
 
-  let modelId: string | null = null;
   let loading = false;
   let error: string | null = null;
   let result: Model | null = null;
@@ -72,27 +70,8 @@
   // Common transform options
   const transformOptions = [
     'ToTensor',
-    'Normalize',
-    'Resize',
-    'RandomHorizontalFlip',
-    'RandomVerticalFlip',
-    'RandomRotation',
-    'ColorJitter',
-    'RandomCrop',
-    'CenterCrop',
-    'Grayscale'
+    'Normalize'
   ];
-
-  // Extract modelId from URL path instead of query parameters
-  $: {
-    const pathParts = $page.url.pathname.split('/');
-    const modelIndex = pathParts.indexOf('model');
-    if (modelIndex !== -1 && modelIndex + 1 < pathParts.length) {
-      modelId = pathParts[modelIndex + 1];
-    } else {
-      modelId = null;
-    }
-  }
 
   // Reactive statement to ensure splits add up to 1.0
   $: {
@@ -108,67 +87,60 @@
   $: csvFeatureColumns = csvFeatureColumnsInput ? csvFeatureColumnsInput.split(',').map(t => t.trim()).filter(t => t) : [];
   $: csvLabelColumns = csvLabelColumnsInput ? csvLabelColumnsInput.split(',').map(t => t.trim()).filter(t => t) : [];
 
-  // Fetch model details when modelId changes
-  $: if (modelId) {
-    fetchModelDetails();
-  }
+  // Automatically fetch model details
+  fetchModelDetails();
 
   async function fetchModelDetails() {
-    if (!modelId) return;
-    
     try {
       const response = await client.query({
         query: GET_MODEL,
-        variables: { id: modelId },
         fetchPolicy: 'network-only'
       });
-      
-      modelDetails = response.data?.getModel;
-      
-      // Pre-populate form if dataset config already exists
-      if (modelDetails?.dataset_config) {
-        const config: DatasetConfig = modelDetails.dataset_config;
+
+      console.log('Model details response:', response);
+
+      modelDetails = response.data.getModel;
+
+      // Pre-populate form if dataset config exists
+      const config: DatasetConfig | undefined = modelDetails ? modelDetails.dataset_config : undefined;
+      if (config) {
         datasetName = config.name || 'mnist';
         batchSize = config.batch_size || 32;
         shuffle = config.shuffle !== undefined ? config.shuffle : true;
-        
+
         if (config.split_length && config.split_length.length >= 2) {
           trainSplit = config.split_length[0];
           testSplit = config.split_length[1];
         }
-        
-        // Handle MNIST config
-        const mnistConfig = config as MNISTDatasetConfig;
-        if (mnistConfig && datasetName === 'mnist') {
+
+        if (datasetName === 'mnist') {
+          const mnistConfig = config as MNISTDatasetConfig;
           mnistRoot = mnistConfig.root || './data/mnist';
           mnistTrain = mnistConfig.train !== undefined ? mnistConfig.train : true;
           mnistDownload = mnistConfig.download !== undefined ? mnistConfig.download : true;
-          mnistTransformInput = mnistConfig.transform ? mnistConfig.transform.join(', ') : '';
+          mnistTransformInput = mnistConfig.transform?.join(', ') || '';
         }
 
-        // Handle CIFAR-10 config
-        const cifar10Config = config as CIFAR10DatasetConfig;
-        if (cifar10Config && datasetName === 'cifar10') {
+        if (datasetName === 'cifar10') {
+          const cifar10Config = config as CIFAR10DatasetConfig;
           cifar10Root = cifar10Config.root || './data/cifar10';
           cifar10Train = cifar10Config.train !== undefined ? cifar10Config.train : true;
           cifar10Download = cifar10Config.download !== undefined ? cifar10Config.download : true;
-          cifar10TransformInput = cifar10Config.transform ? cifar10Config.transform.join(', ') : '';
+          cifar10TransformInput = cifar10Config.transform?.join(', ') || '';
         }
 
-        // Handle Custom CSV config
-        const csvConfig = config as CustomCSVDatasetConfig;
-        if (csvConfig && datasetName === 'custom_csv') {
+        if (datasetName === 'custom_csv') {
+          const csvConfig = config as CustomCSVDatasetConfig;
           csvRoot = csvConfig.root || './data/custom.csv';
-          csvFeatureColumnsInput = csvConfig.feature_columns ? csvConfig.feature_columns.join(', ') : '';
-          csvLabelColumnsInput = csvConfig.label_columns ? csvConfig.label_columns.join(', ') : '';
+          csvFeatureColumnsInput = csvConfig.feature_columns?.join(', ') || '';
+          csvLabelColumnsInput = csvConfig.label_columns?.join(', ') || '';
           csvIsRegressionTask = csvConfig.is_regression_task !== undefined ? csvConfig.is_regression_task : false;
         }
 
-        // Handle Image Folder config
-        const imageFolderConfig = config as ImageFolderDatasetConfig;
-        if (imageFolderConfig && datasetName === 'image_folder') {
+        if (datasetName === 'image_folder') {
+          const imageFolderConfig = config as ImageFolderDatasetConfig;
           imageFolderRoot = imageFolderConfig.root || './data/images';
-          imageFolderTransformInput = imageFolderConfig.transform ? imageFolderConfig.transform.join(', ') : '';
+          imageFolderTransformInput = imageFolderConfig.transform?.join(', ') || '';
           imageFolderAllowEmpty = imageFolderConfig.allow_empty !== undefined ? imageFolderConfig.allow_empty : false;
         }
       }
@@ -199,10 +171,6 @@
   }
 
   async function setDatasetConfig() {
-    if (!modelId) {
-      error = 'Model ID is missing from URL parameters';
-      return;
-    }
 
     const validationError = validateForm();
     if (validationError) {
@@ -260,8 +228,7 @@
 
       const res = await client.mutate({
         mutation: SET_DATASET_CONFIG,
-        variables: { 
-          modelId,
+        variables: {
           datasetConfig: datasetConfigInput
         }
       });
@@ -345,8 +312,6 @@
     }
   }
 
-  let selectionMode = 'feature'; // 'feature' or 'label'
-
   function toggleFeatureColumn(column: string) {
   if (csvFeatureColumns.includes(column)) {
     csvFeatureColumns = csvFeatureColumns.filter(c => c !== column);
@@ -369,16 +334,6 @@ function toggleLabelColumn(column : string) {
 <div class="dataset-config-container">
   <h1 class="dataset-config-heading">Dataset Configuration</h1>
 
-  {#if !modelId}
-    <div class="dataset-config-error">
-      <p>No model ID provided in the URL.</p>
-      <p class="mt-2">
-        <a href="/create-model">
-          Go back to create a model
-        </a>
-      </p>
-    </div>
-  {:else}
     <div class="space-y-6">      
       {#if modelDetails}
         <div class="dataset-config-overview">
@@ -386,12 +341,19 @@ function toggleLabelColumn(column : string) {
           <p class="dataset-config-info">
             Model Name: <span>{modelDetails.name}</span>
           </p>
-          <p class="dataset-config-info">
-            Total Layers: <span>{modelDetails.layers_config?.length || 0}</span>
-          </p>
+          {#if modelDetails.module_graph}
+            <p class="dataset-config-info">
+              Total Layers: <span>{modelDetails.module_graph?.layers?.length || 0}</span>
+              Totals Connections : <span>{modelDetails.module_graph?.edges?.length || 0}</span>
+            </p>
+          {:else}
+            <p class="dataset-config-warning">
+              ⚠️ No module graph found. Please ensure your model is properly configured.
+            </p>
+          {/if}
           {#if modelDetails.train_config}
             <p class="dataset-config-info">
-              Training: <span>{modelDetails.train_config.epochs} epochs, {modelDetails.train_config.optimizer} optimizer</span>
+              Training: <span>{modelDetails.train_config.epochs} Epochs, {modelDetails.train_config.optimizer} optimizer</span>
             </p>
           {:else}
             <p class="dataset-config-warning mt-2">
@@ -880,5 +842,4 @@ function toggleLabelColumn(column : string) {
         </div>
       {/if}
     </div>
-  {/if}
 </div>

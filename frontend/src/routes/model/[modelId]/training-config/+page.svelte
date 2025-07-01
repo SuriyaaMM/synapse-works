@@ -1,14 +1,13 @@
 <script lang="ts">
-  import { page } from '$app/stores';
   import client from '$lib/apolloClient';
   import { SET_TRAIN_CONFIG } from '$lib/mutations';
   import { GET_MODEL } from '$lib/queries';
-  import type { TrainConfig, OptimizerConfig, Model } from '../../../../../../source/types';
+  import type { Model } from '../../../../../../source/types/modelTypes';
+  import type { TrainConfig, OptimizerConfig } from '../../../../../../source/types/trainTypes';
 
   import './training-config.css';
 
    // State variables
-  let modelId: string | null = null;
   let loading = false;
   let error: string | null = null;
   let result: TrainConfig | null = null;
@@ -128,21 +127,7 @@
     initializeOptimizerConfig();
   }
 
-  // Extract modelId from URL path instead of query parameters
-  $: {
-    const pathParts = $page.url.pathname.split('/');
-    const modelIndex = pathParts.indexOf('model');
-    if (modelIndex !== -1 && modelIndex + 1 < pathParts.length) {
-      modelId = pathParts[modelIndex + 1];
-    } else {
-      modelId = null;
-    }
-  }
-
-  // Fetch model details when modelId changes
-  $: if (modelId) {
-    fetchModelDetails();
-  }
+  fetchModelDetails();
 
   function initializeOptimizerConfig() {
     const config = optimizerConfigs[optimizer as keyof typeof optimizerConfigs];
@@ -155,22 +140,15 @@
     optimizerConfig = { lr: config.lr?.default ?? 0.001 };
   }
 
-  async function fetchModelDetails() {
-    if (!modelId) return;
-    
+  async function fetchModelDetails() {    
     try {
       loading = true;
       error = null;
       
       const response = await client.query({
         query: GET_MODEL,
-        variables: { id: modelId },
         fetchPolicy: 'network-only'
       });
-      
-      if (!response.data?.getModel) {
-        throw new Error(`Model with ID ${modelId} not found`);
-      }
       
       modelDetails = response.data.getModel;
       
@@ -255,10 +233,6 @@
   }
 
   async function setTrainingConfig() {
-    if (!modelId) {
-      error = 'Model ID is missing from URL parameters';
-      return;
-    }
 
     const validationError = validateForm();
     if (validationError) {
@@ -297,7 +271,6 @@
       const res = await client.mutate({
         mutation: SET_TRAIN_CONFIG,
         variables: {
-          modelId,
           epochs: epochs || 10, // Use default if null
           optimizer,
           optimizerConfig: finalOptimizerConfig,
@@ -326,15 +299,6 @@
 
 <div class="container">
   <h1 class="title">Training Configuration</h1>
-
-  {#if !modelId}
-    <div class="alert alert-error">
-      <p>No model ID provided in the URL.</p>
-      <p class="alert-link">
-        <a href="/create-model">Go back to create a model</a>
-      </p>
-    </div>
-  {:else}
     <div class="section">
       {#if modelDetails}
         <div class="model-overview">
@@ -342,38 +306,33 @@
           <p class="model-overview-text">
             Model Name: <span class="font-semibold">{modelDetails.name}</span>
           </p>
-          <p class="model-overview-text">
-            Total Layers: <span class="font-semibold">{modelDetails.layers_config?.length || 0}</span>
-          </p>
+          {#if modelDetails.module_graph}
+            <p class="model-overview-text">
+              Total Layers: <span class="font-semibold">{modelDetails.module_graph?.layers?.length || 0}</span>
+              Totals Connections : <span class="font-semibold">{modelDetails.module_graph?.edges?.length || 0}</span>
+            </p>
+          {:else}
+            <p class="model-overview-warning">
+              ⚠️ No module graph found. Please ensure your model is properly configured.
+            </p>
+          {/if}
+          {#if modelDetails.dataset_config}
+            <p class="model-overview-text">
+              Dataset: <span class="font-semibold">{modelDetails.dataset_config.name} (Batch size :{modelDetails.dataset_config.batch_size}</span>)
+            </p>
+          {:else}
+            <p class="model-overview-warning">
+              ⚠️ No dataset configuration found. You may want to configure dataset first.
+            </p>
+          {/if}
         </div>
-
-        {#if modelDetails.layers_config && modelDetails.layers_config.length > 0}
-          <div class="layer-summary">
-            <h3 class="layer-summary-title">Layer Architecture</h3>
-            <div class="section">
-              {#each modelDetails.layers_config as layer, index}
-                <div class="layer-item">
-                  <span class="layer-item-left">
-                    Layer {index + 1}: {layer.name || layer.type}
-                  </span>
-                  <span class="layer-item-right">
-                    {layer.type}
-                    {#if layer.type === 'linear' && 'in_features' in layer && 'out_features' in layer}
-                      ({layer.in_features} → {layer.out_features})
-                    {/if}
-                  </span>
-                </div>
-              {/each}
-            </div>
-          </div>
-        {/if}
       {/if}
 
       <form on:submit|preventDefault={setTrainingConfig} class="form">
         <div class="input-group">
           <div>
             <label for="epochs" class="input-label">
-              Epochs <span class="required">*</span>
+              Epochs <span class="text-red-500">*</span>
             </label>
             <input
               id="epochs"
@@ -548,5 +507,4 @@
         </div>
       {/if}
     </div>
-  {/if}
 </div>

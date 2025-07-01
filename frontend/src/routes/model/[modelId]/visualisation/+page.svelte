@@ -4,10 +4,10 @@
   import client from '$lib/apolloClient';
   import { START_TENSORBOARD } from '$lib/mutations';
   import { GET_MODEL, GET_TRAINING_STATUS } from '$lib/queries';
+  import type { Model } from '../../../../../../source/types/modelTypes';
+  import type { TrainStatus } from '../../../../../../source/types/trainTypes';
   
   import './visualization.css';
-
-  import type { Model, TrainStatus } from '../../../../../../source/types';
   
   let modelId: string | null = null;
   let modelDetails: Model | null = null;
