@@ -1,6 +1,5 @@
 import { LayerConfig, LayerConfigInput } from "./layerTypes.js";
 
-
 export type ModuleAdjacencyList =  {
     source_id: string;
     target_ids: string[];
