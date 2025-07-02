@@ -1,6 +1,6 @@
 <script lang="ts">
-import { createEventDispatcher } from 'svelte';
-import type { LayerConfigInput, LinearLayerConfigInput, 
+  import { createEventDispatcher } from 'svelte';
+  import type { LayerConfigInput, LinearLayerConfigInput, 
                 Conv2dLayerConfigInput, Conv1dLayerConfigInput, 
                 MaxPool2dLayerConfigInput, MaxPool1dLayerConfigInput,
                 AvgPool2dLayerConfigInput, AvgPool1dLayerConfigInput, 
@@ -8,19 +8,27 @@ import type { LayerConfigInput, LinearLayerConfigInput,
                 FlattenLayerConfigInput, DropoutLayerConfigInput,
                 ELULayerConfigInput, ReLULayerConfigInput,
                 LeakyReLULayerConfigInput, SigmoidLayerConfigInput, 
-                LogSigmoidLayerConfigInput, TanhLayerConfigInput} from '../../../../../../source/types/layerTypes';
+                LogSigmoidLayerConfigInput, TanhLayerConfigInput,
+                ConvTranspose2dLayerConfigInput, CatLayerConfigInput,
+                Dropout2dLayerConfigInput} from '../../../../../../source/types/layerTypes';
 
-const dispatch = createEventDispatcher();
+  // Props
+  export let selectedLayerType: any = null;
+  export let nodes: any[] = [];
+  export const loading: boolean = false;
+  export const layerTypes: any[] = [];
+  export let buildResult: any = null;
+  export let graphValidationResult: any = null;
 
-export let selectedLayerType = null;
-export let selectedNode = null;
-export let selectedEdge = null;
-export let nodes = [];
-export let loading = false;
-export let error = null;
-export let buildResult = null;
+  // Events
+  const dispatch = createEventDispatcher<{
+    addLayer: { layerConfig: LayerConfigInput };
+    deleteNode: void;
+    deleteEdge: void;
+    updateNode: { nodeId: string; layerConfig: LayerConfigInput };
+  }>();
 
-// Form fields - Linear
+  // Form fields - Linear
   let layerName = '';
   let inFeatures = '';
   let outFeatures = '';
@@ -74,10 +82,18 @@ export let buildResult = null;
   let negativeSlope = '0.01';
   let leakyReluInplace = false;
 
+  let outputPadding = '';
+  let catDimension = '';
+
+  let formError = '';
+
+
   function resetFormFields() {
+    formError = '';
     layerName = '';
     inFeatures = '';
     outFeatures = '';
+    bias = true;
     inChannels = '';
     outChannels = '';
     kernelSize = '';
@@ -85,6 +101,7 @@ export let buildResult = null;
     padding = '';
     dilation = '';
     groups = '1';
+    convBias = true;
     poolKernelSize = '';
     poolStride = '';
     poolPadding = '';
@@ -108,125 +125,13 @@ export let buildResult = null;
     leakyReluInplace = false;
   }
 
-  
-  
-  function populateFormFromNode(node: Node) {
-    const config = node.layerConfig;
-    
-    if (config.type === 'linear' && config.linear) {
-      layerName = config.linear.name ?? '';
-      inFeatures = config.linear.in_features.toString();
-      outFeatures = config.linear.out_features.toString();
-      bias = config.linear.bias ?? true;
-    } else if (config.type === 'conv2d' && config.conv2d) {
-      layerName = config.conv2d.name ?? '';
-      inChannels = config.conv2d.in_channels.toString();
-      outChannels = config.conv2d.out_channels.toString();
-      kernelSize = config.conv2d.kernel_size.join(',');
-      stride = config.conv2d.stride ? config.conv2d.stride.join(',') : '';
-      padding = config.conv2d.padding ? config.conv2d.padding.join(',') : '';
-      dilation = config.conv2d.dilation ? config.conv2d.dilation.join(',') : '';
-      groups = config.conv2d.groups ? config.conv2d.groups[0].toString() : '1';
-      convBias = config.conv2d.bias ?? true;
-      paddingMode = config.conv2d.padding_mode ?? 'zeros';
-    } else if (config.type === 'conv1d' && config.conv1d) {
-      layerName = config.conv1d.name ?? '';
-      inChannels = config.conv1d.in_channels.toString();
-      outChannels = config.conv1d.out_channels.toString();
-      kernelSize = config.conv1d.kernel_size.join(',');
-      stride = config.conv1d.stride ? config.conv1d.stride.join(',') : '';
-      padding = config.conv1d.padding ? config.conv1d.padding.join(',') : '';
-      dilation = config.conv1d.dilation ? config.conv1d.dilation.join(',') : '';
-      groups = config.conv1d.groups ? config.conv1d.groups[0].toString() : '1';
-      convBias = config.conv1d.bias ?? true;
-      paddingMode = config.conv1d.padding_mode ?? 'zeros';
-    } else if (config.type === 'maxpool2d' && config.maxpool2d) {
-      layerName = config.maxpool2d.name ?? '';
-      poolKernelSize = config.maxpool2d.kernel_size.join(',');
-      poolStride = config.maxpool2d.stride ? config.maxpool2d.stride.join(',') : '';
-      poolPadding = config.maxpool2d.padding ? config.maxpool2d.padding.join(',') : '';
-      poolDilation = config.maxpool2d.dilation ? config.maxpool2d.dilation.join(',') : '';
-      returnIndices = config.maxpool2d.return_indices ?? false;
-      ceilMode = config.maxpool2d.ceil_mode ?? false;
-    } else if (config.type === 'maxpool1d' && config.maxpool1d) {
-      layerName = config.maxpool1d.name ?? '';
-      poolKernelSize = config.maxpool1d.kernel_size.join(',');
-      poolStride = config.maxpool1d.stride ? config.maxpool1d.stride.join(',') : '';
-      poolPadding = config.maxpool1d.padding ? config.maxpool1d.padding.join(',') : '';
-      poolDilation = config.maxpool1d.dilation ? config.maxpool1d.dilation.join(',') : '';
-      returnIndices = config.maxpool1d.return_indices ?? false;
-      ceilMode = config.maxpool1d.ceil_mode ?? false;
-    } else if (config.type === 'avgpool2d' && config.avgpool2d) {
-      layerName = config.avgpool2d.name ?? '';
-      poolKernelSize = config.avgpool2d.kernel_size.join(',');
-      poolStride = config.avgpool2d.stride ? config.avgpool2d.stride.join(',') : '';
-      poolPadding = config.avgpool2d.padding ? config.avgpool2d.padding.join(',') : '';
-      countIncludePad = config.avgpool2d.count_include_pad ?? false;
-      divisorOverride = config.avgpool2d.divisor_override !== undefined && config.avgpool2d.divisor_override !== null
-        ? config.avgpool2d.divisor_override.toString()
-        : '';
-    } else if (config.type === 'avgpool1d' && config.avgpool1d) {
-      layerName = config.avgpool1d.name ?? '';
-      poolKernelSize = config.avgpool1d.kernel_size.join(',');
-      poolStride = config.avgpool1d.stride ? config.avgpool1d.stride.join(',') : '';
-      poolPadding = config.avgpool1d.padding ? config.avgpool1d.padding.join(',') : '';
-      countIncludePad = config.avgpool1d.count_include_pad ?? false;
-      divisorOverride = config.avgpool1d.divisor_override !== undefined && config.avgpool1d.divisor_override !== null
-        ? config.avgpool1d.divisor_override.toString()
-        : '';
-    } else if (config.type === 'batchnorm2d' && config.batchnorm2d) {
-      layerName = config.batchnorm2d.name ?? '';
-      numFeatures = config.batchnorm2d.num_features.toString();
-      eps = config.batchnorm2d.eps?.toString() || '';
-      momentum = config.batchnorm2d.momentum?.toString() || '0.1';
-      affine = config.batchnorm2d.affine ?? true;
-      trackRunningStatus = config.batchnorm2d.track_running_status ?? true;
-    } else if (config.type === 'batchnorm1d' && config.batchnorm1d){
-      layerName = config.batchnorm1d.name ?? '';
-      numFeatures = config.batchnorm1d.num_features.toString();
-      eps = config.batchnorm1d.eps?.toString() || '';
-      momentum = config.batchnorm1d.momentum?.toString() || '0.1';
-      affine = config.batchnorm1d.affine ?? true;
-      trackRunningStatus = config.batchnorm1d.track_running_status ?? true;
-    } else if (config.type === 'flatten' && config.flatten) {
-      layerName = config.flatten.name ?? '';
-      startDim = config.flatten.start_dim?.toString() || '1';
-      endDim = config.flatten.end_dim?.toString() || '-1';
-    } else if (config.type === 'dropout' && config.dropout) {
-      layerName = config.dropout.name ?? '';
-      dropoutP = config.dropout.p?.toString() || '0.5';
-    } else if (config.type === 'elu' && config.elu) {
-      layerName = config.elu.name ?? '';
-      alpha = config.elu.alpha?.toString() || '1.0';
-      eluInplace = config.elu.inplace ?? false;
-    } else if (config.type === 'relu' && config.relu) {
-      layerName = config.relu.name ?? '';
-      reluInplace = config.relu.inplace ?? false;
-    } else if (config.type === 'leakyrelu' && config.leakyrelu) {
-      layerName = config.leakyrelu.name ?? '';
-      negativeSlope = config.leakyrelu.negative_slope?.toString() || '0.01';
-      leakyReluInplace = config.leakyrelu.inplace ?? false;
-    } else if (config.type === 'sigmoid') {
-      layerName = config.sigmoid?.name ?? '';
-      // No additional fields for Sigmoid
-    } else if (config.type === 'logsigmoid') {
-      layerName = config.logsigmoid?.name ?? '';
-      // No additional fields for LogSigmoid
-    } else if (config.type === 'tanh') {
-      layerName = config.tanh?.name ?? '';
-      // No additional fields for Tanh
-    } else {
-      console.warn(`Unknown layer type: ${config.type}`);
-    }
-  }
-
-function parseArrayInput(input: string): number[] | null {
+  function parseArrayInput(input: string): number[] | null {
     if (!input.trim()) return null;
     
     const parts = input.split(',').map(s => s.trim());
     const numbers = parts.map(p => Number(p));
     
-    if (numbers.some(n => isNaN(n) || n <= 0)) return null;
+    if (numbers.some(n => isNaN(n) || n < 0)) return null;
     
     return numbers;
   }
@@ -234,153 +139,59 @@ function parseArrayInput(input: string): number[] | null {
   function validateForm(): string | null {
     if (!selectedLayerType) return 'Layer type is required';
     
-    if (selectedLayerType.type === 'linear') {
-      const inFeaturesNum = Number(inFeatures);
-      const outFeaturesNum = Number(outFeatures);
-      
-      if (!inFeatures || isNaN(inFeaturesNum) || inFeaturesNum <= 0) {
-        return 'Input features must be a positive number';
-      }
-      if (!outFeatures || isNaN(outFeaturesNum) || outFeaturesNum <= 0) {
-        return 'Output features must be a positive number';
-      }
-    } else if (selectedLayerType.type === 'conv2d') {
-      const inChannelsNum = Number(inChannels);
-      const outChannelsNum = Number(outChannels);
-      const groupsNum = Number(groups);
-      
-      if (!inChannels || isNaN(inChannelsNum) || inChannelsNum <= 0) {
-        return 'Input channels must be a positive number';
-      }
-      if (!outChannels || isNaN(outChannelsNum) || outChannelsNum <= 0) {
-        return 'Output channels must be a positive number';
-      }
-      if (!kernelSize.trim()) {
-        return 'Kernel size is required';
-      }
-      if (!groups || isNaN(groupsNum) || groupsNum <= 0) {
-        return 'Groups must be a positive number';
-      }
-      
-      // Validate kernel size format
-      const kernelSizeArray = parseArrayInput(kernelSize);
-      if (!kernelSizeArray || kernelSizeArray.length !== 2) {
-        return 'Kernel size must be an array of exactly two numbers (e.g., "3,3")';
-      }
-    } else if (selectedLayerType.type === 'conv1d') {
-      const inChannelsNum = Number(inChannels);
-      const outChannelsNum = Number(outChannels);
-      const groupsNum = Number(groups);
-      
-      if (!inChannels || isNaN(inChannelsNum) || inChannelsNum <= 0) {
-        return 'Input channels must be a positive number';
-      }
-      if (!outChannels || isNaN(outChannelsNum) || outChannelsNum <= 0) {
-        return 'Output channels must be a positive number';
-      }
-      if (!kernelSize.trim()) {
-        return 'Kernel size is required';
-      }
-      if (!groups || isNaN(groupsNum) || groupsNum <= 0) {
-        return 'Groups must be a positive number';
-      }
-      const kernelSizeArray = parseArrayInput(kernelSize);
-      if (!kernelSizeArray || kernelSizeArray.length !== 1) {
-        return 'Kernel size must be a number (e.g., "3")';
-      }
-    } else if (selectedLayerType.type === 'maxpool2d') {
-      if (!poolKernelSize.trim()) {
-        return 'Kernel size is required';
-      }
-      
-      // Validate kernel size format
-      const kernelSizeArray = parseArrayInput(poolKernelSize);
-      if (!kernelSizeArray || kernelSizeArray.length !== 2) {
-        return 'Kernel size must be an array of exactly two numbers (e.g., "2,2")';
-      }
-    } else if (selectedLayerType.type === 'maxpool1d') {
-      if (!poolKernelSize.trim()) {
-        return 'Kernel size is required';
-      }
-      
-      // Validate kernel size format
-      const kernelSizeArray = parseArrayInput(poolKernelSize);
-      if (!kernelSizeArray || kernelSizeArray.length !== 1) {
-        return 'Kernel size must be a number (e.g., "2")';
-      }
-    } else if (selectedLayerType.type === 'avgpool2d') {
-      if (!poolKernelSize.trim()) {
-          return 'Kernel size is required';
-      }
-      
-      // Validate kernel size format
-      const kernelSizeArray = parseArrayInput(poolKernelSize);
-      if (!kernelSizeArray || kernelSizeArray.length !== 2) {
-          return 'Kernel size must be an array of exactly two numbers (e.g., "2,2")';
-      }
-    } else if (selectedLayerType.type === 'avgpool1d') {
-      if (!poolKernelSize.trim()) {
-          return 'Kernel size is required';
-      }
-      
-      // Validate kernel size format
-      const kernelSizeArray = parseArrayInput(poolKernelSize);
-      if (!kernelSizeArray || kernelSizeArray.length !== 1) {
-          return 'Kernel size must be a number (e.g., "2")';
-      }
-    } else if (selectedLayerType.type === 'batchnorm2d' || selectedLayerType.type === 'batchnorm1d') {
-      const numFeaturesNum = Number(numFeatures);
-      
-      if (!numFeatures || isNaN(numFeaturesNum) || numFeaturesNum <= 0) {
-          return 'Number of features must be a positive number';
-      }
-      
-      const epsNum = Number(eps);
-      if (isNaN(epsNum) || epsNum <= 0) {
-          return 'Eps must be a positive number';
-      }
-      
-      const momentumNum = Number(momentum);
-      if (isNaN(momentumNum) || momentumNum < 0 || momentumNum > 1) {
-          return 'Momentum must be between 0 and 1';
-      }
-    } else if (selectedLayerType.type === 'flatten') {
-      const startDimNum = Number(startDim);
-      const endDimNum = Number(endDim);
-      
-      if (isNaN(startDimNum)) {
-        return 'Start dimension must be a valid number';
-      }
-      if (isNaN(endDimNum)) {
-        return 'End dimension must be a valid number';
-      }
-    } else if (selectedLayerType.type === 'dropout') {
-      const pNum = Number(dropoutP);
-      
-      if (isNaN(pNum) || pNum < 0 || pNum > 1) {
-        return 'Dropout probability must be between 0 and 1';
-      }
-    } else if (selectedLayerType.type === 'elu') {
-      const alphaNum = Number(alpha);
-      
-      if (isNaN(alphaNum) || alphaNum <= 0) {
-        return 'Alpha must be a positive number';
-      }
-    } else if (selectedLayerType.type === 'leakyrelu') {
-      const slopeNum = Number(negativeSlope);
-      
-      if (isNaN(slopeNum)) {
-        return 'Negative slope must be a valid number';
-      }
-    } else if (selectedLayerType.type === 'sigmoid' || selectedLayerType.type === 'logsigmoid' || selectedLayerType.type === 'tanh') {
-    // No additional validation needed for these layers
+    const t = selectedLayerType.type;
+    const validateNum = (val: string, name: string, min = 0, max = Infinity) => {
+        const n = Number(val);
+        if (!val || isNaN(n) || n <= min || n > max) 
+            return `${name} must be ${min === 0 ? 'a positive number' : `between ${min} and ${max}`}`;
+        return null;
+    };
+    
+    const validateKernel = (size: string, dims: number, name = 'Kernel size') => {
+        if (!size?.trim()) return `${name} is required`;
+        const arr = parseArrayInput(size);
+        if (!arr || arr.length !== dims) 
+            return `${name} must be ${dims === 1 ? 'a number' : `an array of exactly ${dims} numbers`} (e.g., "${dims === 1 ? '3' : '3,3'}")`;
+        return null;
+    };
+    
+    if (t === 'linear') {
+        return validateNum(inFeatures, 'Input features') || validateNum(outFeatures, 'Output features');
     }
     
+    if (t === 'conv2d' || t === 'conv1d') {
+        const dims = t === 'conv2d' ? 2 : 1;
+        return validateNum(inChannels, 'Input channels') || 
+               validateNum(outChannels, 'Output channels') || 
+               validateKernel(kernelSize, dims) || 
+               validateNum(groups, 'Groups');
+    }
+    
+    if (t.includes('pool')) {
+        const dims = t.includes('2d') ? 2 : 1;
+        return validateKernel(poolKernelSize, dims);
+    }
+    
+    if (t.includes('batchnorm')) {
+        return validateNum(numFeatures, 'Number of features') || 
+               validateNum(eps, 'Eps') || 
+               validateNum(momentum, 'Momentum', 0, 1);
+    }
+    
+    if (t === 'flatten') {
+        return validateNum(startDim, 'Start dimension', -Infinity) || 
+               validateNum(endDim, 'End dimension', -Infinity);
+    }
+    
+    if (t === 'dropout') return validateNum(dropoutP, 'Dropout probability', 0, 1);
+    if (t === 'elu') return validateNum(alpha, 'Alpha');
+    if (t === 'leakyrelu') return isNaN(Number(negativeSlope)) ? 'Negative slope must be a valid number' : null;
+    
     return null;
-  }
+}
 
   function createLayerConfig(): LayerConfigInput {
-    const layerNameValue = layerName.trim() || `${selectedLayerType!.type}Layer${nodeCounter}`;
+    const layerNameValue = layerName.trim() || `${selectedLayerType!.type}Layer`;
     
     if (selectedLayerType!.type === 'linear') {
       const linearConfig: LinearLayerConfigInput = {
@@ -404,7 +215,6 @@ function parseArrayInput(input: string): number[] | null {
         padding_mode: paddingMode
       };
       
-      // Add optional fields if provided
       if (stride.trim()) {
         const strideArray = parseArrayInput(stride);
         if (strideArray) {
@@ -431,6 +241,43 @@ function parseArrayInput(input: string): number[] | null {
         type: 'conv2d',
         conv2d: conv2dConfig
       };
+    } else if (selectedLayerType!.type === 'convtranspose2d') {
+      const convTranspose2dConfig: ConvTranspose2dLayerConfigInput = {
+        name: layerNameValue,
+        in_channels: parseInt(inChannels, 10),
+        out_channels: parseInt(outChannels, 10),
+        kernel_size: parseArrayInput(kernelSize) || [3, 3],
+        bias: convBias,
+        padding_mode: paddingMode,
+        output_padding: outputPadding ? parseArrayInput(outputPadding ) : undefined
+      };
+      
+      if (stride.trim()) {
+        const strideArray = parseArrayInput(stride);
+        if (strideArray) {
+          convTranspose2dConfig.stride = strideArray;
+        }
+      }
+      if (padding.trim()) {
+        const paddingArray = parseArrayInput(padding);
+        if (paddingArray) {
+          convTranspose2dConfig.padding = paddingArray;
+        }
+      }
+      if (dilation.trim()) {
+        const dilationArray = parseArrayInput(dilation);
+        if (dilationArray) {
+          convTranspose2dConfig.dilation = dilationArray;
+        }
+      }
+      if (groups.trim() && groups !== '1') {
+        convTranspose2dConfig.groups = [parseInt(groups, 10)];
+      }
+      
+      return {
+        type: 'convtranspose2d',
+        convtranspose2d: convTranspose2dConfig
+      };
     } else if (selectedLayerType!.type === 'conv1d') {
       const conv1dConfig: Conv1dLayerConfigInput = {
         name: layerNameValue,
@@ -441,7 +288,6 @@ function parseArrayInput(input: string): number[] | null {
         padding_mode: paddingMode
       };
       
-      // Add optional fields if provided
       if (stride.trim()) {
         const strideArray = parseArrayInput(stride);
         if (strideArray) {
@@ -575,6 +421,16 @@ function parseArrayInput(input: string): number[] | null {
         type: 'dropout',
         dropout: dropoutConfig
       };
+    } else if (selectedLayerType!.type === 'dropout2d') {
+      const dropout2dConfig: Dropout2dLayerConfigInput = {
+        name: layerNameValue,
+        p: parseFloat(dropoutP) || 0.5
+      };
+      
+      return {
+        type: 'dropout2d',
+        dropout2d: dropout2dConfig
+      };
     } else if (selectedLayerType!.type === 'elu') {
       const eluConfig: ELULayerConfigInput = {
         name: layerNameValue,
@@ -631,36 +487,324 @@ function parseArrayInput(input: string): number[] | null {
         type: 'tanh', 
         tanh: tanhConfig
       };
+    } else if (selectedLayerType!.type === 'cat') {
+      const catConfig : CatLayerConfigInput= {
+        name: layerNameValue,
+        dimension: parseInt(catDimension, 10) || 1
+      };
+      return { 
+        type: 'cat', 
+        cat: catConfig
+      };
     }
 
     throw new Error(`Unsupported layer type: ${selectedLayerType!.type}`);
   }
 
   function handleAddLayer() {
-  const validationError = validateForm();
-  if (validationError) return;
-  
-  const layerConfig = createLayerConfig();
-  dispatch('addLayer', { layerConfig });
-  resetFormFields();
-}
+    const validationError = validateForm();
+    if (validationError) {
+      formError = validationError;
+      return;
+    }
+    
+    formError = ''; // Clear any previous errors
+    const layerConfig = createLayerConfig();
+    dispatch('addLayer', { layerConfig });
+    resetFormFields();
+  }
+</script>
 
-function handleDeleteNode() {
-  if (!selectedNode) return;
-  dispatch('deleteNode', { nodeId: selectedNode.id });
-}
+<div class="sidebar right">
+    {#if selectedLayerType}
+      <h3>Add {selectedLayerType.label}</h3>
+      <div class="form">
+        <label>
+          Layer Name:
+          <input type="text" bind:value={layerName} placeholder="Optional custom name">
+        </label>
+        
+        {#if selectedLayerType.type === 'linear'}
+          <label>
+            Input Features:
+            <input type="text" bind:value={inFeatures} placeholder="Enter input features">
+          </label>
+          <label>
+            Output Features:
+            <input type="text" bind:value={outFeatures} placeholder="Enter output features">
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={bias}>
+            Bias
+          </label>
+        {:else if selectedLayerType.type === 'conv2d' || selectedLayerType.type === 'conv1d' || selectedLayerType.type === 'convtranspose2d'}
+          <label>
+            Input Channels:
+            <input type="text" bind:value={inChannels} placeholder="Enter input channels">
+          </label>
+          <label>
+            Output Channels:
+            <input type="text" bind:value={outChannels} placeholder="Enter output channels">
+          </label>
+          <label>
+            Kernel Size:
+            <input type="text" bind:value={kernelSize} placeholder={selectedLayerType.type === 'conv2d' || selectedLayerType.type === 'convtranspose2d' ? "e.g., 3,3" : "e.g., 3"}>
+          </label>
+          <label>
+            Stride (optional):
+            <input type="text" bind:value={stride} placeholder={selectedLayerType.type === 'conv2d' || selectedLayerType.type === 'convtranspose2d' ? "e.g., 1,1" : "e.g., 1"}>
+          </label>
+          <label>
+            Padding (optional):
+            <input type="text" bind:value={padding} placeholder={selectedLayerType.type === 'conv2d' || selectedLayerType.type === 'convtranspose2d' ? "e.g., 1,1" : "e.g., 1"}>
+          </label>
+          <label>
+            Dilation (optional):
+            <input type="text" bind:value={dilation} placeholder={selectedLayerType.type === 'conv2d' || selectedLayerType.type === 'convtranspose2d' ? "e.g., 1,1" : "e.g., 1"}>
+          </label>
+          <label>
+            Groups:
+            <input type="text" bind:value={groups} placeholder="Default: 1">
+          </label>
 
-function handleDeleteEdge() {
-  if (!selectedEdge) return;
-  dispatch('deleteEdge', { edgeId: selectedEdge.id });
-}
+          {#if selectedLayerType.type !== 'convtranspose2d'}
+            <label>
+              Padding Mode:
+              <select bind:value={paddingMode}>
+                <option value="zeros">zeros</option>
+                <option value="reflect">reflect</option>
+                <option value="replicate">replicate</option>
+                <option value="circular">circular</option>
+              </select>
+            </label>
+          {/if}
 
-// Auto-populate form when node selection changes
-$: if (selectedNode) {
-  populateFormFromNode(selectedNode);
-}
+          {#if selectedLayerType.type === 'convtranspose2d'}
+            <label>
+              Output Padding (optional):
+              <input type="text" bind:value={outputPadding} placeholder="e.g., 0,0">
+            </label>
+          {/if}
 
-// Clear form when switching layer types
-$: if (selectedLayerType) {
-  resetFormFields();
-}
+          <label>
+            <input type="checkbox" bind:checked={convBias}>
+            Bias
+          </label>
+        {:else if selectedLayerType.type === 'maxpool1d' || selectedLayerType.type === 'maxpool2d'}
+          <label>
+            Kernel Size:
+            <input type="text" bind:value={poolKernelSize} placeholder= {selectedLayerType.type === 'maxpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Stride (optional):
+            <input type="text" bind:value={poolStride} placeholder ={selectedLayerType.type === 'maxpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Padding (optional):
+            <input type="text" bind:value={poolPadding} placeholder= {selectedLayerType.type === 'maxpool2d' ? "e.g., 0,0" : "e.g., 0"}>
+          </label>
+          <label>
+            Dilation (optional):
+            <input type="text" bind:value={poolDilation} placeholder= {selectedLayerType.type === 'maxpool2d' ? "e.g., 1,1" : "e.g., 1"}>
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={returnIndices}>
+            Return Indices
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={ceilMode}>
+            Ceil Mode
+          </label>
+        {:else if selectedLayerType.type === 'avgpool1d' || selectedLayerType.type === 'avgpool2d'}
+          <label>
+            Kernel Size:
+            <input type="text" bind:value={poolKernelSize} placeholder={selectedLayerType.type === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Stride (optional):
+            <input type="text" bind:value={poolStride} placeholder={selectedLayerType.type === 'avgpool2d' ? "e.g., 2,2" : "e.g., 2"}>
+          </label>
+          <label>
+            Padding (optional):
+            <input type="text" bind:value={poolPadding} placeholder={selectedLayerType.type === 'avgpool2d' ? "e.g., 0,0" : "e.g., 0"}>
+          </label>
+          <label>
+            Count Include Pad:
+            <input type="checkbox" bind:checked={countIncludePad}>
+          </label>
+          <label>
+            Divisor Override:
+            <input type="text" bind:value={divisorOverride} placeholder="Optional divisor override">
+          </label>
+        {:else if selectedLayerType.type === 'batchnorm1d' || selectedLayerType.type === 'batchnorm2d'}
+          <label>
+            Number of Features:
+            <input type="text" bind:value={numFeatures} placeholder="Enter number of features">
+          </label>
+          <label>
+            Epsilon:
+            <input type="text" bind:value={eps} placeholder="Default: 1e-5">
+          </label>
+          <label>
+            Momentum:
+            <input type="text" bind:value={momentum} placeholder="Default: 0.1">
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={affine}>
+            Affine
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={trackRunningStatus}>
+            Track Running Status
+          </label>
+        {:else if selectedLayerType.type === 'flatten'}
+          <label>
+            Start Dimension:
+            <input type="text" bind:value={startDim} placeholder="Default: 1">
+          </label>
+          <label>
+            End Dimension:
+            <input type="text" bind:value={endDim} placeholder="Default: -1">
+          </label>
+        {:else if selectedLayerType.type === 'dropout' || selectedLayerType.type === 'dropout2d'}
+          <label>
+            Dropout Probability:
+            <input type="text" bind:value={dropoutP} placeholder="Default: 0.5">
+          </label>
+        {:else if selectedLayerType.type === 'elu'}
+          <label>
+            Alpha:
+            <input type="text" bind:value={alpha} placeholder="Default: 1.0">
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={eluInplace}>
+            Inplace
+          </label>
+        {:else if selectedLayerType.type === 'relu'}
+          <label>
+            <input type="checkbox" bind:checked={reluInplace}>
+            Inplace
+          </label>
+        {:else if selectedLayerType.type === 'leakyrelu'}
+          <label>
+            Negative Slope:
+            <input type="text" bind:value={negativeSlope} placeholder="Default: 0.01">
+          </label>
+          <label>
+            <input type="checkbox" bind:checked={leakyReluInplace}>
+            Inplace
+          </label>
+        {:else if selectedLayerType.type === 'cat'}
+          <label>
+            Concatenation Dimension:
+            <input type="text" bind:value={catDimension} placeholder="e.g., 1">
+          </label>
+        {/if}
+        {#if formError}
+          <div class="error-message">{formError}</div>
+        {/if}
+        
+        <button class="add-button" on:click={handleAddLayer}>Add to Graph</button>
+      </div>
+    {:else}
+      <h3>Instructions</h3>
+      <div class="instructions">
+        <p>• Select a layer type to add new layers</p>
+        <p>• Click on layers to select and edit them</p>
+        <p>• Click on connections to select and delete them</p>
+        <p>• <strong>Shift + Drag</strong> to add connection between layers</p>
+        <p>• <strong>Drag</strong> layers to reposition them</p>
+        
+        {#if buildResult}
+          <div class="build-result">
+            <h4>Built Graph Successfully</h4>
+            <div class="build-summary">
+              <div class="summary-item">
+                <span class="label">Layers:</span>
+                <span class="value">{buildResult.module_graph.layers.length}</span>
+              </div>
+              <div class="summary-item">
+                <span class="label">Connections:</span>
+                <span class="value">{buildResult.module_graph.edges.length}</span>
+              </div>
+            </div>
+            
+            <!-- Graph Validation Results -->
+            {#if graphValidationResult}
+              <div class="graph-validation">
+                <h5>🔍 Graph Validation</h5>
+                
+                {#if graphValidationResult.status && graphValidationResult.status.length > 0}
+                  <!-- Check if there are validation errors -->
+                  {#if graphValidationResult.status.some((s: any) => s.message)}
+                    <div class="validation-error">
+                      <div class="status-header">
+                        <span class="status-icon">⚠️</span>
+                        <strong>Validation Issues Found</strong>
+                      </div>
+                      
+                      {#each graphValidationResult.status as status, index}
+                        {#if status.message}
+                          <div class="error-item">
+                            <div class="error-number">Issue #{index + 1}</div>
+                            <div class="error-details">
+                              <p class="error-message">{status.message}</p>
+                              
+                              {#if status.out_dimension && status.out_dimension.length > 0}
+                                <div class="dimension-info">
+                                  <span class="dim-label">Output:</span>
+                                  <code class="dimension">[{status.out_dimension.join(', ')}]</code>
+                                </div>
+                              {/if}
+                              
+                              {#if status.required_in_dimension && status.required_in_dimension.length > 0}
+                                <div class="dimension-info">
+                                  <span class="dim-label">Required Input:</span>
+                                  <code class="dimension">[{status.required_in_dimension.join(', ')}]</code>
+                                </div>
+                              {/if}
+                            </div>
+                          </div>
+                        {/if}
+                      {/each}
+                    </div>
+                  {:else}
+                    <div class="validation-success">
+                      <div class="status-header">
+                        <span class="status-icon">✅</span>
+                        <strong>Graph is Valid!</strong>
+                      </div>
+                      <p>All layer dimensions match correctly</p>
+                    </div>
+                  {/if}
+                  
+          
+                {:else}
+                  <div class="no-validation">
+                    <p>No validation data available</p>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+            
+            <!-- Layer Execution Order -->
+            {#if buildResult.module_graph.sorted && buildResult.module_graph.layers.length > 0}
+              <div class="layer-order">
+                <h5>🔄 Layer Execution Order</h5>
+                <div class="layer-list">
+                  {#each buildResult.module_graph.layers as layer, index}
+                    <div class="layer-item">
+                      <div class="layer-info">
+                        <span class="layer-name">{layer.name}</span>
+                        <span class="layer-type">({layer.type})</span>
+                      </div>
+                    </div>
+                  {/each}
+                </div>
+              </div>
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
+  </div>
