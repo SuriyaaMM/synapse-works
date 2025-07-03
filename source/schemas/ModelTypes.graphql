@@ -2,7 +2,7 @@
 type Model {
     id: ID!
     name: String! 
-    module_graph: ModuleGraph!
+    module_graph: ModuleGraph
     # layers_config: [LayerConfig!] 
     train_config: TrainConfig
     dataset_config: DatasetConfig

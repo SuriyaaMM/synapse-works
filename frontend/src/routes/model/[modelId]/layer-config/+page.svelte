@@ -71,6 +71,9 @@
         case 'cifar10':
           inputDimension = [3, 32, 32];
           break;
+        case 'image_folder':
+          inputDimension = [3, 224, 224];
+          break;
         default:
           inputDimension = [1, 28, 28];
       }

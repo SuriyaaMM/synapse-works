@@ -212,3 +212,57 @@
   border-radius: 6px;
   margin-top: 16px;
 }
+
+.export-section {
+  padding: 16px;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.export-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.export-dropdown {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.export-dropdown label {
+  font-weight: 500;
+  color: #555;
+}
+
+.export-select {
+  padding: 8px 12px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  background-color: white;
+  font-size: 14px;
+  cursor: pointer;
+  max-width: 200px;
+}
+
+.export-select:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.export-select:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.export-description {
+  font-size: 12px;
+  color: #666;
+  margin: 0;
+  font-style: italic;
+}

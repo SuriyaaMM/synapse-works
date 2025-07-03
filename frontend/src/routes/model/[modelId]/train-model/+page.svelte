@@ -4,11 +4,13 @@
   import client from '$lib/apolloClient';
   import { TRAIN_MODEL } from '$lib/mutations';
   import { GET_MODEL, GET_TRAINING_STATUS } from '$lib/queries';
-  import type { Model, TrainStatus } from '../../../../../../source/types';
+  import type { Model } from '../../../../../../source/types/modelTypes';
+  import type { TrainStatus } from '../../../../../../source/types/trainTypes';
+  import type { GraphQLTrainArgs, TrainArgs } from '../../../../../../source/types/argTypes';
+  import { ExportType } from '../../../../../../source/types/argTypes';
 
   import './train-model.css';
   
-  let modelId: string | null = null;
   let loading = false;
   let training = false;
   let error: string | null = null;
@@ -16,28 +18,12 @@
   let trainingStatus: TrainStatus | null = null;
   let statusInterval: any = null;
   let stoppedByUser = false;
+  let selectedExportType: ExportType = ExportType.ONNX; // Set default to ONNX
 
-  // Extract modelId from URL path instead of query parameters
-  $: {
-    const pathParts = $page.url.pathname.split('/');
-    const modelIndex = pathParts.indexOf('model');
-    if (modelIndex !== -1 && modelIndex + 1 < pathParts.length) {
-      modelId = pathParts[modelIndex + 1];
-    } else {
-      modelId = null;
-    }
-  }
-
-  // Fetch model details when modelId changes
-  $: if (modelId) {
-    fetchModelDetails();
-  }
-
+  fetchModelDetails();
+  
   onMount(() => {
-    // Check if training is already in progress
-    if (modelId) {
-      checkTrainingStatus();
-    }
+    checkTrainingStatus();
   });
 
   onDestroy(() => {
@@ -47,12 +33,10 @@
   });
 
   async function fetchModelDetails() {
-    if (!modelId) return;
     
     try {
       const response = await client.query({
         query: GET_MODEL,
-        variables: { id: modelId },
         fetchPolicy: 'network-only'
       });
       
@@ -64,13 +48,11 @@
   }
 
   async function checkTrainingStatus() {
-    if (!modelId) return;
     
     try {
       const response = await client.query({
         query: GET_TRAINING_STATUS,
-        variables: { modelId },
-        fetchPolicy: 'no-cache' // Force fresh data
+        fetchPolicy: 'no-cache'
       });
       
       const newStatus = response.data?.getTrainingStatus;
@@ -95,12 +77,10 @@
       clearInterval(statusInterval);
       statusInterval = null;
     }
-    
-    // Reset training state
+
     training = false;
-    stoppedByUser = true;  // Add this line
+    stoppedByUser = true;
     
-    // Reset training status
     if (trainingStatus) {
       trainingStatus = {
         ...trainingStatus,
@@ -118,8 +98,7 @@
       try {
         const response = await client.query({
           query: GET_TRAINING_STATUS,
-          variables: { modelId },
-          fetchPolicy: 'no-cache' // Always get fresh data
+          fetchPolicy: 'no-cache'
         });
         
         const newStatus = response.data?.getTrainingStatus;
@@ -144,14 +123,9 @@
   }
 
   async function startTraining() {
-    if (!modelId) {
-      error = 'Model ID is missing from URL parameters';
-      return;
-    }
 
-    // Validate that model is fully configured
-    if (!modelDetails?.layers_config?.length) {
-      error = 'Model has no layers configured';
+    if (!modelDetails?.module_graph?.layers.length) {
+      error = 'Model has no module graph defined';
       return;
     }
 
@@ -171,9 +145,15 @@
     stoppedByUser = false;
 
     try {
+      const args: GraphQLTrainArgs = {
+        export_to: selectedExportType
+      };
+
+      const variables: TrainArgs = { args };
+
       const res = await client.mutate({
         mutation: TRAIN_MODEL,
-        variables: { modelId },
+        variables,
         errorPolicy: 'all'
       });
       
@@ -185,7 +165,6 @@
         throw new Error('Failed to start training - no data returned');
       }
       
-      // Initialize training status immediately to show that training has started
       trainingStatus = {
         epoch: 0,
         completed: false,
@@ -194,16 +173,13 @@
         started: true
       };
       
-      // Start aggressive polling immediately
       startStatusPolling();
       
-      // Do immediate status checks with exponential backoff
       const checkImmediately = async () => {
         for (let i = 0; i < 10; i++) {
-          await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); // 200ms, 400ms, 600ms, etc.
+          await new Promise(resolve => setTimeout(resolve, 200 * (i + 1))); 
           await checkTrainingStatus();
           
-          // If we got real training data, break the loop
           if (trainingStatus && trainingStatus.epoch > 0) {
             break;
           }
@@ -236,17 +212,6 @@
 
 <div class="start-training-container">
   <h1 class="heading">Start Training</h1>
-
-  {#if !modelId}
-    <div class="error-box">
-      <p>No model ID provided in the URL.</p>
-      <p class="mt-2">
-        <a href="/create-model" class="checklist-links">
-          Go back to create a model
-        </a>
-      </p>
-    </div>
-  {:else}
     <div class="space-y-6">
       {#if modelDetails}
         <div class="model-overview">
@@ -298,8 +263,8 @@
           <h3 class="checklist-title">Pre-Training Checklist</h3>
           <div>
             <div class="checklist-item">
-              <div class="check-circle {modelDetails.layers_config?.length > 0 ? 'green' : 'red'}"></div>
-              <span>Model Architecture: {modelDetails.layers_config?.length || 0} layers configured</span>
+              <div class="check-circle {modelDetails?.module_graph?.layers.length ? 'green' : 'red'}"></div>
+              <span>Build Graph: {modelDetails?.module_graph?.layers.length ? 'Ready' : 'Missing'}</span>
             </div>
             <div class="checklist-item">
               <div class="check-circle {modelDetails.train_config ? 'green' : 'red'}"></div>
@@ -311,28 +276,37 @@
             </div>
           </div>
           
-          {#if modelDetails.layers_config?.length > 0 && modelDetails.train_config && modelDetails.dataset_config}
+          {#if modelDetails?.module_graph?.layers?.length && modelDetails.train_config && modelDetails.dataset_config}
             <div class="checklist-ready">
               ✅ All configurations complete. Ready to start training!
             </div>
           {:else}
             <div class="checklist-warning">
               ❌ Please complete all configurations before starting training.
-              <div class="checklist-links" style="margin-top: 8px;">
-                {#if !modelDetails.layers_config?.length}
-                  <a href={`/create-model?modelId=${modelId}`}>Add Layers</a>
-                {/if}
-                {#if !modelDetails.train_config}
-                  <a href={`/train-config?modelId=${modelId}`}>Configure Training</a>
-                {/if}
-                {#if !modelDetails.dataset_config}
-                  <a href={`/dataset-config?modelId=${modelId}`}>Configure Dataset</a>
-                {/if}
-              </div>
             </div>
           {/if}
         </div>
       {/if}
+
+      <!-- Export Type Selection -->
+      <div class="export-section">
+        <h3 class="export-title">Export Options</h3>
+        <div class="export-dropdown">
+          <label for="export-type">Export Type:</label>
+          <select 
+            id="export-type"
+            bind:value={selectedExportType}
+            disabled={training}
+            class="export-select"
+          >
+            <option value="ONNX">ONNX (Default)</option>
+            <option value="TorchTensor">TorchTensor</option>
+          </select>
+          <p class="export-description">
+            The trained model will be exported in the selected format after training completes.
+          </p>
+        </div>
+      </div>
 
       <!-- Training Status -->
       {#if trainingStatus}
@@ -346,6 +320,7 @@
                 <p>Final Epoch: {trainingStatus.epoch}</p>
                 <p>Final Loss: {trainingStatus.loss?.toFixed(4) || 'N/A'}</p>
                 <p>Final Accuracy: {trainingStatus.accuracy ? (trainingStatus.accuracy * 100).toFixed(2) + '%' : 'N/A'}</p>
+                <p>Export Format: {selectedExportType}</p>
               </div>
             </div>
           {:else}
@@ -361,6 +336,9 @@
                   <p>Current Accuracy: {trainingStatus.accuracy ? (trainingStatus.accuracy * 100).toFixed(2) + '%' : 'N/A'}</p>
                 </div>
               </div>
+              <p style="margin-top: 8px; font-size: 14px; color: #666;">
+                Will export as: {selectedExportType}
+              </p>
             </div>
           {/if}
         </div>
@@ -371,7 +349,7 @@
         {#if !training && !trainingStatus?.completed}
           <button 
             on:click={startTraining}
-            disabled={loading || !modelDetails?.layers_config?.length || !modelDetails?.train_config || !modelDetails?.dataset_config}
+            disabled={loading || !modelDetails?.module_graph?.layers?.length || !modelDetails?.train_config || !modelDetails?.dataset_config}
             class="start-button"
           >
             {loading ? 'Starting Training...' : '🚀 Start Training'}
@@ -399,5 +377,4 @@
         </div>
       {/if}
     </div>
-  {/if}
 </div>

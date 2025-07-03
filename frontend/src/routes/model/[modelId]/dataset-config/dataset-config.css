@@ -51,18 +51,18 @@
 }
 
 .dataset-config-warning {
-  margin-top: 12px;
-  padding: 12px;
+  margin-top: 10px;
+  padding: 10px;
   background-color: #ffedd5;
   border: 1px solid #fdba74;
   color: #92400e;
   border-radius: 4px;
-  font-size: 14px;
+  font-size: 12px;
 }
 
 /* Form Styling */
 .dataset-config-form {
-  max-width: 720px;
+  max-width: 1200px;
 }
 
 .dataset-config-label {

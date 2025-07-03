@@ -9,6 +9,7 @@
 
   const currentStep = derived(page, ($page) => {
     if ($page.url.pathname.includes('/layer-config')) return 'layer-config';
+    if ($page.url.pathname.includes('/graph-construction')) return 'graph-construction';
     if ($page.url.pathname.includes('/dataset-config')) return 'dataset-config';
     if ($page.url.pathname.includes('/training-config')) return 'training-config';
     if ($page.url.pathname.includes('/train-model')) return 'train-model';
@@ -16,69 +17,44 @@
     if ($page.url.pathname.includes('/visualisation')) return 'visualisation';
     return '';
   });
+
+  const tabs = [
+    { id: 'dataset-config', label: 'Configure Dataset', path: `/model/${modelId}/dataset-config` },
+    { id: 'graph-construction', label: 'Graph Construction', path: `/model/${modelId}/graph-construction` },
+    { id: 'training-config', label: 'Configure Training', path: `/model/${modelId}/training-config` },
+    { id: 'train-model', label: 'Train the Model', path: `/model/${modelId}/train-model` },
+    { id: 'visualisation', label: 'Visualisation', path: `/model/${modelId}/visualisation` },
+    { id: 'save-model', label: 'Save Model', path: `/model/${modelId}/save-model` }
+  ];
 </script>
 
 <div class="h-screen flex flex-col p-6">
-  <div class="flex justify-between items-center mb-6">
+  <div class="flex justify-between items-center mb-1">
     <h1 class="text-2xl font-bold">Model Configuration</h1>
     <button on:click={() => goto('/create-model')} class="border px-4 py-2 rounded hover:bg-gray-100">Create Another Model</button>
   </div>
 
-  <div class="flex flex-1 border rounded-lg shadow overflow-hidden">
-    <!-- Sidebar Stepper -->
-    <div class="w-64 bg-gray-50 border-r p-6 space-y-6">
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'layer-config') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/layer-config`)}
-      >
-         Configure Layers
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'training-config') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/training-config`)}
-      >
-         Configure Training
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'dataset-config') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/dataset-config`)}
-      >
-         Configure Dataset
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'train-model') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/train-model`)}
-      >
-         Train the Model
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'save-model') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/save-model`)}
-      >
-         Save Model
-      </button>
-      <button
-        class="w-full text-left py-2 px-4 rounded-lg transition 
-                hover:bg-gray-200 
-                {($currentStep === 'visualisation') ? 'bg-blue-100 font-semibold' : ''}"
-        on:click={() => goto(`/model/${modelId}/visualisation`)}
-      >
-         Visualisation
-      </button>
-    </div>
+  <!-- Horizontal Tabs -->
+  <div class="border-b border-gray-200 mb-1">
+    <nav class="flex space-x-8">
+      {#each tabs as tab}
+        <button
+          class="py-2 px-1 border-b-2 font-medium text-sm transition-colors duration-200
+                {($currentStep === tab.id) 
+                  ? 'border-blue-500 text-blue-600' 
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }"
+          on:click={() => goto(tab.path)}
+        >
+          {tab.label}
+        </button>
+      {/each}
+    </nav>
+  </div>
 
-    <!-- Main Content -->
-    <div class="flex-1 p-8 overflow-y-auto">
+  <!-- Main Content -->
+  <div class="flex-1 border rounded-lg shadow overflow-hidden">
+    <div class="h-full p-8 overflow-y-auto">
       <slot />
     </div>
   </div>

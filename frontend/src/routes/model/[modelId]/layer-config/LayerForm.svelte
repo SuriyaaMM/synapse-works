@@ -190,7 +190,7 @@
       if (!kernelSizeArray || kernelSizeArray.length !== 2) {
           return 'Kernel size must be an array of exactly two numbers (e.g., "2,2")';
       }
-      } else if (layerType === 'avgpool1d') {
+    } else if (layerType === 'avgpool1d') {
       if (!poolKernelSize.trim()) {
           return 'Kernel size is required';
       }

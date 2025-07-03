@@ -115,152 +115,37 @@
   font-weight: 600;
 }
 
-.refresh-button {
-  padding: 6px 12px;
-  background-color: #2563eb;
-  color: white;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-}
+.load-model-section {
+    padding: 2rem;
+    text-align: center;
+    border: 2px dashed #ccc;
+    border-radius: 8px;
+    margin-top: 1rem;
+  }
 
-.refresh-button:hover:not(:disabled) {
-  background-color: #1d4ed8;
-}
+  .load-description {
+    margin-bottom: 1.5rem;
+    color: #666;
+    font-size: 1rem;
+  }
 
-.refresh-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
+  .load-file-button {
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    font-size: 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
 
-.loading-section {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 32px 0;
-}
+  .load-file-button:hover {
+    background-color: #45a049;
+  }
 
-.loading-text, .empty-text {
-  color: gray;
-}
-
-.model-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  max-height: 256px;
-  overflow-y: auto;
-}
-
-.model-card, .available-card {
-  padding: 16px;
-  background-color: #f9fafb;
-  border-radius: 8px;
-  border: 1px solid lightgray;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.model-card:hover {
-  background-color: #f3f4f6;
-}
-
-.available-card {
-  background-color: #eff6ff;
-}
-
-.available-card:hover {
-  background-color: #dbeafe;
-}
-
-.model-card-header {
-  display: flex;
-  justify-content: space-between;
-}
-
-.model-details {
-  flex: 1;
-}
-
-.model-name {
-  font-weight: 600;
-  font-size: 18px;
-}
-
-.model-id {
-  font-size: 14px;
-  color: gray;
-  margin-bottom: 8px;
-}
-
-.model-layers {
-  margin-bottom: 8px;
-}
-
-.model-layer-title {
-  font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.model-layer-list {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.layer-item {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 12px;
-  background-color: white;
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid lightgray;
-}
-
-.layer-type {
-  font-weight: 500;
-  color: #2563eb;
-}
-
-.available-layer {
-  color: #16a34a;
-}
-
-.dot {
-  color: gray;
-}
-
-.layer-name {
-  color: #374151;
-}
-
-.layer-id {
-  color: #9ca3af;
-}
-
-.model-no-layer, .model-dataset {
-  font-size: 14px;
-  color: gray;
-}
-
-.model-actions {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.view-edit-button {
-  padding: 6px 12px;
-  background-color: #16a34a;
-  color: white;
-  font-size: 14px;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.view-edit-button:hover {
-  background-color: #15803d;
-}
+  .file-info {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    color: #888;
+  }
