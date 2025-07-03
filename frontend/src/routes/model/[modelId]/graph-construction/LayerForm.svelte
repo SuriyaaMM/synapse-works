@@ -535,7 +535,6 @@
 
 <div class="sidebar right">
     {#if selectedLayerType}
-      <h3>Add {selectedLayerType.label}</h3>
       <div class="form">
         <label>
           Layer Name:
@@ -723,106 +722,6 @@
         {/if}
         
         <button class="add-button" on:click={handleAddLayer}>Add to Graph</button>
-      </div>
-    {:else}
-      <h3>Instructions</h3>
-      <div class="instructions">
-        <p>• Select a layer type to add new layers</p>
-        <p>• Click on layers to select and edit them</p>
-        <p>• Click on connections to select and delete them</p>
-        <p>• <strong>Shift + Drag</strong> to add connection between layers</p>
-        <p>• <strong>Drag</strong> layers to reposition them</p>
-        
-        {#if buildResult}
-          <div class="build-result">
-            <h4>Built Graph Successfully</h4>
-            <div class="build-summary">
-              <div class="summary-item">
-                <span class="label">Layers:</span>
-                <span class="value">{buildResult.module_graph.layers.length}</span>
-              </div>
-              <div class="summary-item">
-                <span class="label">Connections:</span>
-                <span class="value">{buildResult.module_graph.edges.length}</span>
-              </div>
-            </div>
-            
-            <!-- Graph Validation Results -->
-            {#if graphValidationResult}
-              <div class="graph-validation">
-                <h5>🔍 Graph Validation</h5>
-                
-                {#if graphValidationResult.status && graphValidationResult.status.length > 0}
-                  <!-- Check if there are validation errors -->
-                  {#if graphValidationResult.status.some((s: any) => s.message)}
-                    <div class="validation-error">
-                      <div class="status-header">
-                        <span class="status-icon">⚠️</span>
-                        <strong>Validation Issues Found</strong>
-                      </div>
-                      
-                      {#each graphValidationResult.status as status, index}
-                        {#if status.message}
-                          <div class="error-item">
-                            <div class="error-number">Issue #{index + 1}</div>
-                            <div class="error-details">
-                              <p class="error-message">{status.message}</p>
-                              
-                              {#if status.out_dimension && status.out_dimension.length > 0}
-                                <div class="dimension-info">
-                                  <span class="dim-label">Output:</span>
-                                  <code class="dimension">[{status.out_dimension.join(', ')}]</code>
-                                </div>
-                              {/if}
-                              
-                              {#if status.required_in_dimension && status.required_in_dimension.length > 0}
-                                <div class="dimension-info">
-                                  <span class="dim-label">Required Input:</span>
-                                  <code class="dimension">[{status.required_in_dimension.join(', ')}]</code>
-                                </div>
-                              {/if}
-                            </div>
-                          </div>
-                        {/if}
-                      {/each}
-                    </div>
-                  {:else}
-                    <div class="validation-success">
-                      <div class="status-header">
-                        <span class="status-icon">✅</span>
-                        <strong>Graph is Valid!</strong>
-                      </div>
-                      <p>All layer dimensions match correctly</p>
-                    </div>
-                  {/if}
-                  
-          
-                {:else}
-                  <div class="no-validation">
-                    <p>No validation data available</p>
-                  </div>
-                {/if}
-              </div>
-            {/if}
-            
-            <!-- Layer Execution Order -->
-            {#if buildResult.module_graph.sorted && buildResult.module_graph.layers.length > 0}
-              <div class="layer-order">
-                <h5>🔄 Layer Execution Order</h5>
-                <div class="layer-list">
-                  {#each buildResult.module_graph.layers as layer, index}
-                    <div class="layer-item">
-                      <div class="layer-info">
-                        <span class="layer-name">{layer.name}</span>
-                        <span class="layer-type">({layer.type})</span>
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              </div>
-            {/if}
-          </div>
-        {/if}
       </div>
     {/if}
   </div>
