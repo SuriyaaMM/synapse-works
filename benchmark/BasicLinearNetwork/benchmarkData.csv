@@ -1,0 +1,3 @@
+whom,average_cpu_time_us,average_construction_time_s,average_cuda_time,average_accuracy
+synapse-works,8502885,125,11419676,0.9355
+standalone,8833235,900,15675958,0.9357

@@ -9,12 +9,14 @@ import redis
 import datetime
 import os
 import torch
+import pandas as pd 
 
 from typing import Optional
 
 from torch import nn
 from torch.utils.data import DataLoader, Dataset, random_split
 from torchvision.transforms import ToTensor
+from torch.profiler import record_function
 
 from backendTorchUtils import torch_dataset_name_map, torch_layer_name_map, \
                                 torch_loss_function_name_map, torch_optimizer_name_map
@@ -201,50 +203,49 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
     writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
 
     with torch.profiler.profile(
-    activities=[torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-    schedule=torch.profiler.schedule(wait=1, warmup=1, active=3),
-    on_trace_ready=torch.profiler.tensorboard_trace_handler(writer_filename)
-    ) as prof:
+    activities=[
+        torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+        on_trace_ready=torch.profiler.tensorboard_trace_handler(writer_filename)) as prof:
+        with record_function("model_train"):
+            for epoch in range(train_manager.epochs):
+                running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager, epoch, writer)
+                accuracy = correct_predictions/total_samples
+                # write to tensorboard
+                writer.add_scalar("Loss/train", running_loss, epoch)
+                writer.add_scalar("Accuracy/train", accuracy, epoch)
 
-        for epoch in range(train_manager.epochs):
-            running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager, epoch, writer)
-            accuracy = correct_predictions/total_samples
-            # write to tensorboard
-            writer.add_scalar("Loss/train", running_loss, epoch)
-            writer.add_scalar("Accuracy/train", accuracy, epoch)
-
-            # add histogram only per 5 epochs TODO(mms) hardcoded 5 here
-            if(epoch % 25 == 0):
-                # weights & biases distribution
-                for name, param in train_manager.neuralNet.named_parameters():
-                    # log weights
-                    writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
-                    # log params if they exist
-                    if param.dim() == 1:
+                # add histogram only per 5 epochs TODO(mms) hardcoded 5 here
+                if(epoch % 25 == 0):
+                    # weights & biases distribution
+                    for name, param in train_manager.neuralNet.named_parameters():
+                        # log weights
                         writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
-            
-            prof.step()
-            logging.info(f"GPU Memory Allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
-            logging.info(f"GPU Memory Cached: {torch.cuda.memory_reserved() / 1024**2:.2f} MB")
-            logging.info(f"epoch: {epoch + 1}, loss: {running_loss}, accuracy: {accuracy}")
-            
-            # TODO(mms) hardcoded validation period here to 5
-            if epoch % 25 == 0:
-                running_val_loss, correct_val_predictions, total_val_samples = _ValidateEpoch(train_manager)
-                accuracy_val = correct_val_predictions/total_val_samples
-                writer.add_scalar("Loss/validation", running_val_loss, epoch)
-                writer.add_scalar("Accuracy/validation", accuracy_val, epoch)
+                        # log params if they exist
+                        if param.dim() == 1:
+                            writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
+                
+                prof.step()
+                logging.info(f"GPU Memory Allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
+                logging.info(f"GPU Memory Cached: {torch.cuda.memory_reserved() / 1024**2:.2f} MB")
+                logging.info(f"epoch: {epoch + 1}, loss: {running_loss}, accuracy: {accuracy}")
+                
+                # TODO(mms) hardcoded validation period here to 5
+                if epoch % 25 == 0:
+                    running_val_loss, correct_val_predictions, total_val_samples = _ValidateEpoch(train_manager)
+                    accuracy_val = correct_val_predictions/total_val_samples
+                    writer.add_scalar("Loss/validation", running_val_loss, epoch)
+                    writer.add_scalar("Accuracy/validation", accuracy_val, epoch)
 
-            update_message = {
-                "epoch" : epoch + 1,
-                "loss" : running_loss,
-                "accuracy" : (correct_predictions/total_samples),
-                "completed" : epoch == train_manager.epochs - 1,
-                "timestamp" : datetime.datetime.now().isoformat()
-            }
-            redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
-            logging.info(f"pushed {json.dumps(update_message)} to redis queue")
-
+                update_message = {
+                    "epoch" : epoch + 1,
+                    "loss" : running_loss,
+                    "accuracy" : (correct_predictions/total_samples),
+                    "completed" : epoch == train_manager.epochs - 1,
+                    "timestamp" : datetime.datetime.now().isoformat()
+                }
+                redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
+                logging.info(f"pushed {json.dumps(update_message)} to redis queue")
+    
     hparam_dict = {
         "learning_rate": train_manager.train_config["optimizer_kwargs"]["lr"],
         "optimizer": train_manager.train_config["optimizer"],
