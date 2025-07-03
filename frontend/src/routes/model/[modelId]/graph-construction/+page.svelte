@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
   import { page } from '$app/stores';
-  import { onMount, tick, onDestroy } from 'svelte';
+  import { onMount, tick} from 'svelte';
   import { SvelteFlow } from '@xyflow/svelte';
   import client from '$lib/apolloClient';
   import { ADD_TO_GRAPH, CONNECT_NODES, DELETE_FROM_GRAPH, DISCONNECT_NODES,
@@ -14,7 +14,6 @@
   import '@xyflow/svelte/dist/style.css';
   import './graph-construction.css';
 
-  // Type-safe dispatch functions
   const dispatch = createEventDispatcher<{
     layerAdded: { layerConfig: LayerConfigInput };
     layerDeleted: { layerId: string };
@@ -127,11 +126,6 @@
   async function handleAddLayer(event: CustomEvent<{ layerConfig: LayerConfigInput }>) {
     const { layerConfig } = event.detail;
     
-    if (!modelId) {
-      error = 'Model ID is missing';
-      return;
-    }
-    
     loading = true;
     error = null;
     
@@ -227,6 +221,21 @@
           padding_mode: layer.padding_mode || 'zeros'
         }
       };
+    } else if (layer.type === 'convtranspose2d') {
+      return {
+        type: 'convtranspose2d',
+        convtranspose2d: {
+          name: layer.name,
+          in_channels: layer.in_channels,
+          out_channels: layer.out_channels,
+          kernel_size: layer.kernel_size,
+          stride: layer.stride || 1,
+          padding: layer.padding || 0,
+          output_padding: layer.output_padding || [0, 0],
+          groups: layer.groups || 1,
+          bias: layer.bias ?? true
+        }
+      }
     } else if (layer.type === 'conv1d') {
       return {
         type: 'conv1d',
@@ -318,6 +327,14 @@
           p: layer.p || 0.5
         }
       };
+    } else if (layer.type === 'dropout2d') {
+      return {
+        type: 'dropout2d',
+        dropout2d: {
+          name: layer.name,
+          p: layer.p || 0.5
+        }
+      };
     } else if (layer.type === 'elu') {
       return {
         type: 'elu',
@@ -359,6 +376,14 @@
         tanh: {
           name: layer.name,
         } };
+    } else if (layer.type === 'cat') {
+      return {
+        type: 'cat',
+        cat: {
+          name: layer.name,
+          dimension: layer.dimension || 0
+        }
+      };
     }
 
     throw new Error(`Unsupported layer type: ${layer.type}`);
@@ -629,10 +654,6 @@
   }
 
   async function createConnection(fromId: string, toId: string) {
-    if (!modelId) {
-      error = 'Model ID is missing';
-      return;
-    }
 
     loading = true;
     error = null;
@@ -710,8 +731,8 @@
   }
   
   async function handleDeleteEdge() {
-    if (!selectedEdge || !modelId){
-      console.warn('No edge selected for deletion or model ID is missing');
+    if (!selectedEdge ){
+      console.warn('No edge selected for deletion');
       return;
     }
     
@@ -899,7 +920,6 @@
     tabindex="0"
     aria-label="Clear selection"
     onclick={(e) => {
-      // Only clear if clicking on the canvas itself, not on nodes or edges
       if (e.target === e.currentTarget) {
         clearSelection();
       }
@@ -920,7 +940,7 @@
       {/if}
     </div>
 
-    <div style="width: 100%; height: 600px;">
+    <div style="width: 100%; height: 100%;">
       <SvelteFlow 
         bind:nodes 
         bind:edges

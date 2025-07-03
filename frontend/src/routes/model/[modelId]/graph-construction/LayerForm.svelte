@@ -159,14 +159,28 @@
         return validateNum(inFeatures, 'Input features') || validateNum(outFeatures, 'Output features');
     }
     
-    if (t === 'conv2d' || t === 'conv1d') {
-        const dims = t === 'conv2d' ? 2 : 1;
-        return validateNum(inChannels, 'Input channels') || 
-               validateNum(outChannels, 'Output channels') || 
-               validateKernel(kernelSize, dims) || 
-               validateNum(groups, 'Groups');
+    if (t === 'conv2d' || t === 'conv1d' || t === 'convtranspose2d') {
+      const dims = t === 'conv2d' || t === 'convtranspose2d' ? 2 : 1;
+
+      const baseValidation =
+        validateNum(inChannels, 'Input channels') ||
+        validateNum(outChannels, 'Output channels') ||
+        validateKernel(kernelSize, dims) ||
+        validateNum(groups, 'Groups');
+
+      if (baseValidation) return baseValidation;
+
+      // Validate output_padding only for convtranspose2d
+      if (t === 'convtranspose2d' && outputPadding.trim()) {
+        const arr = parseArrayInput(outputPadding);
+        if (!arr || arr.length !== 2 || arr.some(n => isNaN(n) || n < 0)) {
+          return 'Output padding must be an array of exactly 2 non-negative numbers (e.g., "0,0")';
+        }
+      }
+
+      return null;
     }
-    
+
     if (t.includes('pool')) {
         const dims = t.includes('2d') ? 2 : 1;
         return validateKernel(poolKernelSize, dims);
@@ -183,12 +197,12 @@
                validateNum(endDim, 'End dimension', -Infinity);
     }
     
-    if (t === 'dropout') return validateNum(dropoutP, 'Dropout probability', 0, 1);
+    if (t === 'dropout' || t === 'dropout2d') return validateNum(dropoutP, 'Dropout probability', 0, 1);
     if (t === 'elu') return validateNum(alpha, 'Alpha');
     if (t === 'leakyrelu') return isNaN(Number(negativeSlope)) ? 'Negative slope must be a valid number' : null;
     
     return null;
-}
+  }
 
   function createLayerConfig(): LayerConfigInput {
     const layerNameValue = layerName.trim() || `${selectedLayerType!.type}Layer`;
@@ -247,9 +261,7 @@
         in_channels: parseInt(inChannels, 10),
         out_channels: parseInt(outChannels, 10),
         kernel_size: parseArrayInput(kernelSize) || [3, 3],
-        bias: convBias,
-        padding_mode: paddingMode,
-        output_padding: outputPadding ? parseArrayInput(outputPadding ) : undefined
+        bias: convBias
       };
       
       if (stride.trim()) {
@@ -272,6 +284,12 @@
       }
       if (groups.trim() && groups !== '1') {
         convTranspose2dConfig.groups = [parseInt(groups, 10)];
+      }
+      if (outputPadding.trim()) {
+        const outputPaddingArray = parseArrayInput(outputPadding);
+        if (outputPaddingArray) {
+          convTranspose2dConfig.output_padding = outputPaddingArray;
+        }
       }
       
       return {
@@ -569,7 +587,7 @@
 
           {#if selectedLayerType.type !== 'convtranspose2d'}
             <label>
-              Padding Mode:
+              Padding Mode (optional):
               <select bind:value={paddingMode}>
                 <option value="zeros">zeros</option>
                 <option value="reflect">reflect</option>
@@ -588,7 +606,7 @@
 
           <label>
             <input type="checkbox" bind:checked={convBias}>
-            Bias
+            Bias (optional)
           </label>
         {:else if selectedLayerType.type === 'maxpool1d' || selectedLayerType.type === 'maxpool2d'}
           <label>
@@ -609,11 +627,11 @@
           </label>
           <label>
             <input type="checkbox" bind:checked={returnIndices}>
-            Return Indices
+            Return Indices (optional)
           </label>
           <label>
             <input type="checkbox" bind:checked={ceilMode}>
-            Ceil Mode
+            Ceil Mode (optional)
           </label>
         {:else if selectedLayerType.type === 'avgpool1d' || selectedLayerType.type === 'avgpool2d'}
           <label>
@@ -629,74 +647,74 @@
             <input type="text" bind:value={poolPadding} placeholder={selectedLayerType.type === 'avgpool2d' ? "e.g., 0,0" : "e.g., 0"}>
           </label>
           <label>
-            Count Include Pad:
+            Count Include Pad (optional):
             <input type="checkbox" bind:checked={countIncludePad}>
           </label>
           <label>
-            Divisor Override:
+            Divisor Override (optional):
             <input type="text" bind:value={divisorOverride} placeholder="Optional divisor override">
           </label>
         {:else if selectedLayerType.type === 'batchnorm1d' || selectedLayerType.type === 'batchnorm2d'}
           <label>
-            Number of Features:
+            Number of Features :
             <input type="text" bind:value={numFeatures} placeholder="Enter number of features">
           </label>
           <label>
-            Epsilon:
+            Epsilon (optional):
             <input type="text" bind:value={eps} placeholder="Default: 1e-5">
           </label>
           <label>
-            Momentum:
+            Momentum (optional):
             <input type="text" bind:value={momentum} placeholder="Default: 0.1">
           </label>
           <label>
             <input type="checkbox" bind:checked={affine}>
-            Affine
+            Affine (optional)
           </label>
           <label>
             <input type="checkbox" bind:checked={trackRunningStatus}>
-            Track Running Status
+            Track Running Status (optional)
           </label>
         {:else if selectedLayerType.type === 'flatten'}
           <label>
-            Start Dimension:
+            Start Dimension (optional):
             <input type="text" bind:value={startDim} placeholder="Default: 1">
           </label>
           <label>
-            End Dimension:
+            End Dimension (optional):
             <input type="text" bind:value={endDim} placeholder="Default: -1">
           </label>
         {:else if selectedLayerType.type === 'dropout' || selectedLayerType.type === 'dropout2d'}
           <label>
-            Dropout Probability:
+            Dropout Probability (optional):
             <input type="text" bind:value={dropoutP} placeholder="Default: 0.5">
           </label>
         {:else if selectedLayerType.type === 'elu'}
           <label>
-            Alpha:
+            Alpha (optional):
             <input type="text" bind:value={alpha} placeholder="Default: 1.0">
           </label>
           <label>
             <input type="checkbox" bind:checked={eluInplace}>
-            Inplace
+            Inplace (optional)
           </label>
         {:else if selectedLayerType.type === 'relu'}
           <label>
             <input type="checkbox" bind:checked={reluInplace}>
-            Inplace
+            Inplace (optional)
           </label>
         {:else if selectedLayerType.type === 'leakyrelu'}
           <label>
-            Negative Slope:
+            Negative Slope (optional):
             <input type="text" bind:value={negativeSlope} placeholder="Default: 0.01">
           </label>
           <label>
             <input type="checkbox" bind:checked={leakyReluInplace}>
-            Inplace
+            Inplace (optional)
           </label>
         {:else if selectedLayerType.type === 'cat'}
           <label>
-            Concatenation Dimension:
+            Concatenation Dimension (optional):
             <input type="text" bind:value={catDimension} placeholder="e.g., 1">
           </label>
         {/if}
