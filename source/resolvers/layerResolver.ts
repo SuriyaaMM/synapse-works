@@ -487,6 +487,17 @@ function convOutputDim(
     return Math.floor((input + 2 * padding - dilation * (kernel - 1) - 1) / stride + 1);
 }
 
+function convTransposeOutputDim(
+    input: number,
+    padding: number,
+    dilation: number,
+    kernel: number,
+    stride: number,
+    output_padding: number
+): number {
+    return ((input - 1) * stride - 2 * padding + dilation * (kernel - 1) + output_padding + 1);
+}
+
 export const layerDimensionHandler: Record<string, GraphLayerDimensionHandler> = {
     "linear": (layer_config, in_dimension) => {
         const cfg = layer_config as LinearLayerConfig;
@@ -551,6 +562,36 @@ export const layerDimensionHandler: Record<string, GraphLayerDimensionHandler> =
 
         const h = convOutputDim(in_dimension[1], padding[0], dilation[0], kernel[0], stride[0]);
         const w = convOutputDim(in_dimension[2], padding[1], dilation[1], kernel[1], stride[1]);
+
+        return { out_dimension: [cfg.out_channels, h, w] };
+    },
+
+    "convtranspose2d": (layer_config, in_dimension) => {
+        const cfg = layer_config as ConvTranspose2dLayerConfig;
+
+        if (in_dimension.length !== 3) {
+            return {
+                out_dimension: [],
+                message: `convtranspose2d requires 3d tensor, but received ${in_dimension}`,
+                required_in_dimension: [0, 0, 0]
+            };
+        }
+
+        if (in_dimension[0] !== cfg.in_channels) {
+            return {
+                out_dimension: [],
+                message: `invalid configuration for convtranspose2d, expected input_channels: ${cfg.in_channels}, received: ${in_dimension[0]}`,
+                required_in_dimension: [cfg.in_channels, 0, 0]
+            };
+        }
+
+        const padding = cfg.padding ?? [0, 0];
+        const dilation = cfg.dilation ?? [1, 1];
+        const stride = cfg.stride ?? [1, 1];
+        const kernel = cfg.kernel_size;
+        const output_padding = cfg.output_padding ?? [0, 0];
+        const h = convTransposeOutputDim(in_dimension[1], padding[0], dilation[0], kernel[0], stride[0], output_padding[0]);
+        const w = convTransposeOutputDim(in_dimension[2], padding[1], dilation[1], kernel[1], stride[1], output_padding[1]);
 
         return { out_dimension: [cfg.out_channels, h, w] };
     },
@@ -689,7 +730,38 @@ export const layerDimensionHandler: Record<string, GraphLayerDimensionHandler> =
         }
 
         return { out_dimension: in_dimension };
-    }
+    },
+
+    "relu": (layer_config, in_dimension) => {
+        
+        return { out_dimension: in_dimension };
+    },
+
+    "leakyrelu": (layer_config, in_dimension) => {
+        
+        return { out_dimension: in_dimension };
+    },
+
+    "sigmoid": (layer_config, in_dimension) => {
+        
+        return { out_dimension: in_dimension };
+    },
+
+    "logsigmoid": (layer_config, in_dimension) => {
+        
+        return { out_dimension: in_dimension };
+    },
+
+    "tanh": (layer_config, in_dimension) => {
+        
+        return { out_dimension: in_dimension };
+    }, 
+
+    // TODO(mms) Find a solution for cat Layer
+    "cat": (layer_config, in_dimension) => {
+        
+        return { out_dimension: in_dimension };
+    }, 
 };
 
 

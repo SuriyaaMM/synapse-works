@@ -118,6 +118,12 @@ export const resolvers = {
             else if(dataset_config.name === "cifar10"){
                 return 'CIFAR10DatasetConfig';
             }
+            else if(dataset_config.name === "celeba"){
+                return 'CelebADatasetConfig';
+            }
+            else if(dataset_config.name === "vocsegmentation"){
+                return 'VOCSegmentationDatasetConfig';
+            }
             else if(dataset_config.name == "image_folder"){
                 return 'ImageFolderDatasetConfig';
             }

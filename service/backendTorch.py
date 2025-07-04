@@ -106,7 +106,10 @@ class TorchTrainManager(nn.Module):
         optimizerType = torch_optimizer_name_map(train_config["optimizer"])
         
         self.optimizer = optimizerType(self.neuralNet.parameters(), **train_config["optimizer_kwargs"]) # type:ignore
-        self.loss_function = torch_loss_function_name_map(train_config["loss_function"])()
+        if(dataset_config["name"] == "vocsegmentation"):
+            self.loss_function = torch_loss_function_name_map(train_config["loss_function"])(ignore_index=255)
+        else:
+            self.loss_function = torch_loss_function_name_map(train_config["loss_function"])()
         self.epochs = train_config["epochs"]
 
         self.dataset = torch_dataset_name_map(dataset_config["name"])(**dataset_config["kwargs"]) # type:ignore

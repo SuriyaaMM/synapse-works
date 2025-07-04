@@ -495,7 +495,7 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
                 kwargs[optional_key] = dataset_config[optional_key]
             else:
                 logging.warning(f"{optional_key} is missing in {dataset_config.__class__.__name__}, skipping")
-
+    # handle for cifar10 dataset
     elif name == "cifar10":
         kwargs = cast(CIFAR10DatasetConfig, {
             "root": root,
@@ -509,6 +509,43 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
                 kwargs[optional_key] = dataset_config[optional_key]
             else:
                 logging.warning(f"{optional_key} is missing in {dataset_config.__class__.__name__}, skipping")
+    # handle for celeba dataset
+    elif name == "celeba":
+        kwargs = cast(CelebADatasetConfig, {
+            "root": root,
+            # TODO(mms)
+            "transform" : torchvision.transforms.Compose([
+            torchvision.transforms.PILToTensor()]), 
+            "target_transform" : torchvision.transforms.Compose([
+                torchvision.transforms.PILToTensor()])
+        })
+        optional_keys = ["download", "target_type"]
+        for optional_key in optional_keys:
+            if optional_key in dataset_config.keys():
+                kwargs[optional_key] = dataset_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {dataset_config.__class__.__name__}, skipping")
+    # handle for vocsegmentation dataset
+    elif name == "vocsegmentation":
+        kwargs = cast(VOCSegmentationDatasetConfig, {
+            "root": root,
+            # TODO(mms)
+            "transform" : torchvision.transforms.Compose([
+            torchvision.transforms.Resize((64, 64)),
+            torchvision.transforms.ToTensor(),
+            torchvision.transforms.Normalize(mean=[0,0,0], std=[1,1,1])]), 
+            "target_transform" : torchvision.transforms.Compose([
+                torchvision.transforms.Resize((128, 128), interpolation=torchvision.transforms.InterpolationMode.NEAREST),
+                torchvision.transforms.PILToTensor(),
+                torchvision.transforms.Lambda(lambda t: t.squeeze(0).long())])
+        })
+        optional_keys = ["download", "image_set", "year"]
+        for optional_key in optional_keys:
+            if optional_key in dataset_config.keys():
+                kwargs[optional_key] = dataset_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {dataset_config.__class__.__name__}, skipping")
+    # handle for custom_csv
     elif name == "custom_csv":
         kwargs = cast(CustomCSVDatasetConfig, {
             "root": root,
@@ -522,6 +559,7 @@ def parseFromDataset(dataset_config: TSDatasetInput) -> DatasetConfig:
                 kwargs[optional_key] = dataset_config[optional_key]
             else:
                 logging.warning(f"{optional_key} is missing in {dataset_config.__class__.__name__}, skipping")
+    # handle for image_folder
     elif name == "image_folder":
         kwargs = cast(ImageFolderDatasetConfig, {
             "root": root,

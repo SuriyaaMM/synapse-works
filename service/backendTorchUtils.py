@@ -3,7 +3,7 @@ from config import logging
 import torch
 from torch import nn
 from torch.utils import data as tdu
-from torchvision.datasets import MNIST, CIFAR10, CIFAR100, ImageFolder
+from torchvision.datasets import MNIST, CIFAR10, CIFAR100, ImageFolder, CelebA, VOCSegmentation
 from backendDatasets import *
 from backendModules import *
 
@@ -56,6 +56,8 @@ def torch_dataset_name_map(dataset_name: str, debug: bool = True) -> type[tdu.Da
     dataset_map = {
         "mnist" : MNIST,
         "cifar10" : CIFAR10,
+        "celeba" : CelebA,
+        "vocsegmentation" : VOCSegmentation,
         "image_folder" : ImageFolder,
         "custom_csv" : CustomCSVDataset,
         "cifar100" : CIFAR100
@@ -108,9 +110,22 @@ def torch_loss_function_name_map(loss_function_name: str, debug: bool = True) ->
     # map for iterating
     loss_function_map = {
         "ce" : nn.CrossEntropyLoss,
-        "bce" : nn.BCEWithLogitsLoss,
+        "bcelogit" : nn.BCEWithLogitsLoss,
         "mse" : nn.MSELoss,
-        "l1" : nn.L1Loss
+        "l1" : nn.L1Loss,
+        "nl" : nn.NLLLoss,
+        "bce" : nn.BCELoss,
+        "smoothl1" : nn.SmoothL1Loss,
+        "kldiv" : nn.KLDivLoss,
+        "poissonnl" : nn.PoissonNLLLoss,
+        "gaussiannl" : nn.GaussianNLLLoss,
+        "ctc" : nn.CTCLoss,
+        "huber" : nn.HuberLoss,
+        "softmargin" : nn.SoftMarginLoss,
+        "multilabelsoftmargin" : nn.MultiLabelSoftMarginLoss,
+        "cosineembedding" : nn.CosineEmbeddingLoss,
+        "marginranking" : nn.MarginRankingLoss,
+        "hingeembedding" : nn.HingeEmbeddingLoss,
     }
     # convert to lowercase
     loss_function_name = loss_function_name.lower()

@@ -1,5 +1,6 @@
 from typing import TypedDict, Union, NotRequired, NotRequired, Tuple, Literal, Dict
 from dataclasses import dataclass
+# used in abstractManager.py
 import torch
 import torchvision
 
@@ -459,6 +460,25 @@ class CIFAR10DatasetConfig(TypedDict):
     download: NotRequired[bool]
     transform: torchvision.transforms.Compose
 
+class CelebADatasetConfig(TypedDict):
+    root: str
+    target_type: NotRequired[list[str]]
+    download: NotRequired[bool]
+    transform: torchvision.transforms.Compose
+    target_transform: torchvision.transforms.Compose
+
+class VOCSegmentationDatasetConfig(TypedDict):
+    name: str
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
+    root: str
+    image_set: NotRequired[str]
+    year: NotRequired[str]
+    download: NotRequired[bool]
+    transform: torchvision.transforms.Compose
+    target_transform: torchvision.transforms.Compose
+
 class CustomCSVDatasetConfig(TypedDict):
     root: str
     feature_columns: list[str]
@@ -473,6 +493,8 @@ class ImageFolderDatasetConfig(TypedDict):
 
 DatasetKwargs_T = Union[MNISTDatasetConfig, 
                         CIFAR10DatasetConfig,
+                        CelebADatasetConfig,
+                        VOCSegmentationDatasetConfig,
                         CustomCSVDatasetConfig,
                         ImageFolderDatasetConfig]
 
@@ -508,6 +530,29 @@ class TSCIFAR10DatasetInput(TypedDict):
     train: NotRequired[bool]
     download: NotRequired[bool]
 
+class TSCelebADatasetInput(TypedDict):
+    name: str
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
+    root: str
+    target_type: NotRequired[list[str]]
+    download: NotRequired[bool]
+    transform: torchvision.transforms.Compose
+    target_transform: torchvision.transforms.Compose
+
+class TSVOCSegmentationDatasetInput(TypedDict):
+    name: str
+    batch_size: NotRequired[int]
+    split_length: NotRequired[list[float]]
+    shuffle: NotRequired[bool]
+    root: str
+    image_set: NotRequired[str]
+    year: NotRequired[str]
+    download: NotRequired[bool]
+    transform: torchvision.transforms.Compose
+    target_transform: torchvision.transforms.Compose
+
 class TSCustomCSVDatasetInput(TypedDict):
     name: str
     batch_size: NotRequired[int]
@@ -530,6 +575,8 @@ class TSImageFolderDatasetInput(TypedDict):
 
 TSDatasetInput = Union[TSMNISTDatasetInput, 
                        TSCIFAR10DatasetInput,
+                       TSCelebADatasetInput,
+                       TSVOCSegmentationDatasetInput,
                        TSCustomCSVDatasetInput,
                        TSImageFolderDatasetInput]
 

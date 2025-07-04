@@ -4,8 +4,10 @@ import {
     DatasetConfigInput, 
     MNISTDatasetConfig, 
     CIFAR10DatasetConfig,
+    CelebADatasetConfig,
     CustomCSVDatasetConfig,
-    ImageFolderDatasetConfig } from "../types/datasetTypes.js";
+    ImageFolderDatasetConfig, 
+    VOCSegmentationDatasetConfig} from "../types/datasetTypes.js";
 
 import { Model } from "../types/modelTypes.js";
 import { SetDatasetArgs } from "../types/argTypes.js";
@@ -51,6 +53,47 @@ export const datasetHandlers: DatasetHandlerMap = {
             transform: cifar10.transform
         };
         return newDataset;
+    },
+    "celeba": (dataset: DatasetConfigInput) => {
+        // destructure the dataset
+        const {split_length, shuffle, batch_size, celeba} = dataset;
+        // if celebaConfig is not found, report error
+        if(!celeba) throw new Error("[synapse]: celeba config is missing");
+        // create celebaDataset object & return it
+        const new_dataset: CelebADatasetConfig = {
+            name: "celeba",
+            split_length: split_length,
+            shuffle: shuffle,
+            batch_size: batch_size,
+            root: celeba.root,
+            target_type: celeba.target_type,
+            download: celeba.download,
+            transform: celeba.transform,
+            target_transform: celeba.target_transform
+        };
+
+        return new_dataset;
+    },
+    "vocsegmentation": (dataset: DatasetConfigInput) => {
+        // destructure the dataset
+        const {split_length, shuffle, batch_size, vocsegmentation} = dataset;
+        // if vocsegmentatiopnConfig is not found, report error
+        if(!vocsegmentation) throw new Error("[synapse]: vocsegmentation config is missing");
+        // create vocsegmentationDataset object & return it
+        const new_dataset: VOCSegmentationDatasetConfig= {
+            name: "vocsegmentation",
+            split_length: split_length,
+            shuffle: shuffle,
+            batch_size: batch_size,
+            root: vocsegmentation.root,
+            image_set: vocsegmentation.image_set,
+            year: vocsegmentation.year,
+            download: vocsegmentation.download,
+            transform: vocsegmentation.transform,
+            target_transform: vocsegmentation.target_transform
+        };
+
+        return new_dataset;
     },
     "custom_csv": (dataset: DatasetConfigInput) => {
         // destructure the dataset

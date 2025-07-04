@@ -27,6 +27,31 @@ type CIFAR10DatasetConfig implements DatasetConfig {
     download: Boolean
 }
 
+type CelebADatasetConfig implements DatasetConfig {
+    name: String!
+    batch_size: Int
+    split_length: [Float]
+    shuffle: Boolean
+    root: String!
+    target_type: [String!]
+    download: Boolean
+    transform: [String]
+    target_transform: [String]
+}
+
+type VOCSegmentationDatasetConfig implements DatasetConfig {
+    name: String!
+    batch_size: Int
+    split_length: [Float]
+    shuffle: Boolean
+    root: String!
+    year: String!
+    image_set: String!
+    download: Boolean
+    transform: [String]
+    target_transform: [String]
+}
+
 type CustomCSVDatasetConfig implements DatasetConfig {
     name: String!
     batch_size: Int
@@ -62,6 +87,23 @@ input CIFAR10DatasetConfigInput {
     transform: [String]
 }
 
+input CelebADatasetConfigInput {
+    root: String!
+    target_type: [String!]
+    download: Boolean
+    transform: [String]
+    target_transform: [String]
+}
+
+input VOCSegmentationDatasetConfigInput {
+    root: String!
+    year: String!
+    image_set: String!
+    download: Boolean
+    transform: [String]
+    target_transform: [String]
+}
+
 input CustomCSVDatasetConfigInput {
     root: String!
     feature_columns: [String!]!
@@ -82,6 +124,8 @@ input DatasetConfigInput {
     shuffle: Boolean
     mnist: MNISTDatasetConfigInput
     cifar10: CIFAR10DatasetConfigInput
+    celeba: CelebADatasetConfigInput
+    vocsegmentation: VOCSegmentationDatasetConfigInput
     image_folder: ImageFolderDatasetConfigInput
     custom_csv: CustomCSVDatasetConfigInput
 }

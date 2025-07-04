@@ -19,6 +19,23 @@ export interface CIFAR10DatasetConfig extends DatasetConfig {
     transform?: string[];
 };
 
+export interface CelebADatasetConfig extends DatasetConfig {
+    root: string;
+    target_type?: string[];
+    download?: boolean;
+    transform?: string[];
+    target_transform?: string[];
+};
+
+export interface VOCSegmentationDatasetConfig extends DatasetConfig  {
+    root: string;
+    image_set?: string;
+    year?: string;
+    download?: boolean;
+    transform?: string[];
+    target_transform?: string[];
+};
+
 export interface CustomCSVDatasetConfig extends DatasetConfig {
     root: string;
     feature_columns: string[];
@@ -46,6 +63,23 @@ export type CIFAR10DatasetConfigInput = {
     transform?: string[];
 };
 
+export type CelebADatasetConfigInput =  {
+    root: string;
+    target_type?: string[];
+    download?: boolean;
+    transform?: string[];
+    target_transform?: string[];
+};
+
+export type VOCSegmentationDatasetConfigInput =  {
+    root: string;
+    image_set?: string;
+    year?: string;
+    download?: boolean;
+    transform?: string[];
+    target_transform?: string[];
+};
+
 export type CustomCSVDatasetConfigInput = {
     root: string;
     feature_columns: string[];
@@ -64,8 +98,10 @@ export type DatasetConfigInput  = {
     batch_size?: number;
     split_length?: number[];
     shuffle?: boolean;
-    mnist?: MNISTDatasetConfigInput
-    cifar10?: CIFAR10DatasetConfigInput
-    image_folder?: ImageFolderDatasetConfigInput
-    custom_csv?: CustomCSVDatasetConfigInput
+    mnist?: MNISTDatasetConfigInput;
+    cifar10?: CIFAR10DatasetConfigInput;
+    celeba?: CelebADatasetConfigInput;
+    vocsegmentation?: VOCSegmentationDatasetConfigInput;
+    image_folder?: ImageFolderDatasetConfigInput;
+    custom_csv?: CustomCSVDatasetConfigInput;
 };
