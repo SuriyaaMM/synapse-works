@@ -1,4 +1,3 @@
-/* Container */
 .dataset-config-container {
   max-width: 1200px;
   margin: 0 auto;
@@ -11,7 +10,6 @@
   margin-bottom: 24px;
 }
 
-/* Error Box */
 .dataset-config-error {
   padding: 16px;
   background-color: #fee2e2;

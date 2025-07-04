@@ -17,7 +17,7 @@ declare module '@xyflow/svelte' {
     // Add other common event handlers as needed
     onnodedragstart?: (event: { node: any, event: MouseEvent }) => void;
     onnodedrag?: (event: { node: any, event: MouseEvent }) => void;
-    onnodedragstop?: (event: { node: any, event: MouseEvent }) => void;
+    onnodedragstop?: (event: { event: MouseEvent; targetNode: any; nodes: any[] }) => void;
   }
 
   export class SvelteFlow extends SvelteComponentTyped<

@@ -1,5 +1,5 @@
 import { graphStore } from './graphStore.svelte';
-import type { FlowNode, FlowEdge } from './types';
+import type { FlowNode } from './types';
 
 let lastClickTime = 0;
 const DOUBLE_CLICK_DELAY = 300;
@@ -96,23 +96,20 @@ export function createEventHandlers(
   }
 
   function onNodeDrag(event: { node: any, event: MouseEvent }) {
-    console.log("Node drag event:", event);
     const node = event.node;
     if (node && node.position) {
-      console.log(`Updating position during drag for node ${node.id}:`, node.position);
       graphStore.updateNodePosition(node.id, node.position);
     }
   }
 
-  function onNodeDragStop(event: { node: any, event: MouseEvent }) {
-    console.log("Node drag stop event:", event);
-    const node = event.node;
+  function onNodeDragStop(event: { event: MouseEvent; targetNode: any; nodes: any[] }) {
+    const node = event.targetNode;
     if (node && node.position) {
-      console.log(`Final position update for node ${node.id}:`, node.position);
       graphStore.updateNodePosition(node.id, node.position);
       saveStateToStorage();
     }
   }
+
 
   return {
     onNodeClick,

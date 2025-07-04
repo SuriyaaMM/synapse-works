@@ -24,6 +24,7 @@ export const LayerConfigMap = new Map<string, LayerConfigInput>([
 ]);
 
 export function convertLayerToConfig(layer: any): LayerConfigInput {
+  console.log("5. layertype:", layer);
   const template = LayerConfigMap.get(layer.type);
 
   if (!template) {

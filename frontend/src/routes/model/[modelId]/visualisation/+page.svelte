@@ -3,14 +3,13 @@
   import { onMount, onDestroy } from 'svelte';
   import client from '$lib/apolloClient';
   import { START_TENSORBOARD } from '$lib/mutations';
-  import { GET_MODEL, GET_TRAINING_STATUS } from '$lib/queries';
-  import type { Model } from '../../../../../../source/types/modelTypes';
+  import { GET_TRAINING_STATUS } from '$lib/queries';
+  import {fetchModelDetails} from "../modelDetails"
   import type { TrainStatus } from '../../../../../../source/types/trainTypes';
   
   import './visualization.css';
   
   let modelId: string | null = null;
-  let modelDetails: Model | null = null;
   let trainingStatus: TrainStatus | null = null;
   let tensorboardRunning = false;
   let tensorboardError: string | null = null;
@@ -19,7 +18,6 @@
   let iframeLoaded = false;
   let connectionCheckInterval: NodeJS.Timeout | null = null;
 
-  // Extract modelId from URL path
   $: {
     const pathParts = $page.url.pathname.split('/');
     const modelIndex = pathParts.indexOf('model');
@@ -30,7 +28,6 @@
     }
   }
 
-  // Fetch model details and training status when modelId changes
   $: if (modelId) {
     fetchModelDetails();
     fetchTrainingStatus();
@@ -42,7 +39,6 @@
       fetchTrainingStatus();
     }
     checkTensorboardConnection();
-    // Check connection every 2 seconds
     connectionCheckInterval = setInterval(checkTensorboardConnection, 500);
   });
 
@@ -51,22 +47,6 @@
       clearInterval(connectionCheckInterval);
     }
   });
-
-  async function fetchModelDetails() {
-    if (!modelId) return;
-    
-    try {
-      const response = await client.query({
-        query: GET_MODEL,
-        variables: { id: modelId },
-        fetchPolicy: 'network-only'
-      });
-      
-      modelDetails = response.data?.getModel;
-    } catch (err) {
-      console.error('Error fetching model details:', err);
-    }
-  }
 
   async function fetchTrainingStatus() {
     if (!modelId) return;
@@ -116,7 +96,6 @@
       
       if (response.data?.startTensorboard) {
         tensorboardRunning = true;
-        // Wait a moment for TensorBoard to start, then check connection
         setTimeout(checkTensorboardConnection, 2000);
       }
     } catch (err) {

@@ -137,6 +137,7 @@
   }
 
   function validateForm(): string | null {
+    console.log("1. layertype:", selectedLayerType);
     if (!selectedLayerType) return 'Layer type is required';
     
     const t = selectedLayerType.type;
@@ -206,6 +207,7 @@
 
   function createLayerConfig(): LayerConfigInput {
     const layerNameValue = layerName.trim() || `${selectedLayerType!.type}Layer`;
+    console.log("2. layertype:", selectedLayerType);
     
     if (selectedLayerType!.type === 'linear') {
       const linearConfig: LinearLayerConfigInput = {
@@ -526,8 +528,9 @@
       return;
     }
     
-    formError = ''; // Clear any previous errors
+    formError = ''; 
     const layerConfig = createLayerConfig();
+    console.log("3. layertype:", layerConfig);
     dispatch('addLayer', { layerConfig });
     resetFormFields();
   }

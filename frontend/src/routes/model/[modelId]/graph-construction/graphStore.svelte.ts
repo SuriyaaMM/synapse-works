@@ -4,7 +4,7 @@ import { layerTypes } from './types';
 import { convertLayerToConfig } from './layer';
 
 class GraphStore {
-  private state = $state<GraphState>({
+  private initialState: GraphState = {
     nodes: [],
     edges: [],
     selectedNode: null,
@@ -15,7 +15,9 @@ class GraphStore {
     graphValidationResult: null,
     loading: false,
     error: null
-  });
+  };
+
+  private state = $state<GraphState>({ ...this.initialState });
 
   // Getters
   get nodes() { return this.state.nodes; }
@@ -51,50 +53,80 @@ class GraphStore {
     this.state.error = null;
   }
 
+  resetToInitialState() {
+    console.log('Resetting graph store to initial state');
+    
+    // Reset all state properties to their initial values
+    this.state.nodes = [];
+    this.state.edges = [];
+    this.state.selectedNode = null;
+    this.state.selectedEdge = null;
+    this.state.selectedLayerType = null;
+    this.state.nodeCounter = 1;
+    this.state.buildResult = null;
+    this.state.graphValidationResult = null;
+    this.state.loading = false;
+    this.state.error = null;
+  }
+
   updateNodePosition(nodeId: string, position: { x: number; y: number }) {
     const nodeIndex = this.state.nodes.findIndex(n => n.id === nodeId);
     if (nodeIndex !== -1) {
       this.state.nodes[nodeIndex].position = position;
     }
   }
-
+  
   updateNodesFromGraphData(graphData: any) {
-    if (graphData.layers) {
-      const existingPositions = new Map<string, { x: number; y: number }>();
-      console.log(existingPositions)
-      this.state.nodes.forEach(node => {
-        existingPositions.set(node.id, node.position);
-      });
-
-      const horizontalSpacing = 100;
-      const verticalSpacing = 100;
-      const startX = 100;
-      const startY = 100;
-
-      this.state.nodes = graphData.layers.map((layer: any, index: number) => {
-        const existingNode = this.state.nodes.find(n => n.id === layer.id);
-        const layerType = layerTypes.find(lt => lt.type === layer.type);
-        
-        let position: { x: number; y: number };
-        if (existingPositions.has(layer.id)) {
-          position = existingPositions.get(layer.id)!;
-        } else {
-          const row = index;
-          let xOffset;
-          
-          if (row % 2 === 0) {
-            xOffset = (row / 2) * horizontalSpacing;
-          } else {
-            xOffset = ((row - 1) / 2 + 1) * horizontalSpacing + 300;
-          }
-          
-          position = {
-            x: startX + xOffset,
-            y: startY + (row * verticalSpacing)
+  if (graphData.layers) {
+    const existingNodes = new Map(this.state.nodes.map(node => [node.id, node]));
+    const newLayerIds = new Set(graphData.layers.map((layer: any) => layer.id));
+    
+    // Remove nodes that are no longer in the graph
+    this.state.nodes = this.state.nodes.filter(node => newLayerIds.has(node.id));
+    
+    // Process each layer
+    graphData.layers.forEach((layer: any, index: number) => {
+      const existingNode = existingNodes.get(layer.id);
+      const layerType = layerTypes.find(lt => lt.type === layer.type);
+      
+      if (existingNode) {
+        // Update existing node - keep all existing data, just update what might have changed
+        const nodeIndex = this.state.nodes.findIndex(n => n.id === layer.id);
+        if (nodeIndex !== -1) {
+          this.state.nodes[nodeIndex] = {
+            ...existingNode,
+            data: {
+              ...existingNode.data,
+              label: `${layer.name || layer.id}[${layer.type}]`,
+            }
           };
         }
+      } else {
+        // Add new node
+        const horizontalSpacing = 100;
+        const verticalSpacing = 100;
+        const startX = 100;
+        const startY = 100;
         
-        return {
+        // Position new nodes
+        let position: { x: number; y: number };
+        
+        if (this.state.nodes.length > 0) {
+          // Find bounds of existing nodes
+          const positions = this.state.nodes.map(n => n.position);
+          const maxX = Math.max(...positions.map(p => p.x));
+          const minY = Math.min(...positions.map(p => p.y));
+          
+          // Position new node to the right of existing nodes
+          position = {
+            x: maxX + horizontalSpacing * 2,
+            y: minY
+          };
+        } else {
+          position = { x: startX, y: startY };
+        }
+        
+        const newNode = {
           id: layer.id,
           selectable: true,
           position,
@@ -104,26 +136,29 @@ class GraphStore {
             layerConfig: convertLayerToConfig(layer),
             color: layerType?.color || '#374151'
           },
-          selected: existingNode?.selected || false
+          selected: false
         };
-      });
-    }
-
-    if (graphData.edges) {
-      this.state.edges = [];
-      graphData.edges.forEach((edge: any) => {
-        if (edge.target_ids && Array.isArray(edge.target_ids)) {
-          edge.target_ids.forEach((targetId: string) => {
-            this.state.edges.push({
-              id: `${edge.source_id}-${targetId}`,
-              source: edge.source_id,
-              target: targetId
-            });
-          });
-        }
-      });
-    }
+        
+        this.state.nodes.push(newNode);
+      }
+    });
   }
+
+  if (graphData.edges) {
+    this.state.edges = [];
+    graphData.edges.forEach((edge: any) => {
+      if (edge.target_ids && Array.isArray(edge.target_ids)) {
+        edge.target_ids.forEach((targetId: string) => {
+          this.state.edges.push({
+            id: `${edge.source_id}-${targetId}`,
+            source: edge.source_id,
+            target: targetId
+          });
+        });
+      }
+    });
+  }
+}
 
   getStateForStorage() {
     return {
@@ -135,10 +170,25 @@ class GraphStore {
   }
 
   loadStateFromStorage(savedState: any) {
+    console.log('Loading state from storage:', savedState);
+    
     this.state.nodes = savedState.nodes || [];
     this.state.edges = savedState.edges || [];
     this.state.buildResult = savedState.buildResult || null;
     this.state.nodeCounter = savedState.nodeCounter || 1;
+    
+    // Clear selections when loading from storage
+    this.clearSelection();
+  }
+
+  // Helper method to check if the graph is empty
+  isEmpty(): boolean {
+    return this.state.nodes.length === 0 && this.state.edges.length === 0;
+  }
+
+  // Helper method to get a summary of the current state
+  getStateSummary(): string {
+    return `Nodes: ${this.state.nodes.length}, Edges: ${this.state.edges.length}, Counter: ${this.state.nodeCounter}`;
   }
 }
 

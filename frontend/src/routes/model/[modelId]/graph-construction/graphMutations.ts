@@ -2,27 +2,31 @@ import client from '$lib/apolloClient';
 import type { LayerConfigInput } from '../../../../../../source/types/layerTypes';
 import { ADD_TO_GRAPH, CONNECT_NODES, DELETE_FROM_GRAPH, DISCONNECT_NODES, BUILD_MODULE_GRAPH, VALIDATE_GRAPH } from '$lib/mutations';
 import { tick } from 'svelte';
-import { modelDetails } from '../modelDetails';
+import { fetchModelDetails, modelDetails } from '../modelDetails';
 import { graphStore } from './graphStore.svelte';
+import { get } from 'svelte/store';
 
 export function createGraphMutations(
   saveStateToStorage: () => void,
-  dispatch: (eventName: string, detail?: any) => void // ✅ Accept dispatcher callback
+  dispatch: (eventName: string, detail?: any) => void
 ) {
   let validationTrigger = 0;
 
   async function handleAddLayer(event: CustomEvent<{ layerConfig: LayerConfigInput }>) {
     const { layerConfig } = event.detail;
+    
 
     graphStore.setLoading(true);
     graphStore.setError(null);
 
     try {
+      console.log("just before sending to mutation:", layerConfig);
       const response = await client.mutate({
         mutation: ADD_TO_GRAPH,
         variables: { layer_config: layerConfig },
         fetchPolicy: 'no-cache'
       });
+      console.log(response);
 
       if (!response.data?.appendToModuleGraph) {
         throw new Error('Failed to add layer to graph - no data returned');
@@ -33,7 +37,7 @@ export function createGraphMutations(
       graphStore.incrementNodeCounter();
 
       saveStateToStorage();
-      dispatch('layerAdded', { layerConfig }); // ✅ Use passed dispatcher
+      dispatch('layerAdded', { layerConfig }); 
 
     } catch (err) {
       console.error('Error adding layer to graph:', err);
@@ -61,7 +65,7 @@ export function createGraphMutations(
       const graphData = response.data.connectInModuleGraph;
       graphStore.updateNodesFromGraphData(graphData);
 
-      dispatch('connectionCreated', { fromId, toId }); // ✅ Use passed dispatcher
+      dispatch('connectionCreated', { fromId, toId });
       saveStateToStorage();
 
     } catch (err) {
@@ -95,7 +99,7 @@ export function createGraphMutations(
       const graphData = response.data.deleteInModuleGraph;
       graphStore.updateNodesFromGraphData(graphData);
 
-      dispatch('layerDeleted', { layerId: graphStore.selectedNode.id }); // ✅ Use passed dispatcher
+      dispatch('layerDeleted', { layerId: graphStore.selectedNode.id });
       graphStore.setSelectedNode(null);
       saveStateToStorage();
 
@@ -133,7 +137,7 @@ export function createGraphMutations(
       const graphData = response.data.disconnectInModuleGraph;
       graphStore.updateNodesFromGraphData(graphData);
 
-      dispatch('connectionDeleted', { connectionId: graphStore.selectedEdge.id }); // ✅ Use passed dispatcher
+      dispatch('connectionDeleted', { connectionId: graphStore.selectedEdge.id });
       graphStore.setSelectedEdge(null);
       saveStateToStorage();
 
@@ -182,24 +186,33 @@ export function createGraphMutations(
   }
 
   async function validateGraphStructure() {
+    fetchModelDetails();
     try {
       let inputDimension: number[];
-      const datasetType = modelDetails?.dataset_config?.name?.toLowerCase();
+      const model = get(modelDetails);
+      const datasetType = model?.dataset_config?.name?.toLowerCase();
 
       switch (datasetType) {
-        case 'mnist':
-          inputDimension = [1, 28, 28];
-          break;
-        case 'cifar10':
-          inputDimension = [3, 32, 32];
-          break;
-        case 'image_folder':
-          inputDimension = [3, 224, 224];
-          break;
-        default:
-          inputDimension = [1, 28, 28];
-      }
+      case 'mnist':
+        inputDimension = [1, 28, 28];
+        break;
+      case 'cifar10':
+        inputDimension = [3, 32, 32];
+        break;
+      case 'image_folder':
+        inputDimension = [3, 224, 224];
+        break;
+      case 'celeba':
+        inputDimension = [3, 224, 224]; // Common preprocessing size
+        break;
+      case 'voc_segmentation':
+        inputDimension = [3, 224, 224]; // Common input size for segmentation tasks
+        break;
+      default:
+        inputDimension = [1, 28, 28];
+    }
 
+    console.log(inputDimension);
       const response = await client.mutate({
         mutation: VALIDATE_GRAPH,
         variables: { in_dimension: inputDimension },

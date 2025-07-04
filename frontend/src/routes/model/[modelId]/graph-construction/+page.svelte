@@ -28,7 +28,6 @@
 
   const dispatch = createEventDispatcher();
 
-  // Services (reactive based on modelId)
   const storageService = $derived(() => 
     modelId ? createStorageService(modelId) : null
   );
@@ -48,7 +47,7 @@ const mutations = $derived(() => {
     
     return createGraphMutations(
         storageService()?.saveStateToStorage || (() => {}),
-        (eventName, detail) => dispatch(eventName, detail) // Pass the second required argument here
+        (eventName, detail) => dispatch(eventName, detail)
     );
 });
 
@@ -82,7 +81,6 @@ $effect(() => {
   }
 });
 
-// Also add this method to force save positions when needed
 function forceeSavePositions() {
   if (storageService) {
     const service = storageService();
@@ -90,7 +88,6 @@ function forceeSavePositions() {
   }
 }
 
-  // Component methods
   function showNodeDetailsView(node: FlowNode) {
     detailsNode = node;
     currentModal = 'nodeDetails';
@@ -312,9 +309,22 @@ function forceeSavePositions() {
   });
 
   function buildGraph() {
-    mutations()?.buildModuleGraph();
-    currentModal = 'build-graph';
-  }
+  console.log('🔍 Build Graph clicked');
+  console.log('Current modal before:', currentModal);
+  console.log('Current buildResult:', graphStore.buildResult);
+  console.log('Current graphValidationResult:', graphStore.graphValidationResult);
+  
+  mutations()?.buildModuleGraph();
+  
+  currentModal = 'build-graph';
+  
+  console.log('Current modal after:', currentModal);
+  
+  setTimeout(() => {
+    console.log('Modal state after timeout:', currentModal);
+    console.log('Build result after timeout:', graphStore.buildResult);
+  }, 100);
+}
 </script>
 
 <div class="graph-editor">
@@ -365,7 +375,7 @@ function forceeSavePositions() {
     {/if}
   </div>
 
-    <div style="width: 100%; height: 100%;">
+    <div style="width: 100%; height: 100vh;">
       <SvelteFlow 
     nodes={graphStore.nodes}
     edges={graphStore.edges}
@@ -492,89 +502,109 @@ function forceeSavePositions() {
           </div>
 
           <div class="details-content">
-            <div class="build-result">
-              <h4>Built Graph Successfully</h4>
-              <div class="build-summary">
-                <div class="summary-item">
-                  <span class="label">Layers:</span>
-                  <span class="value">{graphStore.buildResult.module_graph.layers.length}</span>
-                </div>
-                <div class="summary-item">
-                  <span class="label">Connections:</span>
-                  <span class="value">{graphStore.buildResult.module_graph.edges.length}</span>
-                </div>
+            {#if graphStore.loading}
+              <div class="loading-content">
+                <h4>Building graph...</h4>
+                <p>Please wait while the graph is being constructed.</p>
               </div>
+            {:else if graphStore.buildResult}
+              <div class="build-result">
+                <h4>Built Graph Successfully</h4>
+                <div class="build-summary">
+                  <div class="summary-item">
+                    <span class="label">Layers:</span>
+                    <span class="value">{graphStore.buildResult.module_graph?.layers?.length || 0}</span>
+                  </div>
+                  <div class="summary-item">
+                    <span class="label">Connections:</span>
+                    <span class="value">{graphStore.buildResult.module_graph?.edges?.length || 0}</span>
+                  </div>
+                </div>
 
-              <div class="graph-validation">
-                <h5>🔍 Graph Validation</h5>
+                <div class="graph-validation">
+                  <h5>🔍 Graph Validation</h5>
 
-                {#if graphStore.graphValidationResult.status && graphStore.graphValidationResult.status.length > 0}
-                  {#if graphStore.graphValidationResult.status.some((s: any) => s.message)}
-                    <div class="validation-error">
-                      <div class="status-header">
-                        <span class="status-icon">⚠️</span>
-                        <strong>Validation Issues Found</strong>
-                      </div>
+                  {#if graphStore.graphValidationResult?.status && graphStore.graphValidationResult.status.length > 0}
+                    {#if graphStore.graphValidationResult.status.some((s: any) => s.message)}
+                      <div class="validation-error">
+                        <div class="status-header">
+                          <span class="status-icon">⚠️</span>
+                          <strong>Validation Issues Found</strong>
+                        </div>
 
-                      {#each graphStore.graphValidationResult.status as status, index}
-                        {#if status.message}
-                          <div class="error-item">
-                            <div class="error-number">Issue #{index + 1}</div>
-                            <div class="error-details">
-                              <p class="error-message">{status.message}</p>
+                        {#each graphStore.graphValidationResult.status as status, index}
+                          {#if status.message}
+                            <div class="error-item">
+                              <div class="error-number">Issue #{index + 1}</div>
+                              <div class="error-details">
+                                <p class="error-message">{status.message}</p>
 
-                              {#if status.out_dimension && status.out_dimension.length > 0}
-                                <div class="dimension-info">
-                                  <span class="dim-label">Output:</span>
-                                  <code class="dimension">[{status.out_dimension.join(', ')}]</code>
-                                </div>
-                              {/if}
+                                {#if status.out_dimension && status.out_dimension.length > 0}
+                                  <div class="dimension-info">
+                                    <span class="dim-label">Output:</span>
+                                    <code class="dimension">[{status.out_dimension.join(', ')}]</code>
+                                  </div>
+                                {/if}
 
-                              {#if status.required_in_dimension && status.required_in_dimension.length > 0}
-                                <div class="dimension-info">
-                                  <span class="dim-label">Required Input:</span>
-                                  <code class="dimension">[{status.required_in_dimension.join(', ')}]</code>
-                                </div>
-                              {/if}
+                                {#if status.required_in_dimension && status.required_in_dimension.length > 0}
+                                  <div class="dimension-info">
+                                    <span class="dim-label">Required Input:</span>
+                                    <code class="dimension">[{status.required_in_dimension.join(', ')}]</code>
+                                  </div>
+                                {/if}
+                              </div>
                             </div>
-                          </div>
-                        {/if}
-                      {/each}
-                    </div>
-                  {:else}
-                    <div class="validation-success">
-                      <div class="status-header">
-                        <span class="status-icon">✅</span>
-                        <strong>Graph is Valid!</strong>
+                          {/if}
+                        {/each}
                       </div>
-                      <p>All layer dimensions match correctly</p>
+                    {:else}
+                      <div class="validation-success">
+                        <div class="status-header">
+                          <span class="status-icon">✅</span>
+                          <strong>Graph is Valid!</strong>
+                        </div>
+                        <p>All layer dimensions match correctly</p>
+                      </div>
+                    {/if}
+                  {:else}
+                    <div class="no-validation">
+                      <div class="status-header">
+                        <span class="status-icon">ℹ️</span>
+                        <strong>No Validation Data</strong>
+                      </div>
+                      <p>Graph validation results are not available yet.</p>
                     </div>
                   {/if}
-                {:else}
-                  <div class="no-validation">
-                    <p>No validation data available</p>
+                </div>
+
+                {#if graphStore.buildResult.module_graph?.sorted && graphStore.buildResult.module_graph.layers?.length > 0}
+                  <div class="layer-order">
+                    <h5>🔄 Layer Execution Order</h5>
+                    <div class="layer-list">
+                      {#each graphStore.buildResult.module_graph.layers as layer}
+                        <div class="layer-item">
+                          <div class="layer-info">
+                            <span class="layer-name">{layer.name}</span>
+                            <span class="layer-type">({layer.type})</span>
+                          </div>
+                        </div>
+                      {/each}
+                    </div>
                   </div>
                 {/if}
               </div>
-
-              {#if graphStore.buildResult.module_graph.sorted && graphStore.buildResult.module_graph.layers.length > 0}
-                <div class="layer-order">
-                  <h5>🔄 Layer Execution Order</h5>
-                  <div class="layer-list">
-                    {#each graphStore.buildResult.module_graph.layers as layer}
-                      <div class="layer-item">
-                        <div class="layer-info">
-                          <span class="layer-name">{layer.name}</span>
-                          <span class="layer-type">({layer.type})</span>
-                        </div>
-                      </div>
-                    {/each}
-                  </div>
-                </div>
-              {/if}
-            </div>
+            {:else}
+              <div class="error-content">
+                <h4>No Build Result Available</h4>
+                <p>The graph build process did not return any results.</p>
+                {#if graphStore.error}
+                  <div class="error-message">{graphStore.error}</div>
+                {/if}
+              </div>
+            {/if}
           </div>
-              <div class="details-footer">
+          
+          <div class="details-footer">
             <span class="hint">Press ESC to close</span>
           </div>
         </div>
