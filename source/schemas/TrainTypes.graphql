@@ -30,11 +30,38 @@ type OptimizerConfig {
     history_size: Int
 }
 
+type LossFunctionConfig {
+    reduction: String
+    ignore_index: Int
+    label_smoothing: Float
+}
+
+type TrainMetrics {
+    gradient_visualization: Boolean!
+    gradient_visualization_period: Int
+    gradient_norm_visualization: Boolean!
+    gradient_norm_visualization_period: Int
+    learning_rate_visualization: Boolean!
+    learning_rate_visualization_period: Int
+    weights_visualization: Boolean!
+    weights_visualization_period: Int
+    graph_visualization: Boolean!
+    profile: Boolean!
+    accuracy_visualization: Boolean!
+    loss_visualization: Boolean!
+    test_validation: Boolean!
+    test_validation_period: Int!
+    train_validation: Boolean!
+    train_validation_period: Int!
+}
+
 type TrainConfig {
     epochs: Int!
     optimizer: String!
     optimizer_config: OptimizerConfig!
+    loss_function_config: LossFunctionConfig
     loss_function: String!
+    metrics: TrainMetrics!
 }
 
 type TrainStatus {
@@ -76,11 +103,38 @@ input OptimizerConfigInput {
     history_size: Int
 }
 
+input LossFunctionConfigInput {
+    reduction: String
+    ignore_index: Int
+    label_smoothing: Float
+}
+
+input TrainMetricsInput {
+    gradient_visualization: Boolean!
+    gradient_visualization_period: Int
+    gradient_norm_visualization: Boolean!
+    gradient_norm_visualization_period: Int
+    learning_rate_visualization: Boolean!
+    learning_rate_visualization_period: Int
+    weights_visualization: Boolean!
+    weights_visualization_period: Int
+    graph_visualization: Boolean!
+    profile: Boolean!
+    accuracy_visualization: Boolean!
+    loss_visualization: Boolean!
+    test_validation: Boolean!
+    test_validation_period: Int!
+    train_validation: Boolean!
+    train_validation_period: Int!
+}
+
 input TrainConfigInput {
     epochs: Int!
     optimizer: String!
     optimizer_config: OptimizerConfigInput!
     loss_function: String!
+    loss_function_config: LossFunctionConfigInput
+    metrics: TrainMetricsInput!
 }
 
 enum ExportType {

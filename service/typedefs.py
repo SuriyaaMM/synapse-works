@@ -432,19 +432,92 @@ OptimizerKwargs_T = Union[AdadeltaOptimizerKwargs_T,
                           RMSpropOptimizerKwargs_T,
                           RpropOptimizerKwargs_T,
                           SGDOptimizerKwargs_T]
+
+class CrossEntropyLossFunctionKwargs_T(TypedDict):
+    reduction: NotRequired[str]
+    ignore_index: NotRequired[int]
+    label_smoothing: NotRequired[int]
+
+LossFunctionKwargs_T = Union[CrossEntropyLossFunctionKwargs_T]
+
+class TrainMetrics(TypedDict):
+    gradient_visualization: bool
+    gradient_visualization_period: NotRequired[int]
+    gradient_norm_visualization: bool
+    gradient_norm_visualization_period: NotRequired[int]
+    learning_rate_visualization: bool
+    learning_rate_visualization_period: NotRequired[int]
+    weights_visualization: bool 
+    weights_visualization_period: NotRequired[int]
+    graph_visualization: bool
+    profile: bool
+    accuracy_visualization: bool
+    loss_visualization: bool 
+    test_validation: bool
+    test_validation_period: NotRequired[int]
+    train_validation: bool 
+    train_validation_period: NotRequired[int]
+
 class TrainConfig(TypedDict):
     epochs: int
     optimizer: str
     optimizer_kwargs: OptimizerKwargs_T
     loss_function: str
+    loss_function_kwargs: NotRequired[LossFunctionKwargs_T]
+    metrics: TrainMetrics
 
 class TSOptimizerConfigInput(TypedDict):
     lr: float
+    eps: NotRequired[float]
+    weight_decay: NotRequired[float]
+    betas: NotRequired[Tuple[float, ...]]
+    rho: NotRequired[float]
+    beta2_decay: NotRequired[float]
+    d: NotRequired[float]
+    lambd: NotRequired[float]
+    alpha: NotRequired[float]
+    t0: NotRequired[float]
+    momentum: NotRequired[float]
+    dampening: NotRequired[float]
+    nesterov: NotRequired[bool]
+    etas: NotRequired[Tuple[float, ...]]
+    step_sizes: NotRequired[Tuple[int, ...]]
+    max_iter: NotRequired[int]
+    max_eval: NotRequired[int]
+    tolerance_grad: NotRequired[float]
+    tolerance_change: NotRequired[float]
+    history_size: NotRequired[int]
+
+class TSTrainMetricsInput(TypedDict):
+    gradient_visualization: bool
+    gradient_visualization_period: NotRequired[int]
+    gradient_norm_visualization: bool
+    gradient_norm_visualization_period: NotRequired[int]
+    learning_rate_visualization: bool
+    learning_rate_visualization_period: NotRequired[int]
+    weights_visualization: bool 
+    weights_visualization_period: NotRequired[int]
+    graph_visualization: bool
+    profile: bool
+    accuracy_visualization: bool
+    loss_visualization: bool 
+    test_validation: bool
+    test_validation_period: NotRequired[int]
+    train_validation: bool 
+    train_validation_period: NotRequired[int]
+
+class TSLossConfigInput(TypedDict):
+    reduction: NotRequired[str]
+    ignore_index: NotRequired[int]
+    label_smoothing: NotRequired[float]
+
 class TSTrainConfigInput(TypedDict):
     epochs: int
     optimizer: str
     optimizer_config: TSOptimizerConfigInput
     loss_function: str
+    loss_function_config: NotRequired[TSLossConfigInput]
+    metrics: TSTrainMetricsInput
 
 """ ------------------------------------ Dataset Configurations ---------------------------- """
 # refer: https://docs.pytorch.org/vision/stable/generated/torchvision.datasets.MNIST.html

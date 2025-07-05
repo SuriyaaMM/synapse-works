@@ -106,10 +106,7 @@ class TorchTrainManager(nn.Module):
         optimizerType = torch_optimizer_name_map(train_config["optimizer"])
         
         self.optimizer = optimizerType(self.neuralNet.parameters(), **train_config["optimizer_kwargs"]) # type:ignore
-        if(dataset_config["name"] == "vocsegmentation"):
-            self.loss_function = torch_loss_function_name_map(train_config["loss_function"])(ignore_index=255)
-        else:
-            self.loss_function = torch_loss_function_name_map(train_config["loss_function"])()
+        self.loss_function = torch_loss_function_name_map(train_config["loss_function"])(**train_config["loss_function_kwargs"]) # type:ignore
         self.epochs = train_config["epochs"]
 
         self.dataset = torch_dataset_name_map(dataset_config["name"])(**dataset_config["kwargs"]) # type:ignore
@@ -121,6 +118,26 @@ class TorchTrainManager(nn.Module):
         # dummy tensor for computation graph visualization
         self.dummy_tensor_for_computation_graph = next(iter(self.train_loader))[0]
         self.dummy_tensor_for_computation_graph = self.dummy_tensor_for_computation_graph.to(self.device)
+        # metrics
+        self.visualize_gradient = train_config["metrics"]["gradient_visualization"]
+        self.visualize_gradient_norm = train_config["metrics"]["gradient_norm_visualization"]
+        self.visualize_weights = train_config["metrics"]["weights_visualization"]
+        self.visualize_lr = train_config["metrics"]["learning_rate_visualization"]
+        self.visualize_graph = train_config["metrics"]["graph_visualization"]
+        self.visualize_accuracy = train_config["metrics"]["accuracy_visualization"]
+        self.visualize_loss = train_config["metrics"]["loss_visualization"]
+
+        self.visualize_gradient_period = train_config["metrics"].get("gradient_visualization_period", 1) # type:ignore
+        self.visualize_gradient_norm_period = train_config["metrics"].get("gradient_norm_visualization_period", 1) # type:ignore
+        self.visualize_lr_period = train_config["metrics"].get("learning_rate_visualization_period", 1) # type:ignore
+        self.visualize_weights_period = train_config["metrics"].get("weights_visualization_period", 1) # type:ignore
+
+        self.profile = train_config["metrics"]["profile"]
+        
+        self.train_validation = train_config["metrics"]["train_validation"]
+        self.test_validation = train_config["metrics"]["test_validation"]
+        self.train_validation_period = train_config["metrics"].get("train_validation_period", 1) # type:ignore
+        self.test_validation_period = train_config["metrics"].get("test_validation_period", 1) # type:ignore
 
     def forward(self, x: torch.Tensor):
         return self.neuralNet(x)
@@ -144,30 +161,38 @@ def _TrainEpoch(train_manager: TorchTrainManager,
         loss.backward()
 
         # gradient visualization
-        current_global_step = current_epoch * len(train_manager.train_loader) + batch_idx
-        for name, param in train_manager.neuralNet.named_parameters():
-            if param.grad is not None:
-                writer.add_histogram(f"grads/{name.replace('.', '/')}", param.grad, current_global_step)
+        if train_manager.visualize_gradient:
+            if (current_epoch + 1) % train_manager.visualize_gradient_period == 0:
+                current_global_step = current_epoch * len(train_manager.train_loader) + batch_idx
+                for name, param in train_manager.neuralNet.named_parameters():
+                    if param.grad is not None:
+                        writer.add_histogram(f"grads/{name.replace('.', '/')}", param.grad, current_global_step)
         
         # lr visualization
-        writer.add_scalar("Learning Rate", train_manager.optimizer.param_groups[0]['lr'], current_global_step)
+        if train_manager.visualize_lr:
+            if (current_epoch + 1) % train_manager.visualize_lr_period == 0:
+                writer.add_scalar("Learning Rate", train_manager.optimizer.param_groups[0]['lr'], current_global_step)
 
         # gradient norm visualization
-        # TODO(mms) hardcoded 5 here
-        if (current_epoch + 1) % 25 == 0:
-            total_gradient_norm = 0.0
-            for p in train_manager.neuralNet.parameters():
-                if p.grad is not None:
-                    total_gradient_norm += p.grad.data.norm(2).item() ** 2
-            
-            total_gradient_norm = total_gradient_norm ** 0.5
-            writer.add_scalar("Gradient Norm", total_gradient_norm, current_global_step)
+        if train_manager.visualize_gradient_norm:
+            if (current_epoch + 1) % train_manager.visualize_gradient_norm_period == 0:
+                total_gradient_norm = 0.0
+                for p in train_manager.neuralNet.parameters():
+                    if p.grad is not None:
+                        total_gradient_norm += p.grad.data.norm(2).item() ** 2
+                
+                total_gradient_norm = total_gradient_norm ** 0.5
+                writer.add_scalar("Gradient Norm", total_gradient_norm, current_global_step)
 
         train_manager.optimizer.step()
-        running_loss += loss.item() * features.size(0)
-        predictions = torch.argmax(output, dim = 1)
-        correct_predictions += (predictions == labels).sum().item()
-        total_samples += labels.size(0)
+
+        if train_manager.visualize_loss:
+            running_loss += loss.item() * features.size(0)
+        if train_manager.train_validation:
+            if (current_epoch + 1) % train_manager.train_validation_period == 0:
+                predictions = torch.argmax(output, dim = 1)
+                correct_predictions += (predictions == labels).sum().item()
+                total_samples += labels.size(0)
 
     return running_loss, correct_predictions, total_samples
 
@@ -203,22 +228,32 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
     logging.info(f"Using device {train_manager.device}")
     logging.info(f"Using torch: {torch.__version__}")
 
-    writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
+    # graph visualization
+    if train_manager.visualize_graph:
+        writer.add_graph(train_manager.neuralNet, train_manager.dummy_tensor_for_computation_graph)
 
-    with torch.profiler.profile(
-    activities=[
-        torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
-        on_trace_ready=torch.profiler.tensorboard_trace_handler(writer_filename)) as prof:
-        with record_function("model_train"):
-            for epoch in range(train_manager.epochs):
-                running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager, epoch, writer)
-                accuracy = correct_predictions/total_samples
-                # write to tensorboard
+    # profiling
+    if train_manager.profile:
+        profiler = torch.profiler.profile(activities=[
+            torch.profiler.ProfilerActivity.CPU, torch.profiler.ProfilerActivity.CUDA],
+            on_trace_ready=torch.profiler.tensorboard_trace_handler(writer_filename))
+        
+        profiler.start()
+
+    with record_function("model_train"):
+        for epoch in range(train_manager.epochs):
+            running_loss, correct_predictions, total_samples = _TrainEpoch(train_manager, epoch, writer)
+            # visualize loss
+            if train_manager.visualize_loss:
                 writer.add_scalar("Loss/train", running_loss, epoch)
+            # visualize accuracy
+            if train_manager.visualize_accuracy:
+                accuracy = correct_predictions/total_samples
                 writer.add_scalar("Accuracy/train", accuracy, epoch)
 
-                # add histogram only per 5 epochs TODO(mms) hardcoded 5 here
-                if(epoch % 25 == 0):
+            # visualize histogram
+            if train_manager.visualize_weights:
+                if(epoch + 1) % train_manager.visualize_weights_period == 0:
                     # weights & biases distribution
                     for name, param in train_manager.neuralNet.named_parameters():
                         # log weights
@@ -227,28 +262,28 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
                         if param.dim() == 1:
                             writer.add_histogram(f"weights/{name.replace('.', '/')}", param, epoch)
                 
-                prof.step()
+            # profiler
+            if train_manager.profile:
+                profiler.step()
                 logging.info(f"GPU Memory Allocated: {torch.cuda.memory_allocated() / 1024**2:.2f} MB")
                 logging.info(f"GPU Memory Cached: {torch.cuda.memory_reserved() / 1024**2:.2f} MB")
-                logging.info(f"epoch: {epoch + 1}, loss: {running_loss}, accuracy: {accuracy}")
+                logging.info(f"epoch: {epoch + 1}")
                 
-                # TODO(mms) hardcoded validation period here to 5
-                if epoch % 25 == 0:
+            if train_manager.test_validation:
+                if (epoch + 1) % train_manager.test_validation_period == 0:
                     running_val_loss, correct_val_predictions, total_val_samples = _ValidateEpoch(train_manager)
                     accuracy_val = correct_val_predictions/total_val_samples
                     writer.add_scalar("Loss/validation", running_val_loss, epoch)
                     writer.add_scalar("Accuracy/validation", accuracy_val, epoch)
 
-                update_message = {
-                    "epoch" : epoch + 1,
-                    "loss" : running_loss,
-                    "accuracy" : (correct_predictions/total_samples),
-                    "completed" : epoch == train_manager.epochs - 1,
-                    "timestamp" : datetime.datetime.now().isoformat()
-                }
-                redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
-                logging.info(f"pushed {json.dumps(update_message)} to redis queue")
-    
+            update_message = {
+                "epoch" : epoch + 1,
+                "completed" : epoch == train_manager.epochs - 1,
+                "timestamp" : datetime.datetime.now().isoformat()
+            }
+            redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
+            logging.info(f"pushed {json.dumps(update_message)} to redis queue")
+    # hyperparameter dict
     hparam_dict = {
         "learning_rate": train_manager.train_config["optimizer_kwargs"]["lr"],
         "optimizer": train_manager.train_config["optimizer"],
@@ -256,7 +291,7 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
         "batch_size": train_manager.dataset_config["dataloader_config"]["batch_size"], #type:ignore
         "loss_fn": train_manager.train_config["loss_function"],
     }
-   
+   # metric dict
     metric_dict = {
         "hparam/accuracy_train": accuracy, 
         "hparam/loss_train": running_loss,

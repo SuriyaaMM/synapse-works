@@ -337,7 +337,7 @@ export const layerHandler: LayerHandlerMap = {
         new_layer_config = {
             id: layer_id,
             type: "dropout2d",
-            name: dropout2d.name || `dropout_${layer_id.substring(0, 4)}`,
+            name: dropout2d.name || `dropout2d_${layer_id.substring(0, 4)}`,
             p: dropout2d.p
         };
 
@@ -355,8 +355,8 @@ export const layerHandler: LayerHandlerMap = {
 
         new_layer_config = {
             id: layer_id,
-            type: "dropout",
-            name: elu.name || `dropout_${layer_id.substring(0, 4)}`,
+            type: "elu",
+            name: elu.name || `elu_${layer_id.substring(0, 4)}`,
             alpha: elu.alpha,
             inplace: elu.inplace
         };

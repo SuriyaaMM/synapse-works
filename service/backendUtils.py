@@ -306,15 +306,18 @@ def parseFromTrainConfig(train_config: TSTrainConfigInput) -> TrainConfig:
     optimizer: str = train_config["optimizer"]
     epochs: int = train_config["epochs"]
     loss_function: str = train_config["loss_function"]
+    metrics: TSTrainMetricsInput = train_config["metrics"]
     # put together train config
     parsed_train_config: TrainConfig = cast(TrainConfig, {
         "epochs" : epochs,
         "optimizer": optimizer,
-        "loss_function": loss_function  
+        "loss_function": loss_function,
+        "metrics" : metrics  
     })
 
     # optimizer dependent configuration
     optimizer_config: TSOptimizerConfigInput = train_config["optimizer_config"]
+    loss_function_config: TSLossConfigInput = train_config["loss_function_config"] # type:ignore
 
     # handle for adadelta optimizer
     if optimizer == "adadelta":
@@ -450,8 +453,19 @@ def parseFromTrainConfig(train_config: TSTrainConfigInput) -> TrainConfig:
     else:
         raise NotImplementedError(f"{optimizer} is not implemented yet")
     
+    # handle loss function configurations
+    if loss_function == "ce":
+        loss_function_kwargs = {}
+        optional_keys = ["reduction", "ignore_index", "label_smoothing"]
+        for optional_key in optional_keys:
+            if optional_key in loss_function_config.keys():
+                loss_function_kwargs[optional_key] = loss_function_config[optional_key]
+            else:
+                logging.warning(f"{optional_key} is missing in {loss_function_config.__class__.__name__}, skipping")
+        
     # set optimizer-specific kwargs
     parsed_train_config["optimizer_kwargs"] = optimizer_kwargs
+    parsed_train_config["loss_function_kwargs"] = loss_function_kwargs # type:ignore
     logging.info(f"Parsed PARAM(train_config):\n{json.dumps(parsed_train_config, indent=4)}")
     
     return parsed_train_config
