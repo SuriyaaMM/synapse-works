@@ -10,7 +10,8 @@ const server = new ApolloServer({ schema })
 
 const {url} = await startStandaloneServer(
     server, {
-        listen: {port : 4000}
+        listen: { port: parseInt(process.env.PORT || '4000') }
+
     }
 )
 

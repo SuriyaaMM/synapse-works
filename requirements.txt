@@ -1,9 +1,17 @@
-absl-py==2.3.0
+absl-py @ file:///home/conda/feedstock_root/build_artifacts/absl-py_1748348059416/work
+beautifulsoup4==4.13.4
+certifi==2025.6.15
+charset-normalizer==3.4.2
 filelock==3.18.0
 fsspec==2025.5.1
-grpcio==1.73.0
+gdown==5.2.0
+git-filter-repo==2.47.0
+grpcio @ file:///croot/grpc-split_1742490263735/work
+idna==3.10
+importlib_metadata @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_importlib-metadata_1747934053/work
+intel_extension_for_pytorch==2.7.0
 Jinja2==3.1.6
-Markdown==3.8.2
+Markdown @ file:///home/conda/feedstock_root/build_artifacts/markdown_1750360292101/work
 MarkupSafe==3.0.2
 mpmath==1.3.0
 networkx==3.5
@@ -22,18 +30,31 @@ nvidia-cusparselt-cu12==0.6.3
 nvidia-nccl-cu12==2.26.2
 nvidia-nvjitlink-cu12==12.6.85
 nvidia-nvtx-cu12==12.6.77
-packaging==25.0
+onnx==1.18.0
+packaging @ file:///home/conda/feedstock_root/build_artifacts/bld/rattler-build_packaging_1745345660/work
+pandas==2.3.0
 pillow==11.2.1
-protobuf==6.31.1
+protobuf @ file:///croot/protobuf_1742419705443/work/bazel-bin/python/dist/protobuf-5.29.3-cp312-abi3-linux_x86_64.whl#sha256=b288453436273a46653983ade721c0c62cfa5ef6c012b110674c369d25536d88
+psutil==7.0.0
+PySocks==1.7.1
+python-dateutil==2.9.0.post0
+python-dotenv==1.1.1
+pytz==2025.2
 redis==6.2.0
+requests==2.32.4
 setuptools==78.1.1
-six==1.17.0
+six @ file:///home/conda/feedstock_root/build_artifacts/six_1733380938961/work
+soupsieve==2.7
 sympy==1.14.0
-tensorboard==2.19.0
-tensorboard-data-server==0.7.2
+tensorboard @ file:///home/conda/feedstock_root/build_artifacts/tensorboard_1740522445235/work/tensorboard-2.19.0-py3-none-any.whl#sha256=5e71b98663a641a7ce8a6e70b0be8e1a4c0c45d48760b076383ac4755c35b9a0
+tensorboard_data_server @ file:///croot/tensorboard-data-server_1724172556187/work/tensorboard_data_server-0.7.0-py3-none-manylinux2014_x86_64.whl#sha256=162df89696269a70a88358ad14c08b73a057ccde1ec28f3dd314ca4fc4fd9ce4
 torch==2.7.1
 torchvision==0.22.1
+tqdm==4.67.1
 triton==3.3.1
 typing_extensions==4.14.0
-Werkzeug==3.1.3
+tzdata==2025.2
+urllib3==2.5.0
+Werkzeug @ file:///home/conda/feedstock_root/build_artifacts/werkzeug_1733160440960/work
 wheel==0.45.1
+zipp @ file:///home/conda/feedstock_root/build_artifacts/zipp_1749421620841/work
