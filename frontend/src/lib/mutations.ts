@@ -75,6 +75,8 @@ export const SET_TRAIN_CONFIG = gql`
     $optimizer: String!
     $optimizerConfig: OptimizerConfigInput!
     $loss_function: String!
+    $loss_function_config: LossFunctionConfigInput
+    $metrics: TrainMetricsInput!
   ) {
     setTrainConfig(
       train_config: {
@@ -82,6 +84,8 @@ export const SET_TRAIN_CONFIG = gql`
         optimizer: $optimizer
         optimizer_config: $optimizerConfig
         loss_function: $loss_function
+        loss_function_config: $loss_function_config
+        metrics: $metrics
       }
     ) {
       id
@@ -93,6 +97,25 @@ export const SET_TRAIN_CONFIG = gql`
           lr
         }
         loss_function
+        loss_function_config {
+          reduction
+          ignore_index
+          label_smoothing
+        }
+        metrics {
+          gradient_visualization
+          gradient_norm_visualization
+          learning_rate_visualization
+          weights_visualization
+          graph_visualization
+          profile
+          accuracy_visualization
+          loss_visualization
+          test_validation
+          test_validation_period
+          train_validation
+          train_validation_period
+        }
       }
     }
   }

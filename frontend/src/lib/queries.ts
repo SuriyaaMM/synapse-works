@@ -52,8 +52,6 @@ export const GET_TRAINING_STATUS = gql`
   query GetTrainingStatus {
     getTrainingStatus {
       epoch
-      loss
-      accuracy
       completed
     }
   }

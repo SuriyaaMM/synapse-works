@@ -131,12 +131,34 @@ export function updateArrayValue(
   return optimizerConfig;
 }
 
-// API Service Functions
 export interface TrainingConfigRequest {
   epochs: number;
   optimizer: string;
   optimizerConfig: OptimizerConfig;
   lossFunction: string;
+  lossFunctionConfig?: {
+    reduction?: string;
+    ignore_index?: number | null;
+    label_smoothing?: number;
+  };
+  metrics: {
+    gradient_visualization: boolean;
+    gradient_visualization_period?: number;
+    gradient_norm_visualization: boolean;
+    gradient_norm_visualization_period?: number;
+    learning_rate_visualization: boolean;
+    learning_rate_visualization_period?: number;
+    weights_visualization: boolean;
+    weights_visualization_period?: number;
+    graph_visualization: boolean;
+    profile: boolean;
+    accuracy_visualization: boolean;
+    loss_visualization: boolean;
+    test_validation: boolean;
+    test_validation_period: number;
+    train_validation: boolean;
+    train_validation_period: number;
+  };
 }
 
 export interface ServiceResponse<T> {
@@ -149,14 +171,16 @@ export async function setTrainingConfig(
 ): Promise<ServiceResponse<TrainConfig>> {
   try {
     const response = await client.mutate({
-      mutation: SET_TRAIN_CONFIG,
-      variables: {
-        epochs: request.epochs || 10,
-        optimizer: request.optimizer,
-        optimizerConfig: request.optimizerConfig,
-        loss_function: request.lossFunction
-      }
-    });
+    mutation: SET_TRAIN_CONFIG,
+    variables: {
+      epochs: request.epochs || 10,
+      optimizer: request.optimizer,
+      optimizerConfig: request.optimizerConfig,
+      loss_function: request.lossFunction,
+      loss_function_config: request.lossFunctionConfig,
+      metrics: request.metrics
+    }
+  });
 
     console.log('Set training config response:', response);
 
