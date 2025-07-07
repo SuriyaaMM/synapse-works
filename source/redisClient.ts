@@ -1,8 +1,10 @@
 import Redis from 'ioredis'; 
+import 'dotenv/config'; 
 import type { Redis as RedisClientType } from 'ioredis';
 import { TrainStatus } from './types/trainTypes.js'
 
 const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
+console.log(`[synapse]: Using Redis URL -> ${REDIS_URL}`);
 const REDIS_MAIN_QUEUE_NAME = 'model_main_queue';
 const REDIS_TRAIN_QUEUE_NAME = 'model_train_queue';
 
