@@ -1,17 +1,42 @@
 import Redis from 'ioredis'; 
-import 'dotenv/config'; 
 import type { Redis as RedisClientType } from 'ioredis';
+import { readFile } from 'fs/promises';
 import { TrainStatus } from './types/trainTypes.js'
 
-const REDIS_URL = process.env.REDIS_URL || 'redis://localhost:6379';
-console.log(`[synapse]: Using Redis URL -> ${REDIS_URL}`);
+let REDIS_URL = 'redis://localhost:6379';
 const REDIS_MAIN_QUEUE_NAME = 'model_main_queue';
 const REDIS_TRAIN_QUEUE_NAME = 'model_train_queue';
+export let REMOTE_HOSTING = false;
+export let PORT: number = 4000;
 
 let redis_instance: RedisClientType | null = null;
 
+// load environment.json
+const file_path = "environment.json";
+let ENVIRONMENT = await readFile(file_path, 'utf-8');
+ENVIRONMENT = JSON.parse(ENVIRONMENT);
+
+async function configureRedisURL(){
+    // skip default arguements
+    const args = process.argv.slice(2);
+    let remote: boolean = false; 
+    
+    for(const arg of args){
+        if(arg === "--remote"){
+            remote = true;
+            REMOTE_HOSTING = true;
+        }
+    }
+    // modify REDIS URL on remote
+    if(remote){
+        REDIS_URL = ENVIRONMENT["REDIS_URL"];
+    }
+}
+
 // export for use in index.ts
-export function connectRedis() {
+export async function connectRedis() {
+    await configureRedisURL();
+    console.log(`[synapse][redis]: Connected to redis: ${REDIS_URL}`)
 
     // if already connected return the object
     if (redis_instance) {

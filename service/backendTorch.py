@@ -239,6 +239,7 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
             on_trace_ready=torch.profiler.tensorboard_trace_handler(writer_filename))
         
         profiler.start()
+        logging.info("Profiler Initialized")
 
     with record_function("model_train"):
         for epoch in range(train_manager.epochs):
@@ -283,6 +284,10 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
             }
             redis_client.lpush(REDIS_TRAIN_QUEUE_NAME, json.dumps(update_message))
             logging.info(f"pushed {json.dumps(update_message)} to redis queue")
+
+    if train_manager.profile:
+        profiler.stop()
+        
     # hyperparameter dict
     hparam_dict = {
         "learning_rate": train_manager.train_config["optimizer_kwargs"]["lr"],

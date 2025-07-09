@@ -1,7 +1,7 @@
 import { ApolloClient, InMemoryCache } from '@apollo/client/core';
 
 const client = new ApolloClient({
-  uri: 'https://synapse-works-server.onrender.com/',
+  uri: "http://localhost:4000",
   cache: new InMemoryCache(),
 });
 

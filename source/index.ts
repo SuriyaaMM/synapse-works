@@ -1,16 +1,16 @@
 import { ApolloServer } from "@apollo/server";
 import { startStandaloneServer } from "@apollo/server/standalone";
 import { schema } from "./schema.js";
-import { connectRedis } from "./redisClient.js";
+import { connectRedis, PORT } from "./redisClient.js";
 import { tensorboardProcess } from "./resolvers.js";
 
-connectRedis();
+await connectRedis();
 
 const server = new ApolloServer({ schema })
 
 const {url} = await startStandaloneServer(
     server, {
-        listen: { port: parseInt(process.env.PORT || '4000') }
+        listen: { port: PORT}
 
     }
 )

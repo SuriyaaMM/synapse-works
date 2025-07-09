@@ -1,0 +1,4 @@
+{
+    "REDIS_URL": "rediss://default:AdsFAAIjcDE3MTcxMzAyZDQ2ZGQ0ZWI1YjQ2OGJiODQ3OWQ4YjZmNnAxMA@certain-aardvark-56069.upstash.io:6379",
+    "TENSORBOARD_URL": "https://synapse-works-tensorboard-service-production.up.railway.app"
+}

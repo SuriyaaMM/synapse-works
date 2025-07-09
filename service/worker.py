@@ -1,32 +1,38 @@
 import redis
 import os
-from config import logging, REDIS_MAIN_QUEUE_NAME, REDIS_TRAIN_QUEUE_NAME
+import argparse
+import json
+
+from config import logging, REDIS_HOST, REDIS_PORT, REDIS_MAIN_QUEUE_NAME, REDIS_TRAIN_QUEUE_NAME
 from modelManager import ModelManager
 from workerUtils import processMessage
-from dotenv import load_dotenv
-load_dotenv()
 
-def start(model: ModelManager):
+
+def start(model: ModelManager, args: argparse.Namespace):
     """Connects to Redis and starts consuming messages from the list."""
-    print("[synapse][redis]: Connecting to Redis...")
+    logging.info("Connecting to Redis")
+    
+    with open("environment.json", "r") as file:
+        env = json.load(file)
 
     try:
-        # Load REDIS_URL from environment
-        REDIS_URL = os.getenv("REDIS_URL")
+        if args.remote:
+            # Load REDIS_URL from environment
+            REDIS_URL = env["REDIS_URL"]
 
-        if not REDIS_URL:
-            raise ValueError("REDIS_URL not set in environment!")
-
-        # Connect to Upstash Redis using TLS
-        r = redis.from_url(REDIS_URL, decode_responses=True)
-        r.ping()
-
-        print("[synapse][redis]: Connected to Redis.")
-        print(f"[synapse][redis]: Waiting for messages in '{REDIS_MAIN_QUEUE_NAME}'")
+            # Connect to Upstash Redis using TLS
+            r = redis.from_url(REDIS_URL, decode_responses=True)
+            r.ping()
+            logging.info(f"Connected to Redis {REDIS_URL}")
+        else:
+            # Connect to Redis Localhost
+            r = redis.Redis(host=REDIS_HOST, port=REDIS_PORT, db=0)
+            r.ping()
+            logging.info(f"Connected to Redis {REDIS_HOST}:{REDIS_PORT}")
 
         while True:
             # blocking right tail pop, we left pushed to the queue
-            queue, message_data = r.brpop([REDIS_MAIN_QUEUE_NAME], timeout=0)
+            queue, message_data = r.brpop([REDIS_MAIN_QUEUE_NAME], timeout=0) # type:ignore
             if message_data:
                 print(f"[synapse][worker]: Received message: {message_data}")
                 updated_model = processMessage(message_data, model=model, redis_client=r)
@@ -34,7 +40,7 @@ def start(model: ModelManager):
                     model = updated_model
 
     except Exception as e:
-        print(f"[synapse][redis]: unexpected exception: {e}")
+        logging.info(f"unexpected exception: {e}")
 
     finally:
         logging.info(f"Deleting {REDIS_TRAIN_QUEUE_NAME} & {REDIS_MAIN_QUEUE_NAME}")
@@ -48,5 +54,11 @@ def start(model: ModelManager):
                 pass
 
 if __name__ == '__main__':
+
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument("--remote", action = "store_true", help="Connects server to remove URL")
+    args = parser.parse_args()
+
     model = ModelManager("", "")
-    start(model)
+    start(model, args)
