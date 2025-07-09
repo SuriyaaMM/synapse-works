@@ -14,7 +14,7 @@
   let tensorboardRunning = false;
   let tensorboardError: string | null = null;
   let loading = false;
-  let tensorboardUrl = "https://synapse-works-tensorboard-service.onrender.com";
+  let tensorboardUrl = "https://synapse-works-tensorboard-service-production.up.railway.app";
   let iframeLoaded = false;
   let connectionCheckInterval: NodeJS.Timeout | null = null;
 

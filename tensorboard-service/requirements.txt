@@ -1,4 +1,0 @@
-tensorboard==2.19.0
-numpy>=1.21
-grpcio>=1.48.2
-markdown>=3.3
