@@ -581,13 +581,23 @@ function forceeSavePositions() {
                   <div class="layer-order">
                     <h5>🔄 Layer Execution Order</h5>
                     <div class="layer-list">
-                      {#each graphStore.buildResult.module_graph.layers as layer}
-                        <div class="layer-item">
-                          <div class="layer-info">
-                            <span class="layer-name">{layer.name}</span>
-                            <span class="layer-type">({layer.type})</span>
+                      {#each graphStore.buildResult.module_graph.sorted as layerId}
+                        {@const layer = graphStore.buildResult.module_graph.layers.find((l: any) => l.id === layerId)}
+                        {#if layer}
+                          <div class="layer-item">
+                            <div class="layer-info">
+                              <span class="layer-name">{layer.name || layer.id}</span>
+                              <span class="layer-type">({layer.type})</span>
+                            </div>
                           </div>
-                        </div>
+                        {:else}
+                          <div class="layer-item">
+                            <div class="layer-info">
+                              <span class="layer-name">Unknown Layer</span>
+                              <span class="layer-id">[ID: {layerId}]</span>
+                            </div>
+                          </div>
+                        {/if}
                       {/each}
                     </div>
                   </div>

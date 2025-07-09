@@ -26,6 +26,10 @@ import {
     disconnectInModuleGraphResolver, 
     validateModuleGraphResolver} from "./resolvers/graphResolver.js";
 
+import dotenv from 'dotenv';
+dotenv.config();
+
+
 let model: Model;
 export let tensorboardProcess: ChildProcess = null;
 
@@ -228,7 +232,7 @@ export const resolvers = {
             console.log(`[TensorBoard exited with code ${code}]`);
             });
 
-            return `http://localhost:6006`;
+            return process.env.TENSORBOARD_URL || 'http://localhost:6006';
         }
     }
 }

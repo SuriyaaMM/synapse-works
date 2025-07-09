@@ -14,7 +14,7 @@
   let tensorboardRunning = false;
   let tensorboardError: string | null = null;
   let loading = false;
-  let tensorboardUrl = 'http://localhost:6006';
+  let tensorboardUrl = "https://synapse-works-tensorboard-service.onrender.com";
   let iframeLoaded = false;
   let connectionCheckInterval: NodeJS.Timeout | null = null;
 

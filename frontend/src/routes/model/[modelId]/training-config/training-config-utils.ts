@@ -170,17 +170,25 @@ export async function setTrainingConfig(
   request: TrainingConfigRequest
 ): Promise<ServiceResponse<TrainConfig>> {
   try {
-    const response = await client.mutate({
-    mutation: SET_TRAIN_CONFIG,
-    variables: {
+    const mutationVariables: any = {
       epochs: request.epochs || 10,
       optimizer: request.optimizer,
       optimizerConfig: request.optimizerConfig,
       loss_function: request.lossFunction,
-      loss_function_config: request.lossFunctionConfig,
       metrics: request.metrics
+    };
+
+    if (request.lossFunctionConfig && 
+        (request.lossFunctionConfig.reduction !== 'mean' || 
+        request.lossFunctionConfig.ignore_index !== null || 
+        request.lossFunctionConfig.label_smoothing !== 0.0)) {
+      mutationVariables.loss_function_config = request.lossFunctionConfig;
     }
-  });
+
+    const response = await client.mutate({
+      mutation: SET_TRAIN_CONFIG,
+      variables: mutationVariables
+    });
 
     console.log('Set training config response:', response);
 
