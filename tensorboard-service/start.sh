@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# Install Python dependencies (if needed)
-pip install --no-cache-dir tensorboard
+# Install dependencies 
+pip install --no-cache-dir -r requirements.txt
 
-# Start TensorBoard on Render's public port (10000)
+# Run TensorBoard on Render’s required public port 10000
 tensorboard --logdir ../tbsummary --host 0.0.0.0 --port 10000
