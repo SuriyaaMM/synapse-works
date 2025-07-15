@@ -10,7 +10,6 @@ Architect, Train & Evaluate your Neural Networks in seconds
 
 ### Use with Caution
 - Dimension checking is limited, So it might not succeed when dimensions aren't right (Check logs of worker.py)
-- Deleting a layer is not yet implemented, so you'll have to create a new one :(
 
 ### Gallery
 [Visit Gallery](./gallery/README.md)
