@@ -13,36 +13,60 @@ logging.basicConfig(level=logging.INFO,
                     format='%(asctime)s - %(levelname)s - %(message)s')
 
 
-class LinearMNISTModel(nn.Module):
+class ConvUNetMNIST(nn.Module):
     """
-    A simple neural network for MNIST classification using only linear layers,
-    as per the requested architecture.
-    Note: For better performance on image data, non-linear activation functions
-    (like ReLU) are typically added between linear layers. This architecture
-    is kept strictly linear as per the user's explicit request.
+    A small U-Net style convolutional neural network for image classification on CIFAR-10-sized images.
+    The model performs feature extraction via convolutional encoder, upsamples with transposed convolutions,
+    and uses skip connections for better gradient flow.
     """
 
     def __init__(self):
         super().__init__()
-        # Flattens the 28x28 image into a 784-element vector (28 * 28)
-        self.flatten = nn.Flatten()
-        # First linear layer: 784 input features to 1024 hidden features
-        self.fc1 = nn.Linear(784, 1024)
-        # Second linear layer: 1024 hidden features to 2048 hidden features
-        self.fc2 = nn.Linear(1024, 2048)
-        # Output layer: 2048 hidden features to 10 output classes (digits 0-9)
-        self.out = nn.Linear(2048, 10)
+        # Encoder
+        self.enc1 = nn.Sequential(nn.Conv2d(3, 64, 3, padding=1), nn.ReLU(),
+                                  nn.Conv2d(64, 64, 3, padding=1), nn.ReLU())
+        self.pool1 = nn.MaxPool2d(2)
+
+        self.enc2 = nn.Sequential(nn.Conv2d(64, 128, 3, padding=1), nn.ReLU(),
+                                  nn.Conv2d(128, 128, 3, padding=1), nn.ReLU())
+        self.pool2 = nn.MaxPool2d(2)
+
+        self.enc3 = nn.Sequential(nn.Conv2d(128, 256, 3, padding=1), nn.ReLU(),
+                                  nn.Conv2d(256, 256, 3, padding=1), nn.ReLU())
+
+        # Decoder
+        self.up1 = nn.ConvTranspose2d(256, 128, 2, stride=2)
+        self.dec1 = nn.Sequential(nn.Conv2d(256, 128, 3, padding=1), nn.ReLU(),
+                                  nn.Conv2d(128, 128, 3, padding=1), nn.ReLU())
+
+        self.up2 = nn.ConvTranspose2d(128, 64, 2, stride=2)
+        self.dec2 = nn.Sequential(nn.Conv2d(128, 64, 3, padding=1), nn.ReLU(),
+                                  nn.Conv2d(64, 64, 3, padding=1), nn.ReLU())
+
+        self.classifier = nn.Sequential(
+            nn.Flatten(),
+            nn.Linear(64 * 32 * 32,
+                      10)  # 64 channels x 32x32 spatial resolution
+        )
 
     def forward(self, x):
-        # Apply flatten
-        x = self.flatten(x)
-        # Apply first linear layer
-        x = self.fc1(x)
-        # Apply second linear layer
-        x = self.fc2(x)
-        # Apply final output layer
-        x = self.out(x)
-        return x
+        e1 = self.enc1(x)
+        p1 = self.pool1(e1)
+
+        e2 = self.enc2(p1)
+        p2 = self.pool2(e2)
+
+        e3 = self.enc3(p2)
+
+        u1 = self.up1(e3)
+        cat1 = torch.cat([u1, e2], dim=1)
+        d1 = self.dec1(cat1)
+
+        u2 = self.up2(d1)
+        cat2 = torch.cat([u2, e1], dim=1)
+        d2 = self.dec2(cat2)
+
+        return self.classifier(d2)
 
 
 def train_epoch(model, train_loader, device, loss_fn, optimizer, current_epoch,
@@ -157,9 +181,9 @@ def run_training(model,
     logging.info(f"TensorBoard logs will be saved to: {writer_filename}")
 
     # Dummy tensor for tracing the computation graph in TensorBoard
-    dummy_tensor_for_computation_graph = torch.randn(1, 1, 28, 28).to(device)
+    dummy_tensor_for_computation_graph = torch.randn(64, 3, 64, 64).to(device)
     # Add the model's computation graph to TensorBoard
-    writer.add_graph(model, dummy_tensor_for_computation_graph)
+    #writer.add_graph(model, dummy_tensor_for_computation_graph)
 
     # --- Profiler remains as before, but with record_shapes=False by default for less overhead ---
     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA],
@@ -260,16 +284,16 @@ def main():
     # transforms.ToTensor() converts PIL Image to Tensor and scales pixel values to [0, 1]
     transform = transforms.Compose([transforms.ToTensor()])
 
-    # Load MNIST training and test datasets
+    # Load CIFAR10 training and test datasets
     # root="./data" ensures data is downloaded to a 'data' directory in the current working directory
-    logging.info("Downloading MNIST datasets...")
-    train_set = datasets.MNIST(root="./benchmark/data",
+    logging.info("Downloading CIFAR10 datasets...")
+    train_set = datasets.CIFAR10(root="data",
                                train=True,
                                transform=transform)
-    test_set = datasets.MNIST(root="./benchmark/data",
+    test_set = datasets.CIFAR10(root="data",
                               train=False,
                               transform=transform)
-    logging.info("MNIST datasets downloaded.")
+    logging.info("CIFAR10 datasets downloaded.")
 
     # Define batch size for data loaders
     batch_size = 1024
@@ -290,7 +314,7 @@ def main():
         pin_memory=True if device.type == 'cuda' else False)
 
     # Instantiate the model, loss function, and optimizer
-    model = LinearMNISTModel()
+    model = ConvUNetMNIST()
     model.to(device)  # Move model to the selected device
     loss_fn = nn.CrossEntropyLoss()  # Suitable for multi-class classification
     learning_rate = 1e-4  # Learning rate for the optimizer
@@ -308,9 +332,9 @@ def main():
         loss_fn=loss_fn,
         optimizer=optimizer,
         epochs=epochs,
-        model_id="linear-mnist",  # Identifier for the model
-        dataset_name="MNIST",  # Name of the dataset
-        export_to="TorchTensor"  # Option to export the trained model
+        model_id="unet-cifar10",  # Identifier for the model
+        dataset_name="CIFAR10",  # Name of the dataset
+        export_to="ONNX"  # Option to export the trained model
     )
     logging.info("Model training finished.")
 

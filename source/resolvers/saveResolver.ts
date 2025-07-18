@@ -28,6 +28,7 @@ export async function deserialize(model_id: string, dirname: string = "./savefil
 
     console.log(`[synapse]: De-Serialized from ${file_path}`);
     setModel(model);
+    console.log(`[synapse]: Updated Model: ${JSON.stringify(model)}`)
     return model;
 }
 
@@ -51,5 +52,5 @@ export async function loadModelResolver(model_id: string){
         timestamp: new Date().toISOString()
     };
     await enqueueMessage(message);
-    return deserialize(model_id);
+    return await deserialize(model_id);
 }

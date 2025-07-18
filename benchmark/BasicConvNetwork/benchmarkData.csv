@@ -1,5 +1,7 @@
 whom,model_type,average_cpu_time_us,average_construction_time_s,average_cuda_time,average_accuracy,clicks,loc
 synapse-works,conv,1056208,488,62313770,0.9829,118,0
-standalone,conv,1034967,1032,62240921,0.9838,0,153
-synapse-works,linear,8502885,125,11419676,0.9355,48,0
-standalone,linear,8833235,900,15675958,0.9357,0,153
+standalone,conv,1034967,1032,62240921,0.9838,0,180
+synapse-works,linear,8502885,125,11419676,0.9355,80,0
+standalone,linear,8833235,900,15675958,0.9357,0,307
+synapse-works,unet,2172885,633,85819762,0.676,301,0
+standalone,unet,2062367,937,79978831,0.672,0,344

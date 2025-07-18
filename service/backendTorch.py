@@ -248,7 +248,7 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
             if train_manager.visualize_loss:
                 writer.add_scalar("Loss/train", running_loss, epoch)
             # visualize accuracy
-            if train_manager.visualize_accuracy:
+            if train_manager.train_validation and train_manager.visualize_accuracy:
                 accuracy = correct_predictions/total_samples
                 writer.add_scalar("Accuracy/train", accuracy, epoch)
 

@@ -73,7 +73,7 @@ def processMessage(message_data, model: ModelManager, redis_client: redis.Redis)
         # handle DESERIALIZE_MODEL
         elif event_type == "DESERIALIZE_MODEL":
             id = message.get("model_id")
-            model = deserialize_model_manager(id["model_id"])
+            model = deserialize_model_manager(id)
             logging.info(f"{model.__getstate__()}")
             return model
         else:
