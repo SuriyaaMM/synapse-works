@@ -20,11 +20,10 @@
   let stoppedByUser = false;
   let selectedExportType: ExportType = ExportType.ONNX; // Set default to ONNX
 
-  fetchModelDetails();
-  
-  onMount(() => {
-    checkTrainingStatus();
-  });
+  onMount(async () => {
+  await fetchModelDetails();
+  await checkTrainingStatus();
+});
 
   onDestroy(() => {
     if (statusInterval) {
@@ -52,20 +51,25 @@
     try {
       const response = await client.query({
         query: GET_TRAINING_STATUS,
-        fetchPolicy: 'no-cache'
+        fetchPolicy: 'no-cache',
+        errorPolicy: 'all'
       });
       
       const newStatus = response.data?.getTrainingStatus;
       
       if (newStatus) {
-        trainingStatus = newStatus;
-        
-        // If training is in progress, start polling
-        if (!newStatus.completed && !statusInterval) {
-          training = true;
-          startStatusPolling();
-        }
-      }
+  trainingStatus = newStatus;
+  
+  // If training is in progress, start polling
+  if (!newStatus.completed) {
+    training = true;  // ← Set training to true
+    if (!statusInterval) {
+      startStatusPolling();
+    }
+  } else {
+    training = false;  // ← Ensure training is false when completed
+  }
+}
     } catch (err) {
       console.error('Error checking training status:', err);
     }
@@ -328,10 +332,6 @@
                 <div>
                   <p>Current Epoch: {trainingStatus.epoch || 0} / {modelDetails?.train_config?.epochs || 'N/A'}</p>
                   <p>Status: Running</p>
-                </div>
-                <div>
-                  <p>Current Loss: {trainingStatus.loss?.toFixed(4) || 'N/A'}</p>
-                  <p>Current Accuracy: {trainingStatus.accuracy ? (trainingStatus.accuracy * 100).toFixed(2) + '%' : 'N/A'}</p>
                 </div>
               </div>
               <p style="margin-top: 8px; font-size: 14px; color: #666;">

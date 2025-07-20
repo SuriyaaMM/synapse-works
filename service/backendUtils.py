@@ -317,7 +317,8 @@ def parseFromTrainConfig(train_config: TSTrainConfigInput) -> TrainConfig:
 
     # optimizer dependent configuration
     optimizer_config: TSOptimizerConfigInput = train_config["optimizer_config"]
-    loss_function_config: TSLossConfigInput = train_config["loss_function_config"] # type:ignore
+    #loss_function_config: TSLossConfigInput = train_config["loss_function_config"] # type:ignore
+    loss_function_config: TSLossConfigInput = train_config.get("loss_function_config", {}) # type:ignore
 
     # handle for adadelta optimizer
     if optimizer == "adadelta":

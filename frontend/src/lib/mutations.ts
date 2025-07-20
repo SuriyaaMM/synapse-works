@@ -207,9 +207,29 @@ export const ADD_TO_GRAPH = gql`
         id
         name
         type
-        ... on Conv2dLayerConfig { in_channels, out_channels, kernel_size, padding }
-        ... on Conv1dLayerConfig { in_channels, out_channels, kernel_size, padding }
-        ... on LinearLayerConfig { in_features, out_features }
+        ... on LinearLayerConfig { in_features out_features }
+
+        ... on Conv2dLayerConfig { in_channels out_channels kernel_size }
+        ... on Conv1dLayerConfig { in_channels out_channels kernel_size }
+        ... on ConvTranspose2dLayerConfig { in_channels out_channels kernel_size }
+
+        ... on MaxPool2dLayerConfig { kernel_size }
+        ... on MaxPool1dLayerConfig { kernel_size }
+
+        ... on AvgPool2dLayerConfig { kernel_size }
+        ... on AvgPool1dLayerConfig { kernel_size }
+
+        ... on BatchNorm2dLayerConfig { num_features }
+        ... on BatchNorm1dLayerConfig { num_features }
+
+        ... on DropoutLayerConfig { p }
+        ... on Dropout2dLayerConfig { p }
+
+        ... on ELULayerConfig { alpha }
+        ... on LeakyReLULayerConfig { negative_slope }
+
+        ... on CatLayerConfig { dimension }
+
       }
       edges { source_id, target_ids }
     }

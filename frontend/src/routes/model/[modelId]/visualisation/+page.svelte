@@ -14,7 +14,7 @@
   let tensorboardRunning = false;
   let tensorboardError: string | null = null;
   let loading = false;
-  let tensorboardUrl = "https://synapse-works-tensorboard-service-production.up.railway.app";
+  let tensorboardUrl = "http://127.0.0.1:6006/?darkMode=true#timeseries";
   let iframeLoaded = false;
   let connectionCheckInterval: NodeJS.Timeout | null = null;
 
@@ -33,20 +33,35 @@
     fetchTrainingStatus();
   }
 
+  $: if (trainingStatus) { // Add this reactive block
+  manageTrainingPolling();
+}
+
   onMount(() => {
     if (modelId) {
       fetchModelDetails();
       fetchTrainingStatus();
+      startTrainingStatusPolling();
     }
     checkTensorboardConnection();
     connectionCheckInterval = setInterval(checkTensorboardConnection, 500);
   });
 
+  let trainingStatusInterval: NodeJS.Timeout | null = null;
+
+function startTrainingStatusPolling() {
+  if (trainingStatusInterval) clearInterval(trainingStatusInterval);
+  trainingStatusInterval = setInterval(fetchTrainingStatus, 500); // Check every 2 seconds
+}
+
   onDestroy(() => {
-    if (connectionCheckInterval) {
-      clearInterval(connectionCheckInterval);
-    }
-  });
+  if (connectionCheckInterval) {
+    clearInterval(connectionCheckInterval);
+  }
+  if (trainingStatusInterval) { // Add this
+    clearInterval(trainingStatusInterval);
+  }
+});
 
   async function fetchTrainingStatus() {
     if (!modelId) return;
@@ -55,7 +70,8 @@
       const response = await client.query({
         query: GET_TRAINING_STATUS,
         variables: { modelId },
-        fetchPolicy: 'no-cache'
+        fetchPolicy: 'network-only', // Forces fresh data
+        errorPolicy: 'all'
       });
       
       trainingStatus = response.data?.getTrainingStatus;
@@ -63,6 +79,15 @@
       console.error('Error fetching training status:', err);
     }
   }
+
+  function manageTrainingPolling() {
+  if (trainingStatus?.started && !trainingStatus?.completed) {
+    startTrainingStatusPolling();
+  } else if (trainingStatusInterval) {
+    clearInterval(trainingStatusInterval);
+    trainingStatusInterval = null;
+  }
+}
 
   function refreshTrainingStatus() {
     fetchTrainingStatus();
@@ -200,9 +225,6 @@
               class="button {loading || tensorboardRunning ? 'disabled' : ''}"
             >
               {loading ? '⏳ Starting...' : '🚀 Start TensorBoard'}
-            </button>
-            <button on:click={checkTensorboardConnection} class="button">
-              🔄 Check Connection
             </button>
           </div>
         </div>

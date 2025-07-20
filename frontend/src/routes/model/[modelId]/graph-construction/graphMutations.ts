@@ -26,7 +26,7 @@ export function createGraphMutations(
         variables: { layer_config: layerConfig },
         fetchPolicy: 'no-cache'
       });
-      console.log(response);
+      console.log("after mutation:",response);
 
       if (!response.data?.appendToModuleGraph) {
         throw new Error('Failed to add layer to graph - no data returned');
