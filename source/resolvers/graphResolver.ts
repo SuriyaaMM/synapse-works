@@ -230,7 +230,6 @@ export async function validateModuleGraphResolver(model: Model, initial_in_dimen
         const layer_config = layer_id_to_config_map.get(layer_id);
 
         let current_in_dimension: number[];
-
         // for the first layer in the topological sort, use the initial input dimension
         if (i === 0) {
             current_in_dimension = initial_in_dimension;
@@ -279,6 +278,9 @@ export async function validateModuleGraphResolver(model: Model, initial_in_dimen
             out_dimension: result.out_dimension,
             required_in_dimension: result.required_in_dimension
         });
+
+        console.log(`[DEBUG] Layer ${layer_id} (${layer_config.type}): ${JSON.stringify(current_in_dimension)} -> ${JSON.stringify(result.out_dimension)}`);
+
 
         // if there's an error message, stop validation and return the current status
         if (result.message) {
