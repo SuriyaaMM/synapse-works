@@ -226,7 +226,8 @@
                 <span>Model Name:</span> {modelDetails.name}
               </p>
               <p class="model-info">
-                <span>Total Layers:</span> {modelDetails.layers_config?.length || 0}
+                <span>Total Layers:</span> {modelDetails.module_graph?.layers?.length || 0}
+                <span>Total Connections:</span> {modelDetails.module_graph?.edges?.length || 0}
               </p>
             </div>
 
