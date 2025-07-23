@@ -287,6 +287,7 @@ def train(train_manager: TorchTrainManager, redis_client: redis.Redis, args: TST
 
     if train_manager.profile:
         profiler.stop()
+        logging.info(profiler.key_averages())
         
     # hyperparameter dict
     hparam_dict = {
