@@ -26,7 +26,10 @@ ENV PATH="/opt/conda/bin:$PATH"
 RUN conda init bash
 
 # --- Install Python 3.12 via Conda ---
-RUN conda install -y python=3.12
+RUN conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/main && \
+    conda tos accept --override-channels --channel https://repo.anaconda.com/pkgs/r && \
+    conda install -y python=3.12
+
 
 # Create a symlink for consistency (optional)
 RUN ln -sf /opt/conda/bin/python /usr/local/bin/python

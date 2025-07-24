@@ -19,7 +19,7 @@ This is the fastest and recommended way to get started.
 
 Pull the Pre-built Image
 ```bash
-sudo docker pull suriyaamm2705/synapse-works:v1.1.0
+sudo docker pull suriyaamm2705/synapse-works:v1.4.0
 ```
 
 Run the Container
